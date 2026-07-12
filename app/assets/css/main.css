@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#__nuxt {
+  height: 100%;
+}
+
+body {
+  @apply bg-canvas text-white antialiased;
+  font-feature-settings: 'tnum' 1; /* tabular numbers for scores/timers */
+}
+
+/* thin, dark scrollbars to match the dashboard chrome */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #263351 transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: #263351;
+  border-radius: 9999px;
+}
+
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
