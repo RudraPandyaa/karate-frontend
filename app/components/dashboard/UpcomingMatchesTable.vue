@@ -2,7 +2,16 @@
 import { Pencil, Eye } from 'lucide-vue-next'
 import type { UpcomingMatchRow } from '~/types'
 
-defineProps<{ matches: UpcomingMatchRow[] }>()
+const props = defineProps<{ matches: UpcomingMatchRow[] }>()
+
+const editMatch = (match: UpcomingMatchRow) => {
+  alert(`Edit match ${match.matchNo} - coming soon!`)
+}
+
+const viewMatch = (match: UpcomingMatchRow) => {
+  // Go to live scoring if it's a live match, otherwise full match page
+  navigateTo(`/live-scoring/${match.id}`)
+}
 </script>
 
 <template>
@@ -20,11 +29,7 @@ defineProps<{ matches: UpcomingMatchRow[] }>()
         </tr>
       </thead>
       <tbody>
-        <tr
-          v-for="m in matches"
-          :key="m.id"
-          class="border-b border-line last:border-0 hover:bg-surface-hover transition-colors"
-        >
+        <tr v-for="m in matches" :key="m.id" class="border-b border-line last:border-0 hover:bg-surface-hover transition-colors">
           <td class="px-5 py-4 text-sm font-semibold text-white whitespace-nowrap">{{ m.matchNo }}</td>
           <td class="px-5 py-4 text-sm text-white/90">{{ m.categoryName }}</td>
           <td class="px-5 py-4 text-sm text-muted">{{ m.round }}</td>
@@ -43,16 +48,15 @@ defineProps<{ matches: UpcomingMatchRow[] }>()
           </td>
           <td class="px-5 py-4">
             <div class="flex items-center justify-end gap-3">
-              <button class="text-muted hover:text-white transition-colors" aria-label="Edit match">
+              <button @click="editMatch(m)" class="text-muted hover:text-white transition-colors" aria-label="Edit match">
                 <Pencil class="h-4 w-4" />
               </button>
-              <button class="text-muted hover:text-white transition-colors" aria-label="View match">
+              <button @click="viewMatch(m)" class="text-muted hover:text-white transition-colors" aria-label="View match">
                 <Eye class="h-4 w-4" />
               </button>
             </div>
           </td>
         </tr>
-
         <tr v-if="matches.length === 0">
           <td colspan="7" class="px-5 py-10 text-center text-sm text-muted">No upcoming matches scheduled.</td>
         </tr>

@@ -1,7 +1,23 @@
 <script setup lang="ts">
 import { Trophy, Timer, Users, Zap } from 'lucide-vue-next'
+import TatamiDashboard from '~/components/tatami/TatamiDashboard.vue'
 
 const { stats, liveMatches, upcomingMatches, usingMockData, pending, fetchAll } = useDashboardData()
+
+// Shared with AppTopbar.vue via the same useState key — typing in the
+// header search box filters the upcoming matches list below.
+const topbarSearch = useState('topbarSearch', () => '')
+
+const filteredUpcomingMatches = computed(() => {
+  const q = topbarSearch.value.trim().toLowerCase()
+  if (!q) return upcomingMatches.value
+  return upcomingMatches.value.filter(
+    (m) =>
+      m.categoryName.toLowerCase().includes(q) ||
+      m.redAthlete.name.toLowerCase().includes(q) ||
+      m.blueAthlete.name.toLowerCase().includes(q),
+  )
+})
 
 onMounted(() => {
   fetchAll()
@@ -31,7 +47,7 @@ onMounted(() => {
       />
       <DashboardStatCard
         label="Active Tournament"
-        value="01"
+        :value="String(stats.activeTournamentsCount).padStart(2, '0')"
         :icon="Timer"
         :footnote="stats.activeTournamentName ?? 'No active tournament'"
       />
@@ -74,7 +90,10 @@ onMounted(() => {
         </NuxtLink>
       </div>
 
-      <DashboardUpcomingMatchesTable :matches="upcomingMatches" />
+      <p v-if="topbarSearch && filteredUpcomingMatches.length === 0" class="text-sm text-muted mb-3">
+        No upcoming matches match "{{ topbarSearch }}".
+      </p>
+      <DashboardUpcomingMatchesTable :matches="filteredUpcomingMatches" />
     </section>
   </div>
 </template>

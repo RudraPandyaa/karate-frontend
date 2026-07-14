@@ -1,16 +1,40 @@
 <script setup lang="ts">
-import { Search, Bell, Moon, Sun, CircleUserRound } from 'lucide-vue-next'
+import { Search, Bell, CircleUserRound, Sun, Moon, LogOut } from 'lucide-vue-next'
+import { useAuth } from '~/composables/useAuth'
+import TournamentSelectorModal from '~/components/TournamentSelectorModal.vue'
+const search = useState('topbarSearch', () => '')
+const isDark = useDark()
+const { user, logout } = useAuth()
 
-const isDark = ref(true) // TODO: wire to a real theme composable / VueUse useDark if you want light mode later
+const showTournamentModal = ref(false)
+const showUserMenu = ref(false)
+
+// Theme Toggle
+const toggleTheme = () => {
+  isDark.value = !isDark.value
+}
+
+// Tournament Selector
+const openTournamentSelector = () => {
+  showTournamentModal.value = true
+}
+
+const selectTournament = (tournamentId: string) => {
+  // You can store selected tournament globally if needed
+  showTournamentModal.value = false
+  navigateTo('/dashboard')
+}
 </script>
 
 <template>
   <header class="flex h-16 items-center justify-between gap-4 border-b border-line bg-panel px-4 lg:px-6">
     <div class="flex items-center gap-3 min-w-0">
       <h1 class="hidden sm:block text-lg font-bold text-white shrink-0">WKF Manager</h1>
+      
       <div class="relative w-full max-w-sm hidden md:block">
         <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
         <input
+          v-model="search"
           type="text"
           placeholder="Search athletes, matches..."
           class="w-full rounded-full bg-surface border border-line py-2 pl-9 pr-4 text-sm text-white placeholder:text-muted outline-none focus:border-blue-600/60 focus:ring-1 focus:ring-blue-600/40"
@@ -18,34 +42,61 @@ const isDark = ref(true) // TODO: wire to a real theme composable / VueUse useDa
       </div>
     </div>
 
-    <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+    <div class="flex items-center gap-3">
+      <!-- Select Tournament -->
       <button
-        class="rounded-full bg-blue-600/15 border border-blue-600/30 px-4 py-2 text-sm font-medium text-blue-300 hover:bg-blue-600/25 transition-colors"
+        @click="openTournamentSelector"
+        class="rounded-full bg-blue-600/15 border border-blue-600/30 px-5 py-2 text-sm font-medium text-blue-300 hover:bg-blue-600/25 transition-colors"
       >
         Select Tournament
       </button>
 
+      <!-- Theme Toggle -->
       <button
+        @click="toggleTheme"
         class="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-surface hover:text-white transition-colors"
-        aria-label="Notifications"
       >
+        <Sun v-if="!isDark" class="h-5 w-5" />
+        <Moon v-else class="h-5 w-5" />
+      </button>
+
+      <!-- Notifications -->
+      <button class="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-surface hover:text-white transition-colors">
         <Bell class="h-[18px] w-[18px]" />
       </button>
 
-      <button
-        class="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-surface hover:text-white transition-colors"
-        aria-label="Toggle theme"
-        @click="isDark = !isDark"
-      >
-        <component :is="isDark ? Moon : Sun" class="h-[18px] w-[18px]" />
-      </button>
+      <!-- User Menu -->
+      <div class="relative">
+        <button
+          @click="showUserMenu = !showUserMenu"
+          class="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-surface hover:text-white transition-colors"
+        >
+          <CircleUserRound class="h-5 w-5" />
+        </button>
 
-      <button
-        class="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-surface hover:text-white transition-colors"
-        aria-label="Account"
-      >
-        <CircleUserRound class="h-[20px] w-[20px]" />
-      </button>
+        <!-- User Dropdown -->
+        <div v-if="showUserMenu" 
+             class="absolute right-0 mt-2 w-64 bg-surface border border-line rounded-2xl shadow-2xl py-2 z-50">
+          <div class="px-4 py-3 border-b border-line">
+            <p class="font-medium">{{ user?.name || 'Guest User' }}</p>
+            <p class="text-xs text-muted">{{ user?.email || '' }}</p>
+          </div>
+          
+          <button
+            @click="logout"
+            class="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 transition-colors"
+          >
+            <LogOut class="h-4 w-4" /> Logout
+          </button>
+        </div>
+      </div>
     </div>
   </header>
+
+  <!-- Tournament Selector Modal -->
+  <TournamentSelectorModal 
+    v-if="showTournamentModal" 
+    @close="showTournamentModal = false" 
+    @select="selectTournament" 
+  />
 </template>

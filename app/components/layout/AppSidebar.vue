@@ -28,8 +28,8 @@ const mainNav: NavItem[] = [
   { label: 'Categories', to: '/categories', icon: Tags },
   { label: 'Athletes', to: '/athletes', icon: Users },
   { label: 'Tatamis', to: '/tatamis', icon: Waypoints },
-  { label: 'Matches', to: '/matches', icon: Swords },
-  { label: 'Live Scoring', to: '/live-scoring', icon: Tv },
+  { label: 'Matches', to: '/admin/matches', icon: Swords },
+  { label: 'Live Scoring', to: '/live', icon: Tv },
   { label: 'Brackets', to: '/brackets', icon: GitBranch },
 ]
 

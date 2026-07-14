@@ -87,6 +87,7 @@ export interface UpcomingMatchRow {
 export interface DashboardStats {
   totalTournaments: number
   totalTournamentsDeltaPct?: number
+  activeTournamentsCount: number
   activeTournamentName: string | null
   totalAthletes: number
   runningMatches: number
