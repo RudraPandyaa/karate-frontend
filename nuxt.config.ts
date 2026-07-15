@@ -3,7 +3,11 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
-  modules: ['@nuxtjs/tailwindcss', '@vueuse/nuxt'],
+    modules: [
+    '@nuxtjs/tailwindcss',
+    '@vueuse/nuxt',
+    '@nuxtjs/color-mode'
+  ],
 
   // components: [
   //   {
@@ -11,7 +15,6 @@ export default defineNuxtConfig({
   //     pathPrefix: false,
   //   },
   // ],
-
   app: {
     head: {
       title: 'WKF Manager | Tournament Dashboard',
@@ -26,4 +29,7 @@ export default defineNuxtConfig({
   },
 
   css: ['~/assets/css/main.css'],
+    colorMode: {
+    classSuffix: ''
+  },
 })

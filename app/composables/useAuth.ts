@@ -35,7 +35,7 @@ export const useAuth = () => {
   const initAuth = async () => {
     if (accessToken.value) {
       try {
-        const res = await $fetch<User>('/users/me', {
+        const res = await $fetch<User>('/auth/me', {
           headers: { Authorization: `Bearer ${accessToken.value}` },
           baseURL: useRuntimeConfig().public.apiBase,
         })

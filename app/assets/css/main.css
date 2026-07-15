@@ -1,36 +1,49 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-html,
-body,
-#__nuxt {
-  height: 100%;
+:root {
+  --bg: #f3f4f6;
+  --panel: #ffffff;
+  --card: #ffffff;
+  --card-hover: #f9fafb;
+  --border: #e5e7eb;
+  --primary: #2563eb;
+  --text: #111827;
+  --text-muted: #6b7280;
 }
 
-body {
-  @apply bg-canvas text-white antialiased;
-  font-feature-settings: 'tnum' 1; /* tabular numbers for scores/timers */
+.dark {
+  --bg: #020617;
+  --panel: #0f172a;
+  --card: #0f172a;
+  --card-hover: #1e293b;
+  --border: #334155;
+  --primary: #3b82f6;
+  --text: #ffffff;
+  --text-muted: #9ca3af;
 }
 
-/* thin, dark scrollbars to match the dashboard chrome */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #263351 transparent;
-}
-*::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-*::-webkit-scrollbar-thumb {
-  background-color: #263351;
-  border-radius: 9999px;
-}
-
-@layer utilities {
-  .tabular {
-    font-variant-numeric: tabular-nums;
+@layer components {
+  .card {
+    @apply bg-surface border border-line rounded-xl shadow-sm;
+  }
+  .page {
+    @apply bg-canvas;
+  }
+  .title {
+    @apply text-foreground;
+  }
+  .subtitle {
+    @apply text-muted;
+  }
+  .input {
+    @apply bg-surface border border-line text-foreground;
+  }
+  .btn-primary {
+    @apply bg-primary hover:opacity-90 text-white;
+  }
+  .btn-secondary {
+    @apply bg-panel text-foreground;
   }
 }
