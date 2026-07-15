@@ -18,7 +18,7 @@ const labels: Record<typeof props.gender, string> = {
 
 <template>
   <span
-    class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium capitalize"
+    class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium capitalize border-line"
     :class="styles[gender]"
   >
     {{ labels[gender] }}

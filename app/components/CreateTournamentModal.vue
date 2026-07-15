@@ -68,12 +68,12 @@ function submit() {
       <div
         class="flex items-center justify-between border-b border-line px-8 py-6"
       >
-        <h2 class="text-2xl font-bold">
+        <h2 class="text-2xl font-bold text-foreground">
           Create Tournament
         </h2>
 
         <button
-          class="rounded-full p-2 hover:bg-surface"
+          class="rounded-full p-2 hover:bg-surface text-foreground"
           @click="emit('close')"
         >
           <X class="h-5 w-5" />
@@ -96,13 +96,13 @@ function submit() {
         <!-- Name -->
 
         <div>
-          <label class="mb-2 block text-sm font-medium">
+          <label class="mb-2 block text-sm font-medium text-foreground">
             Tournament Name
           </label>
 
           <input
             v-model="form.name"
-            class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600"
+            class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600 text-foreground"
             placeholder="WKF World Championship"
           >
         </div>
@@ -110,13 +110,13 @@ function submit() {
         <!-- Location -->
 
         <div>
-          <label class="mb-2 block text-sm font-medium">
+          <label class="mb-2 block text-sm font-medium text-foreground">
             Location
           </label>
 
           <input
             v-model="form.location"
-            class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600"
+            class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600 text-foreground"
             placeholder="Delhi, India"
           >
         </div>
@@ -126,26 +126,26 @@ function submit() {
         <div class="grid grid-cols-2 gap-5">
 
           <div>
-            <label class="mb-2 block text-sm font-medium">
+            <label class="mb-2 block text-sm font-medium text-foreground">
               Start Date
             </label>
 
             <input
               v-model="form.startDate"
               type="date"
-              class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600"
+              class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600 text-foreground"
             >
           </div>
 
           <div>
-            <label class="mb-2 block text-sm font-medium">
+            <label class="mb-2 block text-sm font-medium text-foreground">
               End Date
             </label>
 
             <input
               v-model="form.endDate"
               type="date"
-              class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600"
+              class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600 text-foreground"
             >
           </div>
 
@@ -154,13 +154,13 @@ function submit() {
         <!-- Organization -->
 
         <div>
-          <label class="mb-2 block text-sm font-medium">
+          <label class="mb-2 block text-sm font-medium text-foreground">
             Organization
           </label>
 
           <select
             v-model="form.organizationId"
-            class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600"
+            class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600 text-foreground"
           >
             <option value="">
               Select Organization
@@ -191,7 +191,7 @@ function submit() {
         class="flex justify-end gap-3 border-t border-line px-8 py-6"
       >
         <button
-          class="rounded-xl border border-line px-6 py-3 hover:bg-surface"
+          class="rounded-xl border border-line px-6 py-3 hover:bg-surface text-foreground"
           @click="emit('close')"
         >
           Cancel

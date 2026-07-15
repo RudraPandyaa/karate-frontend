@@ -16,25 +16,25 @@ onMounted(async () => {
   <div class="p-6">
 
     <div class="mb-8">
-      <h1 class="text-3xl font-bold">
+      <h1 class="text-3xl font-bold text-foreground">
         Tatami Management
       </h1>
 
-      <p class="mt-2 text-zinc-400">
+      <p class="mt-2 text-muted">
         Select a tournament to manage its tatamis.
       </p>
     </div>
 
     <div
       v-if="loading"
-      class="rounded-xl border border-zinc-800 bg-zinc-900 p-10 text-center text-zinc-400"
+      class="rounded-xl border border-line bg-panel p-10 text-center text-muted"
     >
       Loading tournaments...
     </div>
 
     <div
       v-else-if="tournaments.length === 0"
-      class="rounded-xl border border-zinc-800 bg-zinc-900 p-10 text-center text-zinc-400"
+      class="rounded-xl border border-line bg-panel p-10 text-center text-muted"
     >
       No tournaments found.
     </div>
@@ -47,13 +47,13 @@ onMounted(async () => {
         v-for="tournament in tournaments"
         :key="tournament.id"
         :to="`/tatamis/${tournament.id}`"
-        class="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 transition hover:border-blue-500 hover:bg-zinc-800"
+        class="rounded-2xl border border-line bg-panel p-6 transition hover:border-blue-500 hover:bg-surface-hover"
       >
-        <h2 class="text-xl font-semibold">
+        <h2 class="text-xl font-semibold text-foreground">
           {{ tournament.name }}
         </h2>
 
-        <p class="mt-3 text-sm text-zinc-400">
+        <p class="mt-3 text-sm text-muted">
           Click to manage tatamis
         </p>
       </NuxtLink>

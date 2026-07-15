@@ -100,7 +100,7 @@ function closeModal() {
             <Trophy class="h-6 w-6 text-blue-500" />
 
             <div>
-              <h2 class="text-xl font-bold">
+              <h2 class="text-xl font-bold text-foreground">
                 Select Tournament
               </h2>
 
@@ -111,7 +111,7 @@ function closeModal() {
           </div>
 
           <button
-            class="rounded-full p-2 hover:bg-surface"
+            class="rounded-full p-2 hover:bg-surface  text-foreground"
             @click="closeModal"
           >
             <X class="h-5 w-5" />
@@ -130,7 +130,7 @@ function closeModal() {
               v-model="search"
               type="text"
               placeholder="Search tournaments..."
-              class="w-full rounded-xl border border-line bg-surface py-3 pl-10 pr-4 outline-none focus:border-blue-500"
+              class="w-full rounded-xl border border-line bg-surface py-3 pl-10 pr-4 outline-none focus:border-blue-500 text-foreground"
             >
           </div>
         </div>
@@ -186,7 +186,7 @@ function closeModal() {
           >
             <div class="space-y-2">
 
-              <div class="font-semibold">
+              <div class="font-semibold  text-foreground">
                 {{ tournament.name }}
               </div>
 
@@ -219,10 +219,10 @@ function closeModal() {
         <!-- Footer -->
 
         <div
-          class="flex justify-end border-t border-line px-6 py-5"
+          class="flex justify-end border-t border-line px-6 py-5  text-foreground"
         >
           <button
-            class="rounded-xl border border-line px-5 py-2 hover:bg-surface"
+            class="rounded-xl border border-line px-5 py-2 hover:bg-surface text-foreground"
             @click="closeModal"
           >
             Close

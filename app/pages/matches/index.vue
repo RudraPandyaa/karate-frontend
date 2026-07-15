@@ -7,18 +7,18 @@ const statusColor = (status: string) => {
   if (status === 'IN_PROGRESS') return 'text-green-400'
   if (status === 'PAUSED') return 'text-yellow-400'
   if (status === 'COMPLETED') return 'text-blue-400'
-  return 'text-white/50'
+  return 'text-muted'
 }
 </script>
 
 <template>
-  <div class="min-h-screen bg-zinc-950 px-6 py-10">
+  <div class="min-h-screen bg-canvas px-6 py-10">
     <div class="max-w-5xl mx-auto">
-      <h1 class="text-3xl font-bold text-white mb-8">All Matches</h1>
+      <h1 class="text-3xl font-bold text-foreground mb-8">All Matches</h1>
 
-      <div v-if="pending" class="text-white/60 text-center py-20">Loading matches...</div>
+      <div v-if="pending" class="text-foreground/60 text-center py-20">Loading matches...</div>
       <div v-else-if="error" class="text-red-400 text-center py-20">{{ error }}</div>
-      <div v-else-if="matches.length === 0" class="text-white/60 text-center py-20">
+      <div v-else-if="matches.length === 0" class="text-foreground/60 text-center py-20">
         No matches found.
       </div>
 
@@ -27,18 +27,18 @@ const statusColor = (status: string) => {
           v-for="m in matches"
           :key="m.id"
           :to="`/live-scoring/${m.id}`"
-          class="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900 px-5 py-4 hover:border-zinc-600 transition-colors"
+          class="flex items-center justify-between rounded-xl border border-line bg-panel px-5 py-4 hover:border-primary/40 transition-colors"
         >
           <div>
-            <p class="text-white font-semibold">
+            <p class="text-foreground font-semibold">
               {{ m.redAthlete?.name ?? 'TBD' }} vs {{ m.blueAthlete?.name ?? 'TBD' }}
             </p>
-            <p class="text-sm text-white/50">
+            <p class="text-sm text-muted">
               {{ m.category?.name }} • {{ m.round }}
             </p>
           </div>
           <div class="text-right">
-            <p class="font-mono text-white">{{ m.redScore }} - {{ m.blueScore }}</p>
+            <p class="font-mono text-foreground">{{ m.redScore }} - {{ m.blueScore }}</p>
             <p class="text-xs font-medium" :class="statusColor(m.status)">{{ m.status }}</p>
           </div>
         </NuxtLink>

@@ -33,7 +33,7 @@ const formattedTime = computed(() => {
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto space-y-8 text-white">
+  <div class="max-w-6xl mx-auto space-y-8 text-foreground">
 
     <!-- Notification -->
     <Transition name="fade">
@@ -55,15 +55,15 @@ const formattedTime = computed(() => {
 
     <!-- Timer -->
     <div
-      class="rounded-3xl border border-zinc-800 bg-zinc-900 p-8 text-center"
+      class="rounded-3xl border border-line bg-panel p-8 text-center"
     >
 
-      <h2 class="text-7xl font-black tracking-wider">
+      <h2 class="text-7xl font-black tracking-wider text-foreground">
         {{ formattedTime }}
       </h2>
 
       <p
-        class="mt-3 text-xl font-bold"
+        class="mt-3 text-xl font-bold text-foreground"
         :class="{
           'text-green-400': matchStatus === 'IN_PROGRESS',
           'text-yellow-400': matchStatus === 'PAUSED',
@@ -89,10 +89,10 @@ const formattedTime = computed(() => {
 
     <!-- Timer Controls -->
     <div
-      class="flex flex-wrap justify-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 p-6"
+      class="flex flex-wrap justify-center gap-3 rounded-2xl border border-line bg-panel p-6"
     >
       <button
-        class="rounded-lg bg-green-600 px-6 py-3 font-semibold hover:bg-green-500"
+        class="rounded-lg bg-green-600 px-6 py-3 font-semibold hover:bg-green-500 text-white"
         :disabled="submitting"
         @click="emit('start')"
       >
@@ -100,7 +100,7 @@ const formattedTime = computed(() => {
       </button>
 
       <button
-        class="rounded-lg bg-yellow-600 px-6 py-3 font-semibold hover:bg-yellow-500"
+        class="rounded-lg bg-yellow-600 px-6 py-3 font-semibold hover:bg-yellow-500 text-white"
         :disabled="submitting"
         @click="emit('pause')"
       >
@@ -108,7 +108,7 @@ const formattedTime = computed(() => {
       </button>
 
       <button
-        class="rounded-lg bg-zinc-700 px-5 py-3 font-semibold hover:bg-zinc-600"
+        class="rounded-lg bg-surface px-5 py-3 font-semibold hover:bg-surface-hover"
         :disabled="submitting"
         @click="emit('adjustTime', -10)"
       >
@@ -116,7 +116,7 @@ const formattedTime = computed(() => {
       </button>
 
       <button
-        class="rounded-lg bg-zinc-700 px-5 py-3 font-semibold hover:bg-zinc-600"
+        class="rounded-lg bg-surface px-5 py-3 font-semibold hover:bg-surface-hover"
         :disabled="submitting"
         @click="emit('adjustTime', 10)"
       >
@@ -124,7 +124,7 @@ const formattedTime = computed(() => {
       </button>
 
       <button
-        class="rounded-lg bg-zinc-700 px-5 py-3 font-semibold hover:bg-zinc-600"
+        class="rounded-lg bg-surface px-5 py-3 font-semibold hover:bg-surface-hover"
         :disabled="submitting"
         @click="emit('adjustTime', 30)"
       >
@@ -151,7 +151,7 @@ const formattedTime = computed(() => {
           <button
             v-for="s in scoreTypes"
             :key="s.type"
-            class="w-full rounded-xl bg-red-700 py-4 text-lg font-bold hover:bg-red-600 disabled:opacity-40"
+            class="w-full rounded-xl bg-red-700 py-4 text-lg font-bold hover:bg-red-600 disabled:opacity-40 text-white"
             :disabled="submitting || match.status !== 'IN_PROGRESS'"
             @click="emit('score','RED',s.type)"
           >
@@ -176,7 +176,7 @@ const formattedTime = computed(() => {
           <button
             v-for="s in scoreTypes"
             :key="s.type"
-            class="w-full rounded-xl bg-blue-700 py-4 text-lg font-bold hover:bg-blue-600 disabled:opacity-40"
+            class="w-full rounded-xl bg-blue-700 py-4 text-lg font-bold hover:bg-blue-600 disabled:opacity-40 text-white"
             :disabled="submitting || match.status !== 'IN_PROGRESS'"
             @click="emit('score','BLUE',s.type)"
           >
@@ -190,7 +190,7 @@ const formattedTime = computed(() => {
     <!-- Undo -->
     <div class="flex justify-center">
       <button
-        class="rounded-xl bg-zinc-800 px-8 py-4 text-lg font-semibold hover:bg-zinc-700 disabled:opacity-30"
+        class="rounded-xl bg-surface px-8 py-4 text-lg font-semibold hover:bg-surface-hover disabled:opacity-30"
         :disabled="!canUndo || submitting"
         @click="emit('undoLast')"
       >

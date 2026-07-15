@@ -27,12 +27,12 @@ defineProps<{
 
 <template>
   <div
-    class="rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition"
+    class="rounded-2xl border border-line bg-canvas p-5 transition"
   >
     <!-- Loading -->
     <div
       v-if="loading"
-      class="py-8 text-center text-sm text-zinc-400"
+      class="py-8 text-center text-sm text-muted"
     >
       Loading current match...
     </div>
@@ -40,7 +40,7 @@ defineProps<{
     <!-- No Match -->
     <div
       v-else-if="!match"
-      class="py-8 text-center text-sm text-zinc-500"
+      class="py-8 text-center text-sm text-muted"
     >
       No match currently running
     </div>
@@ -63,14 +63,14 @@ defineProps<{
 
       <div
         v-if="match.category"
-        class="mb-5 text-sm text-zinc-400"
+        class="mb-5 text-sm text-muted"
       >
         {{ match.category.name }}
       </div>
 
       <div class="grid grid-cols-3 items-center gap-3">
         <div class="text-center">
-          <div class="text-sm text-zinc-500 mb-2">
+          <div class="text-sm text-muted mb-2">
             AKA
           </div>
 
@@ -80,13 +80,13 @@ defineProps<{
         </div>
 
         <div
-          class="text-center text-xl font-bold text-zinc-500"
+          class="text-center text-xl font-bold text-muted"
         >
           VS
         </div>
 
         <div class="text-center">
-          <div class="text-sm text-zinc-500 mb-2">
+          <div class="text-sm text-muted mb-2">
             AO
           </div>
 

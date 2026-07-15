@@ -32,29 +32,29 @@ const borderClass = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-col rounded-2xl border border-line bg-surface shadow-card overflow-hidden" :class="borderClass">
+  <div class="flex flex-col rounded-2xl text-foreground border border-line bg-surface shadow-card overflow-hidden" :class="borderClass">
     <div class="flex items-center justify-between px-4 pt-4">
-      <span class="text-xs font-bold tracking-wide text-white">TATAMI {{ match.tatami.number }}</span>
+      <span class="text-xs font-bold tracking-wide text-foreground">TATAMI {{ match.tatami.number }}</span>
       <span class="text-xs text-muted truncate max-w-[55%] text-right">{{ match.category.name }}</span>
     </div>
 
     <div class="flex items-center justify-between px-4 pt-3">
       <div class="text-left">
         <p class="text-[11px] font-bold text-aka">AKA</p>
-        <p class="text-sm font-semibold text-white truncate max-w-[110px]">{{ match.redAthlete?.name ?? 'TBD' }}</p>
+        <p class="text-sm font-semibold text-foreground truncate max-w-[110px]">{{ match.redAthlete?.name ?? 'TBD' }}</p>
       </div>
       <span class="text-xs font-semibold text-muted px-2">VS</span>
       <div class="text-right">
         <p class="text-[11px] font-bold text-ao">AO</p>
-        <p class="text-sm font-semibold text-white truncate max-w-[110px]">{{ match.blueAthlete?.name ?? 'TBD' }}</p>
+        <p class="text-sm font-semibold text-foreground truncate max-w-[110px]">{{ match.blueAthlete?.name ?? 'TBD' }}</p>
       </div>
     </div>
 
     <div class="flex items-center justify-between px-6 pt-2">
-      <span class="text-3xl font-extrabold tabular text-white">
+      <span class="text-3xl font-extrabold tabular text-foreground">
         {{ isKata ? match.redKataScore?.toFixed(1) ?? '-' : match.redScore }}
       </span>
-      <span class="text-3xl font-extrabold tabular text-white">
+      <span class="text-3xl font-extrabold tabular text-foreground">
         {{ isKata ? match.blueKataScore?.toFixed(1) ?? '-' : match.blueScore }}
       </span>
     </div>

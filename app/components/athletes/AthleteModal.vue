@@ -115,7 +115,7 @@ function submit() {
             class="flex items-center justify-between border-b border-line px-6 py-5"
           >
             <div>
-              <h2 class="text-xl font-bold text-white">
+              <h2 class="text-xl font-bold text-foreground">
                 {{ isEdit ? 'Edit Athlete' : 'Register Athlete' }}
               </h2>
 
@@ -140,7 +140,7 @@ function submit() {
 
           <div class="space-y-5 p-6">
             <div>
-              <label class="mb-2 block text-sm font-medium">
+              <label class="mb-2 block text-sm font-medium text-foreground">
                 Athlete Name
               </label>
 
@@ -148,7 +148,7 @@ function submit() {
                 v-model="form.name"
                 type="text"
                 placeholder="Rahul Sharma"
-                class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600"
+                class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600 text-foreground"
               />
 
               <p
@@ -160,7 +160,7 @@ function submit() {
             </div>
 
             <div>
-              <label class="mb-2 block text-sm font-medium">
+              <label class="mb-2 block text-sm font-medium text-foreground">
                 State
               </label>
 
@@ -168,7 +168,7 @@ function submit() {
                 v-model="form.state"
                 type="text"
                 placeholder="Gujarat"
-                class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600"
+                class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600 text-foreground"
               />
 
               <p
@@ -180,7 +180,7 @@ function submit() {
             </div>
 
             <div>
-              <label class="mb-2 block text-sm font-medium">
+              <label class="mb-2 block text-sm font-medium text-foreground">
                 Country
               </label>
 
@@ -188,7 +188,7 @@ function submit() {
                 v-model="form.country"
                 type="text"
                 placeholder="IND"
-                class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600"
+                class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600 text-foreground"
               />
             </div>
           </div>

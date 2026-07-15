@@ -106,7 +106,7 @@ async function handleDelete() {
     <div class="flex items-center justify-between">
 
       <div>
-        <h1 class="text-3xl font-bold text-white">
+        <h1 class="text-3xl font-bold text-foreground">
           Categories
         </h1>
 
@@ -148,7 +148,7 @@ async function handleDelete() {
         <input
           v-model="search"
           placeholder="Search category..."
-          class="w-full rounded-full border border-line bg-surface py-3 pl-10 pr-4 text-sm outline-none transition focus:border-blue-600"
+          class="w-full rounded-full border border-line bg-surface py-3 pl-10 pr-4 text-sm outline-none transition focus:border-blue-600 text-foreground"
         />
 
       </div>
@@ -186,7 +186,7 @@ async function handleDelete() {
       v-else-if="filteredRows.length === 0"
       class="rounded-2xl border border-line bg-surface py-20 text-center"
     >
-      <h3 class="text-lg font-semibold">
+      <h3 class="text-lg font-semibold text-foreground">
         No categories found
       </h3>
 

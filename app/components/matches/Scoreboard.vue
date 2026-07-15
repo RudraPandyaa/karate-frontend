@@ -18,15 +18,15 @@ const isLowTime = computed(() => props.match.timeRemaining <= 15 && props.match.
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col items-center justify-center bg-black px-6 py-10 text-white">
+  <div class="flex min-h-screen flex-col items-center justify-center bg-canvas px-6 py-10 text-foreground">
 
     <!-- Status / round -->
     <div class="mb-8 flex items-center gap-3">
       <span
         class="h-2.5 w-2.5 rounded-full"
-        :class="match.isRunning ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'"
+        :class="match.isRunning ? 'bg-green-500 animate-pulse text-white' : 'bg-yellow-500 text-white'"
       />
-      <span class="text-sm font-medium uppercase tracking-widest text-white/60">
+      <span class="text-sm font-medium uppercase tracking-widest text-foreground/60">
         {{ match.isRunning ? 'Live' : match.status }}
       </span>
     </div>
@@ -34,7 +34,7 @@ const isLowTime = computed(() => props.match.timeRemaining <= 15 && props.match.
     <!-- Timer -->
     <div
       class="mb-10 font-mono text-7xl font-bold tabular-nums sm:text-8xl"
-      :class="isLowTime ? 'text-red-500 animate-pulse' : 'text-white'"
+      :class="isLowTime ? 'text-red-500 animate-pulse' : 'text-foreground'"
     >
       {{ clock }}
     </div>
@@ -47,7 +47,7 @@ const isLowTime = computed(() => props.match.timeRemaining <= 15 && props.match.
 
         <div
           v-if="match.senshu === 'RED'"
-          class="absolute right-4 top-4 rounded-full bg-red-600 px-3 py-1 text-xs font-bold uppercase"
+          class="absolute right-4 top-4 rounded-full bg-red-600 px-3 py-1 text-xs font-bold uppercase text-white"
         >
           Senshu
         </div>
@@ -56,7 +56,7 @@ const isLowTime = computed(() => props.match.timeRemaining <= 15 && props.match.
           {{ match.redAthlete?.name ?? 'Red Corner' }}
         </p>
 
-        <p class="mt-4 font-mono text-8xl font-extrabold text-white sm:text-9xl">
+        <p class="mt-4 font-mono text-8xl font-extrabold text-foreground sm:text-9xl">
           {{ match.redScore }}
         </p>
 
@@ -67,7 +67,7 @@ const isLowTime = computed(() => props.match.timeRemaining <= 15 && props.match.
 
         <div
           v-if="match.senshu === 'BLUE'"
-          class="absolute right-4 top-4 rounded-full bg-blue-600 px-3 py-1 text-xs font-bold uppercase"
+          class="absolute right-4 top-4 rounded-full bg-blue-600 px-3 py-1 text-xs font-bold uppercase text-white"
         >
           Senshu
         </div>
@@ -76,7 +76,7 @@ const isLowTime = computed(() => props.match.timeRemaining <= 15 && props.match.
           {{ match.blueAthlete?.name ?? 'Blue Corner' }}
         </p>
 
-        <p class="mt-4 font-mono text-8xl font-extrabold text-white sm:text-9xl">
+        <p class="mt-4 font-mono text-8xl font-extrabold text-foreground sm:text-9xl">
           {{ match.blueScore }}
         </p>
 

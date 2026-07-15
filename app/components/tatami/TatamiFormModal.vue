@@ -63,16 +63,16 @@ async function onSubmit() {
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
   >
     <div
-      class="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 shadow-2xl"
+      class="w-full max-w-md rounded-2xl border border-line bg-panel shadow-2xl"
     >
       <!-- Header -->
 
-      <div class="border-b border-zinc-800 px-6 py-5">
-        <h2 class="text-xl font-bold">
+      <div class="border-b border-line px-6 py-5">
+        <h2 class="text-xl font-bold text-foreground">
           {{ isEdit ? 'Edit Tatami' : 'Create Tatami' }}
         </h2>
 
-        <p class="mt-1 text-sm text-zinc-400">
+        <p class="mt-1 text-sm text-muted">
           {{
             isEdit
               ? 'Update tatami details'
@@ -91,7 +91,7 @@ async function onSubmit() {
 
         <div>
           <label
-            class="mb-2 block text-sm font-medium text-zinc-300"
+            class="mb-2 block text-sm font-medium text-muted"
           >
             Tatami Number
           </label>
@@ -101,7 +101,7 @@ async function onSubmit() {
             type="number"
             min="1"
             required
-            class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 outline-none transition focus:border-blue-500"
+            class="w-full rounded-xl border border-line bg-canvas px-4 py-3 outline-none transition focus:border-blue-500 text-foreground"
           />
         </div>
 
@@ -109,7 +109,7 @@ async function onSubmit() {
 
         <div>
           <label
-            class="mb-2 block text-sm font-medium text-zinc-300"
+            class="mb-2 block text-sm font-medium text-muted"
           >
             Tatami Name
           </label>
@@ -118,7 +118,7 @@ async function onSubmit() {
             v-model="form.name"
             type="text"
             placeholder="Tatami 1"
-            class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 outline-none transition focus:border-blue-500"
+            class="w-full rounded-xl border border-line bg-canvas px-4 py-3 outline-none transition focus:border-blue-500 text-foreground"
           />
         </div>
 
@@ -137,7 +137,7 @@ async function onSubmit() {
           <button
             type="button"
             @click="emit('close')"
-            class="flex-1 rounded-xl bg-zinc-700 py-3 font-semibold transition hover:bg-zinc-600"
+            class="flex-1 rounded-xl bg-surface py-3 font-semibold transition hover:bg-surface-hover"
           >
             Cancel
           </button>
@@ -145,7 +145,7 @@ async function onSubmit() {
           <button
             type="submit"
             :disabled="saving"
-            class="flex-1 rounded-xl bg-blue-600 py-3 font-semibold transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+            class="flex-1 rounded-xl bg-blue-600 py-3 font-semibold transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50 text-white"
           >
             {{ saving ? 'Saving...' : isEdit ? 'Update' : 'Create' }}
           </button>

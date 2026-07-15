@@ -15,7 +15,7 @@ async function handleGenerate() {
 
 <template>
   <div class="p-6">
-    <div v-if="pending" class="py-20 text-center text-white/60">Loading bracket...</div>
+    <div v-if="pending" class="py-20 text-center text-muted">Loading bracket...</div>
 
     <div v-else-if="error" class="py-20 text-center text-red-400">{{ error }}</div>
 
@@ -24,7 +24,7 @@ async function handleGenerate() {
         <button
           @click="handleGenerate"
           :disabled="generating"
-          class="rounded-xl bg-green-600 px-5 py-2.5 font-medium hover:bg-green-500 disabled:opacity-50"
+          class="rounded-xl bg-green-600 px-5 py-2.5 font-medium hover:bg-green-500 disabled:opacity-50 text-white"
         >
           {{ generating ? 'Generating...' : 'Generate Bracket' }}
         </button>

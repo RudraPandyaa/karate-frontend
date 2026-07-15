@@ -14,19 +14,34 @@ const {
 const search = ref('')
 const showCreateModal = ref(false)
 const creating = ref(false)
-const createError = ref<string |null>(null)
+const createError = ref<string | null>(null)
 
+const showFilterMenu = ref(false)
+const statusFilter = ref<string | null>(null)
+
+const filteredRows = computed(() => {
+  if (!statusFilter.value) return rows.value
+  console.log('filter:', statusFilter.value, 'sample row status:', rows.value[0]?.status)
+  return rows.value.filter((t: any) => t.status === statusFilter.value)
+})
 onMounted(async () => {
   await fetchAll()
 })
-
-async function handleCreate(payload: any) {
+function openCreateModal() {
+  showCreateModal.value = true
+}
+const handleEditTournament = (tournament: TournamentRow) => {
+  navigateTo(`/tournaments/${tournament.id}/edit`)
+  // Or open an edit modal if you prefer
+}
+async function handleCreateTournament(payload: any) {
   creating.value = true
   createError.value = null
 
   try {
     await createTournament(payload)
     showCreateModal.value = false
+    await fetchAll()
   } catch (err: any) {
     createError.value =
       err?.data?.message ||
@@ -35,6 +50,30 @@ async function handleCreate(payload: any) {
   } finally {
     creating.value = false
   }
+}
+
+function exportToCsv() {
+  const data = filteredRows.value
+  if (!data.length) return
+
+  const headers = Object.keys(data[0]).filter((k) => typeof data[0][k] !== 'object')
+  const csvRows = [
+    headers.join(','),
+    ...data.map((row: any) =>
+      headers.map((h) => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(',')
+    ),
+  ]
+
+  const csvContent = csvRows.join('\n')
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `tournaments-${new Date().toISOString().slice(0, 10)}.csv`
+  link.click()
+
+  URL.revokeObjectURL(url)
 }
 </script>
 
@@ -60,7 +99,7 @@ async function handleCreate(payload: any) {
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-3xl font-bold text-white">
+        <h1 class="text-3xl font-bold text-foreground">
           Tournaments
         </h1>
 
@@ -90,19 +129,59 @@ async function handleCreate(payload: any) {
           v-model="search"
           type="text"
           placeholder="Search tournaments..."
-          class="w-full rounded-full border border-line bg-surface py-3 pl-10 pr-4 text-sm outline-none focus:border-blue-500"
+          class="w-full rounded-full border border-line bg-surface py-3 pl-10 pr-4 text-sm outline-none focus:border-blue-500 text-foreground"
         >
       </div>
 
-      <button
-        class="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 transition hover:bg-zinc-800"
-      >
-        <Filter class="h-4 w-4" />
-        Filter
-      </button>
+      <div class="relative">
+        <button
+          class="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-foreground transition hover:bg-surface-hover"
+          @click="showFilterMenu = !showFilterMenu"
+        >
+          <Filter class="h-4 w-4" />
+          Filter
+        </button>
+
+        <div
+          v-if="showFilterMenu"
+          class="absolute right-0 mt-2 w-48 rounded-xl border border-line bg-surface shadow-2xl py-2 z-50"
+        >
+          <button
+            class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
+            @click="statusFilter = null; showFilterMenu = false"
+          >
+            All
+          </button>
+          <button
+            class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
+            @click="statusFilter = 'DRAFT'; showFilterMenu = false"
+          >
+            Draft
+          </button>
+          <button
+            class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
+            @click="statusFilter = 'ONGOING'; showFilterMenu = false"
+          >
+            Ongoing
+          </button>
+          <button
+            class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
+            @click="statusFilter = 'COMPLETED'; showFilterMenu = false"
+          >
+            Completed
+          </button>
+          <button
+            class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
+            @click="statusFilter = 'CANCELLED'; showFilterMenu = false"
+          >
+            Cancelled
+          </button>
+        </div>
+      </div>
 
       <button
-        class="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 transition hover:bg-zinc-800"
+        class="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-foreground transition hover:bg-surface-hover"
+        @click="exportToCsv"
       >
         <Download class="h-4 w-4" />
         Export
@@ -112,8 +191,10 @@ async function handleCreate(payload: any) {
 
     <!-- Table -->
     <TournamentsTable
-      :rows="rows"
+      :rows="filteredRows"
       :search="search"
+      :show-actions="isStaff"
+      @edit="handleEditTournament"
     />
 
     <!-- Create Tournament Modal -->
@@ -122,7 +203,7 @@ async function handleCreate(payload: any) {
       :submitting="creating"
       :submit-error="createError"
       @close="showCreateModal = false"
-      @submit="handleCreate"
+      @submit="handleCreateTournament"
     />
 
   </div>

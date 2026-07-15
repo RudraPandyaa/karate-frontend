@@ -30,42 +30,42 @@ const onSubmit = async () => {
 
 <template>
   <div class="max-w-md mx-auto p-8">
-    <h1 class="text-2xl font-bold mb-6">Create New Tatami</h1>
+    <h1 class="text-2xl font-bold mb-6 text-foreground">Create New Tatami</h1>
 
     <form @submit.prevent="onSubmit" class="space-y-6">
       <div>
-        <label class="block text-sm mb-2">Tournament ID</label>
+        <label class="block text-sm mb-2 text-foreground">Tournament ID</label>
         <input
           v-model="form.tournamentId"
           type="text"
-          class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3"
+          class="w-full bg-panel border border-line rounded-xl px-4 py-3 text-foreground"
           required
         />
       </div>
 
       <div>
-        <label class="block text-sm mb-2">Tatami Number</label>
+        <label class="block text-sm mb-2 text-foreground">Tatami Number</label>
         <input
           v-model="form.number"
           type="number"
-          class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3"
+          class="w-full bg-panel border border-line rounded-xl px-4 py-3 text-foreground"
           required
         />
       </div>
 
       <div>
-        <label class="block text-sm mb-2">Tatami Name (Optional)</label>
+        <label class="block text-sm mb-2 text-foreground">Tatami Name (Optional)</label>
         <input
           v-model="form.name"
           type="text"
           placeholder="Main Tatami"
-          class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3"
+          class="w-full bg-panel border border-line rounded-xl px-4 py-3 text-foreground"
         />
       </div>
 
       <button
         type="submit"
-        class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-semibold"
+        class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-semibold text-white"
       >
         Create Tatami
       </button>

@@ -19,7 +19,7 @@ defineProps<{
       </div>
     </div>
 
-    <p class="mt-3 text-3xl font-extrabold tabular text-white">{{ value }}</p>
+    <p class="mt-3 text-3xl font-extrabold tabular text-foreground">{{ value }}</p>
 
     <p class="mt-1.5 flex items-center gap-1 text-xs text-muted">
       <TrendingUp v-if="trendPct" class="h-3.5 w-3.5 text-emerald-400" />

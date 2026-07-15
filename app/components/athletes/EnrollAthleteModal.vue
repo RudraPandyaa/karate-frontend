@@ -72,7 +72,7 @@ function handleSubmit() {
               </div>
 
               <div>
-                <h2 class="text-lg font-bold text-white">
+                <h2 class="text-lg font-bold text-foreground">
                   Enroll Athlete
                 </h2>
                 <p class="text-sm text-muted">
@@ -103,7 +103,7 @@ function handleSubmit() {
               <select
                 v-model="selectedTournamentId"
                 required
-                class="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm outline-none transition focus:border-blue-600"
+                class="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm outline-none transition focus:border-blue-600 text-foreground"
               >
                 <option
                   value=""
@@ -130,7 +130,7 @@ function handleSubmit() {
                 v-model="selectedCategoryId"
                 required
                 :disabled="!selectedTournamentId"
-                class="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm outline-none transition focus:border-blue-600 disabled:opacity-50"
+                class="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm outline-none transition focus:border-blue-600 disabled:opacity-50 text-foreground"
               >
                 <option
                   value=""
@@ -158,7 +158,7 @@ function handleSubmit() {
                 type="number"
                 min="1"
                 placeholder="Seeding number"
-                class="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm outline-none transition focus:border-blue-600"
+                class="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm outline-none transition focus:border-blue-600 text-foreground"
               />
             </div>
 

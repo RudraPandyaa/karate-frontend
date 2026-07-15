@@ -115,12 +115,12 @@ function handleClose() {
           <!-- Header -->
 
           <div class="mb-6 flex items-center justify-between">
-            <h2 class="text-xl font-semibold text-white">
+            <h2 class="text-xl font-semibold text-foreground">
               {{ isEdit ? 'Edit Category' : 'Add Category' }}
             </h2>
 
             <button
-              class="rounded-lg p-1.5 text-muted transition hover:bg-white/10 hover:text-white"
+              class="rounded-lg p-1.5 text-muted transition hover:bg-surface-hover hover:text-foreground"
               :disabled="loading"
               @click="handleClose"
             >
@@ -133,14 +133,14 @@ function handleClose() {
           <form class="space-y-4" @submit.prevent="handleSubmit">
 
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-white">
+              <label class="mb-1.5 block text-sm font-medium text-foreground">
                 Tournament
               </label>
 
               <select
                 v-model="form.tournamentId"
-                class="w-full rounded-xl border border-line bg-transparent px-4 py-2.5 text-sm text-white outline-none transition focus:border-blue-600"
-                :class="{ 'border-red-500': errors.tournamentId }"
+                class="w-full rounded-xl border border-line bg-transparent px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-blue-600"
+                :class="{ 'border-red-500 text-foreground': errors.tournamentId }"
               >
                 <option value="" disabled>Select a tournament</option>
                 <option
@@ -158,7 +158,7 @@ function handleClose() {
             </div>
 
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-white">
+              <label class="mb-1.5 block text-sm font-medium text-foreground">
                 Name
               </label>
 
@@ -166,8 +166,8 @@ function handleClose() {
                 v-model="form.name"
                 type="text"
                 placeholder="e.g. Senior Male Kumite -75kg"
-                class="w-full rounded-xl border border-line bg-transparent px-4 py-2.5 text-sm text-white outline-none transition focus:border-blue-600"
-                :class="{ 'border-red-500': errors.name }"
+                class="w-full rounded-xl border border-line bg-transparent px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-blue-600"
+                :class="{ 'border-red-500 text-foreground': errors.name }"
               />
 
               <p v-if="errors.name" class="mt-1 text-xs text-red-400">
@@ -176,7 +176,7 @@ function handleClose() {
             </div>
 
             <div>
-              <label class="mb-1.5 block text-sm font-medium text-white">
+              <label class="mb-1.5 block text-sm font-medium text-foreground">
                 Age Group
               </label>
 
@@ -184,8 +184,8 @@ function handleClose() {
                 v-model="form.ageGroup"
                 type="text"
                 placeholder="e.g. Senior, U21, U18..."
-                class="w-full rounded-xl border border-line bg-transparent px-4 py-2.5 text-sm text-white outline-none transition focus:border-blue-600"
-                :class="{ 'border-red-500': errors.ageGroup }"
+                class="w-full rounded-xl border border-line bg-transparent px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-blue-600"
+                :class="{ 'border-red-500 text-foreground': errors.ageGroup }"
               />
 
               <p v-if="errors.ageGroup" class="mt-1 text-xs text-red-400">
@@ -195,13 +195,13 @@ function handleClose() {
 
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="mb-1.5 block text-sm font-medium text-white">
+                <label class="mb-1.5 block text-sm font-medium text-foreground">
                   Gender
                 </label>
 
                 <select
                   v-model="form.gender"
-                  class="w-full rounded-xl border border-line bg-transparent px-4 py-2.5 text-sm text-white outline-none transition focus:border-blue-600"
+                  class="w-full rounded-xl border border-line bg-transparent px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-blue-600"
                 >
                   <option
                     v-for="g in genderOptions"
@@ -214,13 +214,13 @@ function handleClose() {
               </div>
 
               <div>
-                <label class="mb-1.5 block text-sm font-medium text-white">
+                <label class="mb-1.5 block text-sm font-medium text-foreground">
                   Discipline
                 </label>
 
                 <select
                   v-model="form.discipline"
-                  class="w-full rounded-xl border border-line bg-transparent px-4 py-2.5 text-sm text-white outline-none transition focus:border-blue-600"
+                  class="w-full rounded-xl border border-line bg-transparent px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-blue-600"
                 >
                   <option
                     v-for="d in disciplineOptions"
@@ -235,7 +235,7 @@ function handleClose() {
 
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="mb-1.5 block text-sm font-medium text-white">
+                <label class="mb-1.5 block text-sm font-medium text-foreground">
                   Min Weight (kg)
                 </label>
 
@@ -244,12 +244,12 @@ function handleClose() {
                   type="number"
                   step="0.1"
                   placeholder="Optional"
-                  class="w-full rounded-xl border border-line bg-transparent px-4 py-2.5 text-sm text-white outline-none transition focus:border-blue-600"
+                  class="w-full rounded-xl border border-line bg-transparent px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-blue-600"
                 />
               </div>
 
               <div>
-                <label class="mb-1.5 block text-sm font-medium text-white">
+                <label class="mb-1.5 block text-sm font-medium text-foreground">
                   Max Weight (kg)
                 </label>
 
@@ -258,8 +258,8 @@ function handleClose() {
                   type="number"
                   step="0.1"
                   placeholder="Optional"
-                  class="w-full rounded-xl border border-line bg-transparent px-4 py-2.5 text-sm text-white outline-none transition focus:border-blue-600"
-                  :class="{ 'border-red-500': errors.weightMax }"
+                  class="w-full rounded-xl border border-line bg-transparent px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-blue-600"
+                  :class="{ 'border-red-500 text-foreground': errors.weightMax }"
                 />
 
                 <p v-if="errors.weightMax" class="mt-1 text-xs text-red-400">

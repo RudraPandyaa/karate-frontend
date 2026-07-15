@@ -36,8 +36,8 @@ async function handleUndoLast() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-zinc-950 py-10 px-6">
-    <div v-if="pending" class="text-center text-white/60">Loading match...</div>
+  <div class="min-h-screen bg-canvas py-10 px-6">
+    <div v-if="pending" class="text-center text-foreground/60">Loading match...</div>
     <div v-else-if="error" class="text-center text-red-400">{{ error }}</div>
     <MatchesScoringControls
         v-else-if="match"

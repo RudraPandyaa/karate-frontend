@@ -57,7 +57,7 @@ async function handleUnenroll(categoryId: string) {
       class="flex items-center justify-between"
     >
       <div>
-        <h1 class="text-3xl font-bold text-white">
+        <h1 class="text-3xl font-bold text-foreground">
           {{ athlete.name }}
         </h1>
         <p class="mt-1 text-sm text-muted">
@@ -92,7 +92,7 @@ async function handleUnenroll(categoryId: string) {
       v-else-if="enrollments.length === 0"
       class="rounded-2xl border border-line bg-surface py-20 text-center"
     >
-      <h3 class="text-lg font-semibold">
+      <h3 class="text-lg font-semibold text-foreground">
         Not enrolled in any category yet
       </h3>
       <p class="mt-2 text-muted">
@@ -114,7 +114,7 @@ async function handleUnenroll(categoryId: string) {
             <p class="text-xs uppercase tracking-wide text-muted">
               {{ enrollment.category.tournament.name }}
             </p>
-            <h3 class="mt-1 font-semibold text-white">
+            <h3 class="mt-1 font-semibold text-foreground">
               {{ enrollment.category.name }}
             </h3>
             <p

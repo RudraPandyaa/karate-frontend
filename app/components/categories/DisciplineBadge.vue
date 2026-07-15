@@ -20,7 +20,7 @@ const labels: Record<typeof props.discipline, string> = {
 
 <template>
   <span
-    class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium"
+    class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium border-line"
     :class="styles[discipline]"
   >
     {{ labels[discipline] }}

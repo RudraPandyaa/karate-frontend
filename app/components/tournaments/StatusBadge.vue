@@ -9,7 +9,7 @@ const badgeClasses: Record<TournamentDisplayStatus, string> = {
   UPCOMING:
     'bg-blue-500/15 text-blue-400 border border-blue-500/30',
 
-  LIVE:
+  ONGOING :
     'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
 
   DRAFT:
@@ -30,20 +30,20 @@ const badgeClasses: Record<TournamentDisplayStatus, string> = {
   >
     <!-- Live indicator -->
     <span
-      v-if="status === 'LIVE'"
-      class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"
+      v-if="status === 'ONGOING '"
+      class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse text-white"
     />
 
     <!-- Upcoming -->
     <span
       v-else-if="status === 'UPCOMING'"
-      class="h-2 w-2 rounded-full bg-blue-400"
+      class="h-2 w-2 rounded-full bg-blue-400 text-white"
     />
 
     <!-- Draft -->
     <span
       v-else-if="status === 'DRAFT'"
-      class="h-2 w-2 rounded-full bg-amber-400"
+      class="h-2 w-2 rounded-full bg-amber-400 text-white"
     />
 
     <!-- Completed -->
@@ -55,7 +55,7 @@ const badgeClasses: Record<TournamentDisplayStatus, string> = {
     <!-- Cancelled -->
     <span
       v-else
-      class="h-2 w-2 rounded-full bg-red-400"
+      class="h-2 w-2 rounded-full bg-red-400 text-white"
     />
 
     {{ status }}

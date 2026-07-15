@@ -35,14 +35,14 @@ function handleClose() {
               <AlertTriangle class="h-5 w-5 text-red-400" />
             </div>
 
-            <h2 class="text-lg font-semibold text-white">
+            <h2 class="text-lg font-semibold text-foreground">
               Delete Category
             </h2>
           </div>
 
           <p class="mt-4 text-sm text-muted">
             Are you sure you want to delete
-            <span class="font-medium text-white">{{ category?.name }}</span>?
+            <span class="font-medium text-foreground">{{ category?.name }}</span>?
             This action cannot be undone and will remove any associated athletes and matches from this category.
           </p>
 

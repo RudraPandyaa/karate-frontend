@@ -40,7 +40,7 @@ const emit = defineEmits<{
               </div>
 
               <div>
-                <h2 class="text-lg font-bold text-white">
+                <h2 class="text-lg font-bold text-foreground">
                   Delete Athlete
                 </h2>
                 <p class="text-sm text-muted">

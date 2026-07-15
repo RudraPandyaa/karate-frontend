@@ -54,20 +54,20 @@ async function handleAutoAssign() {
 <template>
   <div class="p-6">
     <div class="flex justify-between items-center mb-8">
-      <h1 class="text-3xl font-bold">
+      <h1 class="text-3xl font-bold text-foreground">
         Tatami Management
       </h1>
 
       <div class="flex gap-3">
         <button
-          class="bg-blue-600 px-5 py-3 rounded-xl"
+          class="bg-blue-600 px-5 py-3 rounded-xl text-white"
           @click="openCreate"
         >
           Add Tatami
         </button>
 
         <button
-          class="bg-green-600 px-5 py-3 rounded-xl"
+          class="bg-green-600 px-5 py-3 rounded-xl text-white"
           @click="handleAutoAssign"
         >
           Auto Assign
@@ -75,15 +75,15 @@ async function handleAutoAssign() {
       </div>
     </div>
 
-    <div v-if="pending">
+    <div v-if="pending" class="text-muted">
       Loading...
     </div>
 
-    <div v-else-if="error">
+    <div v-else-if="error" class="text-red-400">
       {{ error }}
     </div>
 
-    <div v-else-if="tatamis.length === 0">
+    <div v-else-if="tatamis.length === 0" class="text-muted">
       No Tatamis Found
     </div>
 

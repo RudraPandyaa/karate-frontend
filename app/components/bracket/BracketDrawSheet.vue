@@ -7,6 +7,76 @@ const props = defineProps<{
   matches: BracketMatch[]
 }>()
 
+interface PodiumEntry {
+  name: string
+  state: string
+}
+
+const podium = computed(() => {
+  const finalMatch = props.matches.find(
+    (m) =>
+      (m.round === 'FINAL' || m.round === 'FINAL_MATCH') &&
+      m.status === 'COMPLETED'
+  )
+
+  if (!finalMatch) return null
+
+  const winner =
+    finalMatch.winnerId === finalMatch.redAthlete?.id
+      ? finalMatch.redAthlete
+      : finalMatch.blueAthlete
+
+  const runnerUp =
+    finalMatch.winnerId === finalMatch.redAthlete?.id
+      ? finalMatch.blueAthlete
+      : finalMatch.redAthlete
+
+  if (!winner || !runnerUp) return null
+
+  let secondRunnerUp: PodiumEntry | null = null
+
+  // If a bronze match exists, use its winner
+  const bronzeMatch = props.matches.find(
+    (m) => m.round === 'BRONZE' && m.status === 'COMPLETED'
+  )
+
+  if (bronzeMatch) {
+    secondRunnerUp =
+      bronzeMatch.winnerId === bronzeMatch.redAthlete?.id
+        ? bronzeMatch.redAthlete ?? null
+        : bronzeMatch.blueAthlete ?? null
+  } else {
+    // Otherwise, use the semifinal loser who didn't reach the final
+    const semiFinals = props.matches.filter(
+      (m) =>
+        (m.round === 'SEMI_FINAL' || m.round === 'SEMIFINAL') &&
+        m.status === 'COMPLETED'
+    )
+
+    for (const semi of semiFinals) {
+      const loser =
+        semi.winnerId === semi.redAthlete?.id
+          ? semi.blueAthlete
+          : semi.redAthlete
+
+      if (
+        loser &&
+        loser.id !== winner.id &&
+        loser.id !== runnerUp.id
+      ) {
+        secondRunnerUp = loser
+        break
+      }
+    }
+  }
+
+  return {
+    winner,
+    runnerUp,
+    secondRunnerUp,
+  }
+})
+
 const ROUND_ORDER: Record<string, number> = {
   ROUND_1: 1,
   ROUND_2: 2,
@@ -102,30 +172,49 @@ function athleteLabel(a?: { name: string; state: string } | null) {
 </script>
 
 <template>
-  <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+  <div class="rounded-2xl border border-line bg-panel p-6">
     <!-- Category header -->
-    <div class="mb-6 border-b border-zinc-800 pb-4">
-      <h2 class="text-xl font-bold">{{ category.name }}</h2>
-      <p class="text-sm text-white/60">
+    <div class="mb-6 border-b border-line pb-4">
+      <h2 class="text-xl font-bold text-foreground">{{ category.name }}</h2>
+      <p class="text-sm text-muted">
         {{ category.ageGroup }} · {{ category.gender }} · {{ category.discipline }}
         <span v-if="weightLabel"> · {{ weightLabel }}</span>
       </p>
     </div>
+    <!-- Podium -->
+<!-- Podium -->
+    <div v-if="podium" class="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-4">
+        <p class="text-xs font-semibold uppercase tracking-wide text-yellow-400 mb-1">🥇 Winner</p>
+        <p class="font-semibold text-foreground">{{ athleteLabel(podium.winner) }}</p>
+      </div>
 
-    <div v-if="matches.length === 0" class="py-12 text-center text-white/50">
+      <div class="rounded-xl border border-line bg-surface p-4">
+        <p class="text-xs font-semibold uppercase tracking-wide text-muted mb-1">🥈 Runner-up</p>
+        <p class="font-semibold text-foreground">{{ athleteLabel(podium.runnerUp) }}</p>
+      </div>
+
+      <div class="rounded-xl border border-orange-500/30 bg-orange-500/10 p-4">
+        <p class="text-xs font-semibold uppercase tracking-wide text-orange-400 mb-1">🥉 2nd Runner-up</p>
+        <p class="font-semibold text-foreground">
+          {{ podium.secondRunnerUp ? athleteLabel(podium.secondRunnerUp) : '—' }}
+        </p>
+      </div>
+    </div>
+    <div v-if="matches.length === 0" class="py-12 text-center text-muted">
       No bracket generated yet for this category.
     </div>
 
     <!-- Pools -->
     <div v-else class="space-y-10">
       <div v-for="pg in poolGroups" :key="pg.pool ?? 'final'">
-        <h3 class="mb-3 text-sm font-semibold uppercase tracking-widest text-white/50">
+        <h3 class="mb-3 text-sm font-semibold uppercase tracking-widest text-muted">
           {{ pg.label }}
         </h3>
 
         <div class="flex gap-6 overflow-x-auto pb-2">
           <div v-for="rg in pg.rounds" :key="rg.round" class="min-w-[260px] flex-shrink-0">
-            <p class="mb-2 text-xs font-medium uppercase tracking-wide text-white/40">
+            <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
               {{ rg.label }}
             </p>
 
@@ -133,29 +222,29 @@ function athleteLabel(a?: { name: string; state: string } | null) {
               <div
                 v-for="m in rg.matches"
                 :key="m.id"
-                class="rounded-xl border border-zinc-800 bg-zinc-950 p-3"
+                class="rounded-xl border border-line bg-canvas p-3"
               >
                 <div class="flex items-center justify-between text-sm">
                   <span
-                    class="truncate"
+                    class="truncate text-foreground"
                     :class="{ 'font-semibold text-green-400': m.winnerId === m.redAthlete?.id }"
                   >
                     {{ athleteLabel(m.redAthlete) }}
                   </span>
-                  <span v-if="m.status === 'COMPLETED'" class="ml-2 text-white/60">{{ m.redScore }}</span>
+                  <span v-if="m.status === 'COMPLETED'" class="ml-2 text-muted">{{ m.redScore }}</span>
                 </div>
-                <div class="my-1 border-t border-zinc-800" />
+                <div class="my-1 border-t border-line" />
                 <div class="flex items-center justify-between text-sm">
                   <span
-                    class="truncate"
+                    class="truncate text-foreground"
                     :class="{ 'font-semibold text-green-400': m.winnerId === m.blueAthlete?.id }"
                   >
                     {{ athleteLabel(m.blueAthlete) }}
                   </span>
-                  <span v-if="m.status === 'COMPLETED'" class="ml-2 text-white/60">{{ m.blueScore }}</span>
+                  <span v-if="m.status === 'COMPLETED'" class="ml-2 text-muted">{{ m.blueScore }}</span>
                 </div>
 
-                <div v-if="m.tatami" class="mt-2 text-xs text-white/40">
+                <div v-if="m.tatami" class="mt-2 text-xs text-muted">
                   Tatami {{ m.tatami.number }}
                 </div>
               </div>

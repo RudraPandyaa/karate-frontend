@@ -59,12 +59,12 @@ const filtered = computed(() => {
           :key="athlete.id"
           class="border-t border-line hover:bg-surface-hover"
         >
-          <td class="px-6 py-4 font-medium">{{ athlete.name }}</td>
-          <td class="px-6 py-4">{{ athlete.country }}</td>
+          <td class="px-6 py-4 font-medium text-foreground">{{ athlete.name }}</td>
+          <td class="px-6 py-4 text-foreground">{{ athlete.country }}</td>
           <td class="px-6 py-4 text-sm text-muted">
             {{ athlete.enrollments?.length ?? 0 }} enrolled
           </td>
-          <td class="px-6 py-4 text-right space-x-3">
+          <td class="px-6 py-4 text-right space-x-3 text-foreground">
             <button
               class="text-blue-400 hover:text-blue-300 text-sm"
               @click="emit('view', athlete)"
@@ -72,7 +72,7 @@ const filtered = computed(() => {
               View Profile
             </button>
             <button
-              class="text-muted hover:text-white text-sm"
+              class="text-muted hover:text-foreground text-sm"
               @click="emit('edit', athlete)"
             >
               Edit

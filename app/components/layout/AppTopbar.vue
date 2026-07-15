@@ -2,6 +2,7 @@
 import { Search, Bell, CircleUserRound, Sun, Moon, LogOut } from 'lucide-vue-next'
 import { useAuth } from '~/composables/useAuth'
 import TournamentSelectorModal from '~/components/TournamentSelectorModal.vue'
+import NotificationBell from '~/components/notifications/NotificationBell.vue'
 const search = useState('topbarSearch', () => '')
 const { user, logout } = useAuth()
 const colorMode = useColorMode()
@@ -59,6 +60,7 @@ const selectTournament = (tournamentId: string) => {
       <button
         v-if="canSelectTournament"
         class="rounded-full bg-blue-600/15 border border-blue-600/30 px-5 py-2 text-sm font-medium text-blue-300 hover:bg-blue-600/25 transition-colors"
+        @click="openTournamentSelector"
       >
         Select Tournament
       </button>
@@ -66,22 +68,25 @@ const selectTournament = (tournamentId: string) => {
       <!-- Theme Toggle -->
       <button
         @click="toggleTheme"
-        class="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-surface hover:text-white transition-colors"
+        class="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-surface hover:text-foreground transition-colors"
       >
-        <Sun v-if="!isDark" class="h-5 w-5" />
-        <Moon v-else class="h-5 w-5" />
+        <ClientOnly>
+          <Sun v-if="!isDark" class="h-5 w-5" />
+          <Moon v-else class="h-5 w-5" />
+          <template #fallback>
+            <div class="h-5 w-5" />
+          </template>
+        </ClientOnly>
       </button>
 
       <!-- Notifications -->
-      <button class="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-surface hover:text-white transition-colors">
-        <Bell class="h-[18px] w-[18px]" />
-      </button>
+        <NotificationBell />
 
       <!-- User Menu -->
       <div class="relative">
         <button
           @click="showUserMenu = !showUserMenu"
-          class="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-surface hover:text-white transition-colors"
+          class="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-surface hover:text-foreground transition-colors"
         >
           <CircleUserRound class="h-5 w-5" />
         </button>
@@ -106,8 +111,9 @@ const selectTournament = (tournamentId: string) => {
   </header>
 
   <!-- Tournament Selector Modal -->
+<!-- Tournament Selector Modal -->
   <TournamentSelectorModal 
-    v-if="showTournamentModal" 
+    :model-value="showTournamentModal"
     @close="showTournamentModal = false" 
     @select="selectTournament" 
   />

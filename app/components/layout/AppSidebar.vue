@@ -32,13 +32,6 @@ const mainNav: NavItem[] = [
   { label: 'Live Scoring', to: '/live', icon: Tv },
   { label: 'Brackets', to: '/brackets', icon: GitBranch },
 ]
-
-const managementNav: NavItem[] = [
-  { label: 'Users', to: '/users', icon: UserCog },
-  { label: 'Reports', to: '/reports', icon: BarChart3 },
-  { label: 'Settings', to: '/settings', icon: Settings },
-]
-
 const route = useRoute()
 const isActive = (to: string) => route.path === to
 
@@ -54,11 +47,11 @@ const navLinkClass = (to: string) => [
   <aside class="hidden lg:flex w-64 shrink-0 flex-col bg-panel border-r border-line">
     <!-- Logo -->
     <div class="flex items-center gap-3 px-5 h-16 border-b border-line">
-      <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600">
-        <Swords class="h-5 w-5 text-white" />
+      <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white">
+        <Swords class="h-5 w-5 text-foreground" />
       </div>
       <div class="leading-tight">
-        <p class="text-sm font-bold text-white">Karate System</p>
+        <p class="text-sm font-bold text-foreground">Karate System</p>
         <p class="text-[11px] font-semibold tracking-wide text-muted">TOURNAMENT MANAGER</p>
       </div>
     </div>
@@ -70,11 +63,6 @@ const navLinkClass = (to: string) => [
         {{ item.label }}
       </NuxtLink>
 
-      <p class="px-3 pt-5 pb-1 text-[11px] font-semibold tracking-wide text-muted/70">MANAGEMENT</p>
-      <NuxtLink v-for="item in managementNav" :key="item.to" :to="item.to" :class="navLinkClass(item.to)">
-        <component :is="item.icon" class="h-[18px] w-[18px]" />
-        {{ item.label }}
-      </NuxtLink>
     </nav>
 
     <!-- Pro plan promo card -->

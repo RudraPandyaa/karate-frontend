@@ -6,11 +6,11 @@ const { match, pending, error } = useLiveMatch(matchId)
 </script>
 
 <template>
-  <div class="min-h-screen bg-black">
+  <div class="min-h-screen bg-canvas">
 
     <div
       v-if="pending"
-      class="flex min-h-screen items-center justify-center text-white/60"
+      class="flex min-h-screen items-center justify-center text-foreground/60"
     >
       Loading match...
     </div>

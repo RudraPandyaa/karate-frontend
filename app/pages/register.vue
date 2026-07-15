@@ -49,15 +49,15 @@ const handleRegister = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-zinc-950 px-4">
+  <div class="min-h-screen flex items-center justify-center bg-canvas px-4">
     <div
       class="w-full max-w-md p-8 bg-surface rounded-3xl border border-line"
     >
-      <h1 class="text-3xl font-bold text-center mb-2">
+      <h1 class="text-3xl font-bold text-center mb-2 text-foreground">
         Create Account
       </h1>
 
-      <p class="text-center text-zinc-400 mb-8">
+      <p class="text-center text-muted mb-8">
         Register as a Guest. You can become an Athlete later.
       </p>
 
@@ -70,7 +70,7 @@ const handleRegister = async () => {
           type="text"
           placeholder="Full Name"
           required
-          class="w-full bg-zinc-900 border border-line rounded-xl px-4 py-3"
+          class="w-full bg-panel border border-line rounded-xl px-4 py-3 text-foreground"
         />
 
         <input
@@ -78,7 +78,7 @@ const handleRegister = async () => {
           type="email"
           placeholder="Email"
           required
-          class="w-full bg-zinc-900 border border-line rounded-xl px-4 py-3"
+          class="w-full bg-panel border border-line rounded-xl px-4 py-3 text-foreground"
         />
 
         <input
@@ -87,7 +87,7 @@ const handleRegister = async () => {
           placeholder="Password"
           required
           minlength="6"
-          class="w-full bg-zinc-900 border border-line rounded-xl px-4 py-3"
+          class="w-full bg-panel border border-line rounded-xl px-4 py-3 text-foreground"
         />
 
         <input
@@ -95,7 +95,7 @@ const handleRegister = async () => {
           type="password"
           placeholder="Confirm Password"
           required
-          class="w-full bg-zinc-900 border border-line rounded-xl px-4 py-3"
+          class="w-full bg-panel border border-line rounded-xl px-4 py-3 text-foreground"
         />
 
         <p
@@ -115,13 +115,13 @@ const handleRegister = async () => {
         <button
           type="submit"
           :disabled="loading"
-          class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-xl font-medium transition"
+          class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-xl font-medium transition text-white"
         >
           {{ loading ? 'Creating Account...' : 'Register' }}
         </button>
       </form>
 
-      <div class="mt-6 text-center text-sm text-zinc-400">
+      <div class="mt-6 text-center text-sm text-muted">
         Already have an account?
 
         <NuxtLink

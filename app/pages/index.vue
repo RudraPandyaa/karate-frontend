@@ -7,7 +7,18 @@ const { stats, liveMatches, upcomingMatches, usingMockData, pending, fetchAll } 
 // Shared with AppTopbar.vue via the same useState key — typing in the
 // header search box filters the upcoming matches list below.
 const topbarSearch = useState('topbarSearch', () => '')
+const { isStaff } = useAuth()
 
+const handleEditMatch = (match: any) => {
+  // TODO: Open edit modal or navigate to edit page
+  console.log('Edit match:', match)
+  // navigateTo(`/admin/matches/${match.id}/edit`)
+}
+
+const createNewMatch = () => {
+  // TODO: Open create modal
+  console.log('Create new match')
+}
 const filteredUpcomingMatches = computed(() => {
   const q = topbarSearch.value.trim().toLowerCase()
   if (!q) return upcomingMatches.value
@@ -18,7 +29,6 @@ const filteredUpcomingMatches = computed(() => {
       m.blueAthlete.name.toLowerCase().includes(q),
   )
 })
-
 onMounted(() => {
   fetchAll()
 })
@@ -68,9 +78,9 @@ onMounted(() => {
     <!-- Live tatamis -->
     <section>
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-bold text-white">Live Tatamis</h2>
+        <h2 class="text-xl font-bold text-foreground">Live Tatamis</h2>
         <span class="inline-flex items-center gap-1.5 rounded-full bg-rose-600/15 border border-rose-600/30 px-3 py-1 text-xs font-bold text-rose-400">
-          <span class="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
+          <span class="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse text-white" />
           LIVE BROADCAST
         </span>
       </div>
@@ -84,16 +94,19 @@ onMounted(() => {
     <!-- Upcoming matches -->
     <section>
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-bold text-white">Upcoming Matches</h2>
-        <NuxtLink to="/matches" class="text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors">
-          View Full Schedule ›
-        </NuxtLink>
+        <h2 class="text-xl font-bold text-foreground">Upcoming Matches</h2>
+        <div class="flex items-center gap-4">
+          <NuxtLink to="/matches" class="text-sm font-medium text-blue-400 hover:text-blue-300">
+            View Full Schedule ›
+          </NuxtLink>
+        </div>
       </div>
 
-      <p v-if="topbarSearch && filteredUpcomingMatches.length === 0" class="text-sm text-muted mb-3">
-        No upcoming matches match "{{ topbarSearch }}".
-      </p>
-      <DashboardUpcomingMatchesTable :matches="filteredUpcomingMatches" />
+      <DashboardUpcomingMatchesTable 
+        :matches="filteredUpcomingMatches" 
+        :editable="isStaff"
+        @edit="handleEditMatch"
+      />
     </section>
   </div>
 </template>

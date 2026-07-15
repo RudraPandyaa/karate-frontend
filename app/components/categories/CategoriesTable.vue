@@ -30,15 +30,15 @@ function formatWeight(min: number | null, max: number | null) {
 
         <thead>
           <tr class="border-b border-line text-xs uppercase tracking-wide text-muted">
-            <th class="px-6 py-4 font-medium">Name</th>
-            <th class="px-6 py-4 font-medium">Tournament</th>
-            <th class="px-6 py-4 font-medium">Age Group</th>
-            <th class="px-6 py-4 font-medium">Gender</th>
-            <th class="px-6 py-4 font-medium">Discipline</th>
-            <th class="px-6 py-4 font-medium">Weight</th>
-            <th class="px-6 py-4 font-medium">Athletes</th>
-            <th class="px-6 py-4 font-medium">Matches</th>
-            <th class="px-6 py-4 font-medium text-right">Actions</th>
+            <th class="px-6 py-4 font-medium text-foreground">Name</th>
+            <th class="px-6 py-4 font-medium text-foreground">Tournament</th>
+            <th class="px-6 py-4 font-medium text-foreground">Age Group</th>
+            <th class="px-6 py-4 font-medium text-foreground">Gender</th>
+            <th class="px-6 py-4 font-medium text-foreground">Discipline</th>
+            <th class="px-6 py-4 font-medium text-foreground">Weight</th>
+            <th class="px-6 py-4 font-medium text-foreground">Athletes</th>
+            <th class="px-6 py-4 font-medium text-foreground">Matches</th>
+            <th class="px-6 py-4 font-medium text-right text-foreground">Actions</th>
           </tr>
         </thead>
 
@@ -46,9 +46,9 @@ function formatWeight(min: number | null, max: number | null) {
           <tr
             v-for="category in rows"
             :key="category.id"
-            class="border-b border-line last:border-b-0 transition hover:bg-white/5"
+            class="border-b border-line last:border-b-0 transition hover:bg-surface-hover"
           >
-            <td class="px-6 py-4 font-medium text-white">
+            <td class="px-6 py-4 font-medium text-foreground">
               {{ category.name }}
             </td>
 
@@ -60,11 +60,11 @@ function formatWeight(min: number | null, max: number | null) {
               {{ category.ageGroup }}
             </td>
 
-            <td class="px-6 py-4">
+            <td class="px-6 py-4 text-foreground">
               <GenderBadge :gender="category.gender" />
             </td>
 
-            <td class="px-6 py-4">
+            <td class="px-6 py-4 text-foreground">
               <DisciplineBadge :discipline="category.discipline" />
             </td>
 
@@ -86,10 +86,10 @@ function formatWeight(min: number | null, max: number | null) {
               </span>
             </td>
 
-            <td class="px-6 py-4">
+            <td class="px-6 py-4 text-foreground">
               <div class="flex items-center justify-end gap-2">
                 <button
-                  class="rounded-lg p-2 text-muted transition hover:bg-white/10 hover:text-white"
+                  class="rounded-lg p-2 text-muted transition hover:bg-surface-hover hover:text-foreground"
                   title="Edit category"
                   @click="emit('edit', category)"
                 >

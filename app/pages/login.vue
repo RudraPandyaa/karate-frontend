@@ -17,9 +17,9 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-zinc-950">
+  <div class="min-h-screen flex items-center justify-center bg-canvas">
     <div class="w-full max-w-md p-8 bg-surface rounded-3xl border border-line">
-      <h1 class="text-3xl font-bold text-center mb-8">WKF Manager</h1>
+      <h1 class="text-3xl font-bold text-center mb-8 text-foreground">WKF Manager</h1>
       
       <form @submit.prevent="handleLogin" class="space-y-6">
         <input
@@ -27,7 +27,7 @@ const handleLogin = async () => {
           type="email"
           placeholder="Email"
           required
-          class="w-full bg-zinc-900 border border-line rounded-xl px-4 py-3"
+          class="w-full bg-panel border border-line rounded-xl px-4 py-3 text-foreground"
         />
 
         <input
@@ -35,19 +35,19 @@ const handleLogin = async () => {
           type="password"
           placeholder="Password"
           required
-          class="w-full bg-zinc-900 border border-line rounded-xl px-4 py-3"
+          class="w-full bg-panel border border-line rounded-xl px-4 py-3 text-foreground"
         />
 
         <button
           type="submit"
           :disabled="loading"
-          class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-xl font-medium"
+          class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-xl font-medium text-white"
         >
           {{ loading ? 'Logging in...' : 'Login' }}
         </button>
 
         <div class="text-center">
-          <span class="text-zinc-400">
+          <span class="text-muted">
             Don't have an account?
           </span>
 
