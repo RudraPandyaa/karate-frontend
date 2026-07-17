@@ -17,6 +17,8 @@ export interface CreateMatchPayload {
   bracketSlot?: number
   redAthleteId?: string
   blueAthleteId?: string
+  refereeId?: string
+  scorekeeperId?: string
   status?: string
   timerSeconds?: number
 }

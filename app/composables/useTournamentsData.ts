@@ -1,6 +1,5 @@
 import type {
   RawTournamentListItem,
-  RawCategoryWithCounts,
   TournamentRow,
   TournamentDisplayStatus,
 } from '~/types'

@@ -5,6 +5,7 @@ export interface Athlete {
   name: string
   state: string
   country: string
+  photoUrl?: string | null
   createdAt?: string
   updatedAt?: string
   _count?: {
@@ -67,13 +68,15 @@ export function useAthletes() {
   }
 
   async function createAthlete(payload: CreateAthleteDto) {
-    await api('/athletes', { method: 'POST', body: payload })
+    const athlete = await api<Athlete>('/athletes', { method: 'POST', body: payload })
     await fetchAthletes()
+    return athlete
   }
 
   async function updateAthlete(id: string, payload: Partial<CreateAthleteDto>) {
-    await api(`/athletes/${id}`, { method: 'PATCH', body: payload })
+    const athlete = await api<Athlete>(`/athletes/${id}`, { method: 'PATCH', body: payload })
     await fetchAthletes()
+    return athlete
   }
 
   async function deleteAthlete(id: string) {
@@ -126,6 +129,25 @@ export function useAthletes() {
       saving.value = false
     }
   }
+  async function uploadPhoto(athleteId: string, file: File) {
+    saving.value = true
+    const formData = new FormData()
+    formData.append('photo', file)
+
+    try {
+      const response = await api(`/athletes/upload-photo/${athleteId}`, {
+        method: 'POST',
+        body: formData,
+      })
+      await fetchAthletes() // refresh list
+      return response
+    } catch (err: any) {
+      console.error(err)
+      throw err
+    } finally {
+      saving.value = false
+    }
+  }
 
   return {
     athletes,
@@ -137,6 +159,7 @@ export function useAthletes() {
     createAthlete,
     updateAthlete,
     deleteAthlete,
+    uploadPhoto,
     getAthlete,
     fetchEnrollments,
     enrollAthlete,

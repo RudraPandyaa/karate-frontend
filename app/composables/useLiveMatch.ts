@@ -14,11 +14,13 @@ export interface LiveMatch {
   redAthlete: {
     id: string
     name: string
+    photoUrl?: string | null   // ← Add this
   } | null
 
   blueAthlete: {
     id: string
     name: string
+    photoUrl?: string | null   // ← Add this
   } | null
 
   scoreEvents: any[]
@@ -51,38 +53,30 @@ export function useLiveMatch(matchId: string) {
       transports: ['websocket'],
     })
 
-    // Join the correct room
     socket.emit('joinMatch', { matchId })
 
-    // Score updates
     socket.on('scoreUpdated', (data: any) => {
       console.log('scoreUpdated', data)
-
       match.value = data.match ?? data
     })
 
-    // Timer updates
     socket.on('timerUpdate', (data: any) => {
       if (!match.value) return
-
       match.value.timeRemaining = data.timeRemaining
     })
 
     socket.on('timerStarted', () => {
       if (!match.value) return
-
       match.value.status = 'IN_PROGRESS'
     })
 
     socket.on('timerPaused', () => {
       if (!match.value) return
-
       match.value.status = 'PAUSED'
     })
 
     socket.on('timerEnded', () => {
       if (!match.value) return
-
       match.value.status = 'COMPLETED'
       match.value.timeRemaining = 0
     })

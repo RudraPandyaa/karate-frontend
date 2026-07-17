@@ -57,13 +57,15 @@ const selectTournament = (tournamentId: string) => {
 
     <div class="flex items-center gap-3">
       <!-- Select Tournament -->
-      <button
-        v-if="canSelectTournament"
-        class="rounded-full bg-blue-600/15 border border-blue-600/30 px-5 py-2 text-sm font-medium text-blue-300 hover:bg-blue-600/25 transition-colors"
-        @click="openTournamentSelector"
-      >
-        Select Tournament
-      </button>
+      <ClientOnly>
+        <button
+          v-if="canSelectTournament"
+          class="rounded-full bg-blue-600/15 border border-blue-600/30 px-5 py-2 text-sm font-medium text-blue-300 hover:bg-blue-600/25 transition-colors"
+          @click="openTournamentSelector"
+        >
+          Select Tournament
+        </button>
+      </ClientOnly>
 
       <!-- Theme Toggle -->
       <button

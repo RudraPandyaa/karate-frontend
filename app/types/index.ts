@@ -22,6 +22,29 @@ export type MatchStatus =
   | 'COMPLETED'
   | 'CANCELLED'
 
+export type MatchRound =
+  | 'ROUND_1'
+  | 'ROUND_2'
+  | 'ROUND_3'
+  | 'QUARTER_FINAL'
+  | 'QUARTERFINAL'
+  | 'SEMI_FINAL'
+  | 'SEMIFINAL'
+  | 'FINAL'
+  | 'FINAL_MATCH'
+  | 'REPECHAGE'
+  | 'BRONZE'
+
+export type SenshuHolder = 'NONE' | 'RED' | 'BLUE'
+
+export type MatchResultType =
+  | 'POINT_GAP'
+  | 'TIME'
+  | 'HANSOKU'
+  | 'KIKEN'
+  | 'HANTEI'
+  | 'SENSHU'
+
 export type Corner = 'RED' | 'BLUE'
 
 export interface Athlete {
@@ -29,6 +52,7 @@ export interface Athlete {
   name: string
   state: string
   country: string
+  dateOfBirth?: string | null
 }
 
 export interface Tournament {
@@ -38,6 +62,9 @@ export interface Tournament {
   startDate: string
   endDate: string
   status: TournamentStatus
+  displayStatus: TournamentDisplayStatus
+  categoriesCount: number
+  matchesCount: number
 }
 
 export interface Category {
@@ -52,6 +79,44 @@ export interface Tatami {
   id: string
   number: number
   name?: string | null
+}
+
+export interface SafeUser {
+  id: string
+  name: string
+  email: string
+  role?: Role
+}
+
+export interface Match {
+  id: string
+  categoryId: string
+  category: Pick<Category, 'id' | 'name' | 'ageGroup' | 'gender' | 'discipline'>
+  tatamiId: string | null
+  tatami: Tatami | null
+  round: MatchRound
+  bracketSlot: number | null
+  redAthleteId: string | null
+  redAthlete: Athlete | null
+  blueAthleteId: string | null
+  blueAthlete: Athlete | null
+  refereeId: string | null
+  referee: SafeUser | null
+  scorekeeperId: string | null
+  scorekeeper: SafeUser | null
+  status: MatchStatus
+  redScore: number
+  blueScore: number
+  senshu: SenshuHolder
+  senshuLocked: boolean
+  timerSeconds: number
+  timeRemaining: number
+  winnerId: string | null
+  resultType: MatchResultType | null
+  startedAt: string | null
+  completedAt: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 // Shape returned by GET /tournaments/:id/dashboard (or assembled client-side
@@ -112,26 +177,16 @@ export interface RawTournamentListItem {
   }
 }
 
-// Raw shape of GET /tournaments/:id/categories — used only to sum athlete
-// counts per tournament (no dedicated endpoint for this exists yet).
-export interface RawCategoryWithCounts {
-  id: string
-  _count: {
-    athletes: number
-    matches: number
-  }
-}
-
 // Display-only status, derived client-side since the schema's TournamentStatus
 // enum (DRAFT/ONGOING/COMPLETED/CANCELLED) has no "Upcoming" value but the
-// UI needs one. DRAFT + future startDate => Upcoming. Adjust the mapping in
-// deriveDisplayStatus() in useTournamentsData.ts if this assumption is wrong.
+// UI needs one. DRAFT + future startDate => Upcoming. Mapping lives in
+// utils/tournamentStatus.ts (deriveDisplayStatus) — shared by the list page
+// and the detail page, so update it there, not per-component.
 export type TournamentDisplayStatus = 'UPCOMING' | 'LIVE' | 'DRAFT' | 'COMPLETED' | 'CANCELLED'
 
 export interface TournamentRow {
   id: string
   name: string
-  subtitle: string // no dedicated field in schema for this — falls back to location
   location: string
   startDate: string
   endDate: string

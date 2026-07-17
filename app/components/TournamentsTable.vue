@@ -113,13 +113,7 @@ function formatDate(date: string) {
                 View
               </NuxtLink>
 
-              <!-- Dashboard Button - Everyone -->
-              <NuxtLink
-                :to="`/tournaments/${tournament.id}/dashboard`"
-                class="rounded-lg border border-line px-4 py-2 text-sm transition hover:bg-surface"
-              >
-                Dashboard
-              </NuxtLink>
+        
 
               <!-- Edit Button - Staff Only -->
               <button

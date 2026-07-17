@@ -11,6 +11,8 @@ const {
   createTournament,
 } = useTournamentsData()
 
+const { isStaff } = useAuth()
+
 const search = ref('')
 const showCreateModal = ref(false)
 const creating = ref(false)
@@ -21,19 +23,13 @@ const statusFilter = ref<string | null>(null)
 
 const filteredRows = computed(() => {
   if (!statusFilter.value) return rows.value
-  console.log('filter:', statusFilter.value, 'sample row status:', rows.value[0]?.status)
   return rows.value.filter((t: any) => t.status === statusFilter.value)
 })
+
 onMounted(async () => {
   await fetchAll()
 })
-function openCreateModal() {
-  showCreateModal.value = true
-}
-const handleEditTournament = (tournament: TournamentRow) => {
-  navigateTo(`/tournaments/${tournament.id}/edit`)
-  // Or open an edit modal if you prefer
-}
+
 async function handleCreateTournament(payload: any) {
   creating.value = true
   createError.value = null
@@ -108,16 +104,20 @@ function exportToCsv() {
         </p>
       </div>
 
-      <button
-        class="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700"
-        @click="showCreateModal = true"
-      >
-        <Plus class="h-4 w-4" />
-        Create Tournament
-      </button>
+      <!-- Staff/Admin only -->
+      <ClientOnly>
+        <button
+          v-if="isStaff"
+          class="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700"
+          @click="showCreateModal = true"
+        >
+          <Plus class="h-4 w-4" />
+          Create Tournament
+        </button>
+      </ClientOnly>
     </div>
 
-    <!-- Toolbar -->
+    <!-- Toolbar (open to any logged-in user) -->
     <div class="flex flex-wrap items-center gap-3">
 
       <div class="relative flex-1 min-w-[250px] max-w-md">
@@ -189,12 +189,10 @@ function exportToCsv() {
 
     </div>
 
-    <!-- Table -->
+    <!-- Table (open to any logged-in user) -->
     <TournamentsTable
       :rows="filteredRows"
       :search="search"
-      :show-actions="isStaff"
-      @edit="handleEditTournament"
     />
 
     <!-- Create Tournament Modal -->

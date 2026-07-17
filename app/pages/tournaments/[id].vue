@@ -1,15 +1,53 @@
 <script setup lang="ts">
-import { Calendar, MapPin, Users, Trophy } from 'lucide-vue-next'
+import { ref } from 'vue'
+import type { Match } from '~/types'
+import { Calendar, MapPin, Trophy } from 'lucide-vue-next'
+import StatusBadge from '~/components/tournaments/StatusBadge.vue'
+import TournamentStaffDashboard from '~/components/tournaments/TournamentStaffDashboard.vue'
+import CreateMatchModal from '~/components/matches/CreateMatchModal.vue'
+import AssignOfficialsModal from '~/components/matches/AssignOfficialsModal.vue'
 
 const route = useRoute()
 const id = route.params.id as string
-
-const { isStaff } = useAuth()
+const { isStaff, isAdmin } = useAuth()
 
 // Fetch tournament data
-const { tournament, matches, athletes, categories, loading, refresh } = useTournamentDetail(id)
+const {
+  tournament,
+  matches,
+  athletes,
+  categories,
+  loading,
+  refresh,
+} = useTournamentDetail(id)
 
-const activeTab = ref<'overview' | 'matches' | 'athletes' | 'categories' | 'dashboard'>('overview')
+// Prevent opening modal until data is ready
+const canCreateMatch = computed(() => !loading.value && athletes.value.length > 0)
+
+const openCreateMatch = () => {
+  if (!canCreateMatch.value) {
+    alert("Athletes are still loading. Please wait a moment.")
+    return
+  }
+  showCreateMatch.value = true
+}
+// Tabs
+const activeTab = ref<
+  'overview' | 'matches' | 'athletes' | 'categories' | 'dashboard'
+>('overview')
+
+// Modals
+const showCreateMatch = ref(false)
+const showAssignOfficials = ref(false)
+
+// Selected Match
+const selectedMatch = ref<Match | null>(null)
+
+// Assign Officials
+function handleAssignOfficials(match: Match) {
+  selectedMatch.value = match
+  showAssignOfficials.value = true
+}
 
 const tabs = [
   { id: 'overview', label: 'Overview' },
@@ -18,11 +56,12 @@ const tabs = [
   { id: 'categories', label: 'Categories' },
 ]
 
-const formatDate = (date: string) => {
+const formatDate = (date?: string) => {
+  if (!date) return ''
   return new Date(date).toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
-    year: 'numeric'
+    year: 'numeric',
   })
 }
 </script>
@@ -40,7 +79,6 @@ const formatDate = (date: string) => {
         <div>
           <h1 class="text-4xl font-bold">{{ tournament?.name }}</h1>
           <p class="mt-2 text-lg text-slate-300">{{ tournament?.subtitle }}</p>
-
           <div class="flex flex-wrap gap-x-6 gap-y-2 mt-5 text-sm">
             <div class="flex items-center gap-2">
               <MapPin class="w-5 h-5 text-slate-400" />
@@ -52,9 +90,8 @@ const formatDate = (date: string) => {
             </div>
           </div>
         </div>
-
         <div class="text-right">
-          <StatusBadge :status="tournament?.status" size="lg" />
+          <StatusBadge :status="tournament?.displayStatus" size="lg" />
         </div>
       </div>
     </div>
@@ -91,57 +128,83 @@ const formatDate = (date: string) => {
 
         <!-- Quick Staff Actions -->
         <div v-if="isStaff" class="flex gap-3">
-            <button
-                @click="() => {}"
-                class="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700"
-                >
-                New Match
-            </button>
+          <button
+            @click="showCreateMatch = true"
+            class="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            New Match
+          </button>
         </div>
       </div>
     </div>
 
     <div class="min-h-[400px]">
-    <!-- Overview -->
-    <div v-if="activeTab === 'overview'">
+      <!-- Overview -->
+      <div v-if="activeTab === 'overview'">
         <TournamentOverview
-        :tournament="tournament"
-        :athletes-count="athletes.length"
+          :tournament="tournament"
+          :athletes-count="athletes.length"
         />
-    </div>
+      </div>
 
-    <!-- Matches -->
-    <div v-else-if="activeTab === 'matches'" class="rounded-xl border border-line p-6">
+      <!-- Matches -->
+      <div v-else-if="activeTab === 'matches'" class="rounded-xl border border-line p-6">
         <h2 class="text-xl font-semibold">Matches</h2>
         <p class="mt-2">Total Matches: {{ matches.length }}</p>
-    </div>
+      </div>
 
-    <!-- Athletes -->
-    <div v-else-if="activeTab === 'athletes'">
+      <!-- Athletes -->
+      <div v-else-if="activeTab === 'athletes'">
         <AthletesTable :athletes="athletes" />
-    </div>
+      </div>
 
-    <!-- Categories -->
-    <div v-else-if="activeTab === 'categories'" class="rounded-xl border border-line p-6">
+      <!-- Categories -->
+      <div v-else-if="activeTab === 'categories'" class="rounded-xl border border-line p-6">
         <h2 class="text-xl font-semibold">Categories</h2>
-
         <ul class="mt-4 space-y-2">
-        <li
+          <li
             v-for="category in categories"
             :key="category.id"
-        >
+          >
             {{ category.name }}
-        </li>
+          </li>
         </ul>
-    </div>
+      </div>
 
-    <!-- Staff Dashboard -->
-    <div v-else-if="activeTab === 'dashboard' && isStaff">
+      <!-- Staff Dashboard -->
+      <div v-else-if="activeTab === 'dashboard' && isStaff">
         <TournamentStaffDashboard
-        :tournament="tournament"
-        :matches="matches"
+          :tournament="tournament"
+          :matches="matches"
+          :is-admin="isAdmin"
+          @assign-officials="handleAssignOfficials"
         />
-    </div>
+      </div>
     </div>
   </div>
+
+  <!-- Modals -->
+  <CreateMatchModal
+    v-if="showCreateMatch"
+    :categories="categories"
+    :athletes="athletes"
+    :tatamis="tournament?.tatamis || []"
+    @close="showCreateMatch = false"
+    @created="() => {
+      showCreateMatch = false
+      refresh()
+    }"
+  />
+
+  <AssignOfficialsModal
+    v-if="showAssignOfficials"
+    :match="selectedMatch"
+    @close="showAssignOfficials = false"
+    @saved="
+      () => {
+        showAssignOfficials = false
+        refresh()
+      }
+    "
+  />
 </template>

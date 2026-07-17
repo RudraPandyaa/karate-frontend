@@ -1,11 +1,5 @@
 <script setup lang="ts">
-import {
-  Search,
-  Medal,
-  User,
-  Users
-} from 'lucide-vue-next'
-
+import { Search, User, Users } from 'lucide-vue-next'
 import type { Athlete } from '~/types'
 
 const props = defineProps<{
@@ -16,23 +10,18 @@ const search = ref('')
 
 const filteredAthletes = computed(() => {
   if (!search.value) return props.athletes
-
   const q = search.value.toLowerCase()
-
   return props.athletes.filter((a) =>
-    [
-      a.firstName,
-      a.lastName,
-      a.club,
-      a.state,
-      a.country
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase()
-      .includes(q)
+    [a.name, a.state, a.country].filter(Boolean).join(' ').toLowerCase().includes(q)
   )
 })
+
+function calculateAge(dateOfBirth: string | null | undefined): number | string {
+  if (!dateOfBirth) return '-'
+  const dob = new Date(dateOfBirth)
+  const diff = Date.now() - dob.getTime()
+  return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25))
+}
 </script>
 
 <template>

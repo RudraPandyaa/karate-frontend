@@ -6,6 +6,8 @@ export const useAuth = () => {
   const STAFF_ROLES = ['SCOREKEEPER', 'REFEREE', 'ORGANIZER', 'ADMIN', 'SUPER_ADMIN']
   const isStaff = computed(() => !!user.value && STAFF_ROLES.includes(user.value.role))
   const isLoggedIn = computed(() => !!user.value)
+  const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN']
+  const isAdmin = computed(() => !!user.value && ADMIN_ROLES.includes(user.value.role))
 
   async function login(email: string, password: string) {
     try {
@@ -46,5 +48,5 @@ export const useAuth = () => {
     }
   }
 
-  return { user, isLoggedIn, isStaff, login, logout, initAuth }
+  return { user, isLoggedIn, isStaff, isAdmin, login, logout, initAuth }
 }

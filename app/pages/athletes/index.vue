@@ -15,6 +15,7 @@ const {
   createAthlete,
   updateAthlete,
   deleteAthlete,
+  uploadPhoto
 } = useAthletes()
 
 const search = useState('topbarSearch', () => '')
@@ -60,21 +61,46 @@ function closeDeleteModal() {
   selectedAthlete.value = null
 }
 
-async function saveAthlete(form: Athlete) {
+async function saveAthlete(payload: { athlete: any; photoFile?: File }) {
   modalLoading.value = true
-
   try {
-    const { id, ...payload } = form as CreateAthleteDto & { id?: string }
+    const { athlete, photoFile } = payload
 
-    if (selectedAthlete.value) {
-      await updateAthlete(selectedAthlete.value.id, payload)
+    let savedAthlete: any
+
+    if (selectedAthlete.value?.id) {
+      // Update
+      savedAthlete = await updateAthlete(selectedAthlete.value.id, {
+        name: athlete.name,
+        state: athlete.state,
+        country: athlete.country,
+      })
     } else {
-      await createAthlete(payload)
+      // Create
+      savedAthlete = await createAthlete({
+        name: athlete.name,
+        state: athlete.state,
+        country: athlete.country,
+      })
+    }
+
+    // Important: Refresh to get the latest data (including photoUrl)
+    await fetchAthletes()
+
+    // Upload photo if selected
+    if (photoFile) {
+      // Find the latest version of this athlete
+      const freshAthlete = athletes.value.find(a => a.id === savedAthlete?.id || a.name === athlete.name)
+      if (freshAthlete?.id) {
+        await uploadPhoto(freshAthlete.id, photoFile)
+      }
     }
 
     closeModal()
-  } catch (err) {
+    await fetchAthletes()   // Final refresh
+  } catch (err: any) {
     console.error(err)
+    alert(err?.data?.message || err.message || 'Failed to save athlete')
   } finally {
     modalLoading.value = false
   }
@@ -88,6 +114,7 @@ async function removeAthlete() {
   try {
     await deleteAthlete(selectedAthlete.value.id)
     closeDeleteModal()
+    
   } catch (err) {
     console.error(err)
   } finally {

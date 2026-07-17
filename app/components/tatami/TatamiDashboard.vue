@@ -33,10 +33,17 @@ function openEdit(tatami: Tatami) {
   showForm.value = true
 }
 
-async function handleSaved() {
-  showForm.value = false
-  editingTatami.value = null
-  await fetchTatami(tournamentId)
+async function handleSave({ athlete, photoFile }: { athlete: Athlete; photoFile?: File }) {
+  const isEdit = !!athlete.id
+  const saved = isEdit
+    ? await updateAthlete(athlete.id!, { name: athlete.name, state: athlete.state, country: athlete.country })
+    : await createAthlete({ name: athlete.name, state: athlete.state, country: athlete.country })
+
+  if (photoFile && saved?.id) {
+    await uploadPhoto(saved.id, photoFile)
+  }
+
+  showModal.value = false
 }
 
 async function handleDelete(id: string) {

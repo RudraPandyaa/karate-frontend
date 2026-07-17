@@ -16,7 +16,7 @@ const stats = computed(() => [
   },
   {
     label: 'Categories',
-    value: props.tournament?.categoriesCount ?? 0,
+    value: props.tournament?.categoriesCount ?? props.tournament?.categories?.length ?? 0,
     icon: Target,
     color: 'text-blue-400'
   },

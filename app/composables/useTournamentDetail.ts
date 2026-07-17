@@ -8,6 +8,8 @@ export const useTournamentDetail = (tournamentId: string) => {
   const loading = ref(true)
   const error = ref<string | null>(null)
 
+  const { fetchAthletes, athletes: globalAthletes } = useAthletes()
+
   const fetchTournament = async () => {
     loading.value = true
     error.value = null
@@ -15,47 +17,50 @@ export const useTournamentDetail = (tournamentId: string) => {
     try {
       const config = useRuntimeConfig()
 
-      // Fetch main tournament data
-      const [tData, mData, aData, cData] = await Promise.all([
-        $fetch<Tournament>(`/tournaments/${tournamentId}`, {
-          baseURL: config.public.apiBase,
-        }),
-        $fetch<Match[]>(`/tournaments/${tournamentId}/matches`, {
-          baseURL: config.public.apiBase,
-        }),
-        $fetch<Athlete[]>(`/tournaments/${tournamentId}/athletes`, {
-          baseURL: config.public.apiBase,
-        }),
-        $fetch<Category[]>(`/tournaments/${tournamentId}/categories`, {
-          baseURL: config.public.apiBase,
-        })
+      const [tData, mData, cData] = await Promise.all([
+        $fetch<any>(`/tournaments/${tournamentId}`, { baseURL: config.public.apiBase }),
+        $fetch<Match[]>(`/tournaments/${tournamentId}/matches`, { baseURL: config.public.apiBase }),
+        $fetch<Category[]>(`/tournaments/${tournamentId}/categories`, { baseURL: config.public.apiBase }),
       ])
 
-      tournament.value = tData
+      await fetchAthletes()
+
+      const athletesCount = globalAthletes.value.length
+
+      tournament.value = {
+        id: tData.id,
+        name: tData.name,
+        location: tData.location,
+        startDate: tData.startDate,
+        endDate: tData.endDate,
+        status: tData.status,
+        displayStatus: deriveDisplayStatus(tData),
+        categoriesCount: cData.length,
+        matchesCount: mData.length,
+        // Add this line
+        athletesCount: athletesCount,
+      }
+
       matches.value = mData
-      athletes.value = aData
       categories.value = cData
+      athletes.value = globalAthletes.value
+
     } catch (err: any) {
-      console.error(err)
+      console.error('Tournament fetch error:', err)
       error.value = err?.data?.message || 'Failed to load tournament details'
     } finally {
       loading.value = false
     }
   }
 
-  // Refresh function
   const refresh = async () => {
     await fetchTournament()
   }
 
-  // Auto fetch on mount
   onMounted(() => {
-    if (tournamentId) {
-      fetchTournament()
-    }
+    if (tournamentId) fetchTournament()
   })
 
-  // Watch for ID changes (if used in dynamic route)
   watch(() => tournamentId, (newId) => {
     if (newId) fetchTournament()
   })
@@ -67,6 +72,6 @@ export const useTournamentDetail = (tournamentId: string) => {
     categories: readonly(categories),
     loading: readonly(loading),
     error: readonly(error),
-    refresh
+    refresh,
   }
 }
