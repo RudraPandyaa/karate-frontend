@@ -23,7 +23,7 @@ interface NavItem {
 // "Referees" was dropped and "Users" moved into Management per the latest
 // screenshot — update both lists together if the nav changes again.
 const mainNav: NavItem[] = [
-  { label: 'Dashboard', to: '/', icon: LayoutDashboard },
+  { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
   { label: 'Tournaments', to: '/tournaments', icon: Trophy },
   { label: 'Categories', to: '/categories', icon: Tags },
   { label: 'Athletes', to: '/athletes', icon: Users },

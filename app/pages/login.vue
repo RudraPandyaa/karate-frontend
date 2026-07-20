@@ -11,7 +11,7 @@ const handleLogin = async () => {
   loading.value = true
   const success = await login(email.value, password.value)
   if (success) {
-    await navigateTo(isStaff.value ? '/' : '/matches')
+      await navigateTo(isStaff.value ? '/dashboard' : '/matches')
   } else {
     alert('Login failed')
   }
