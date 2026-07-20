@@ -1,5 +1,12 @@
 export default defineNuxtRouteMiddleware((to) => {
-  const publicRoutes = ['/login', '/live-scoring','live','/matches']
+  const publicRoutes = [
+    '/login',
+    '/register',
+    '/live-scoring',
+    '/live',
+    '/matches',
+  ]
+
   if (publicRoutes.some((path) => to.path.startsWith(path))) {
     return
   }

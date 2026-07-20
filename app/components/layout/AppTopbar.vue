@@ -9,6 +9,25 @@ const colorMode = useColorMode()
 
 const showTournamentModal = ref(false)
 const showUserMenu = ref(false)
+const userMenuRef = ref<HTMLElement | null>(null)
+
+const handleClickOutside = (event: MouseEvent) => {
+  if (
+    showUserMenu.value &&
+    userMenuRef.value &&
+    !userMenuRef.value.contains(event.target as Node)
+  ) {
+    showUserMenu.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 
 const canSelectTournament = computed(() =>
   ['ADMIN','SUPER_ADMIN','ORGANIZER'].includes(user.value?.role || '')
@@ -85,7 +104,10 @@ const selectTournament = (tournamentId: string) => {
         <NotificationBell />
 
       <!-- User Menu -->
-      <div class="relative">
+      <div
+        ref="userMenuRef"
+        class="relative"
+      >
         <button
           @click="showUserMenu = !showUserMenu"
           class="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-surface hover:text-foreground transition-colors"

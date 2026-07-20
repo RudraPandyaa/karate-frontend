@@ -1,8 +1,11 @@
 <script setup lang="ts">
+definePageMeta({
+  layout: 'public',
+})
+
 const { matches, pending, error, fetchAll } = useMatches()
 
 onMounted(fetchAll)
-
 const statusColor = (status: string) => {
   if (status === 'IN_PROGRESS') return 'text-green-400'
   if (status === 'PAUSED') return 'text-yellow-400'

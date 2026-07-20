@@ -1,7 +1,9 @@
 <script setup lang="ts">
 const route = useRoute()
 const matchId = route.params.id as string
-
+definePageMeta({
+  layout: 'public',
+})
 const { match, pending, error } = useLiveMatch(matchId)
 </script>
 

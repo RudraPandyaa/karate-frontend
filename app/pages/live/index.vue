@@ -1,4 +1,7 @@
 <script setup lang="ts">
+definePageMeta({
+  layout: 'public',
+})
 const { matches, pending, error } = useLiveMatches()
 </script>
 

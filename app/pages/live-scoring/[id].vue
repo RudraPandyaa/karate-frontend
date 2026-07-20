@@ -1,4 +1,7 @@
 <script setup lang="ts">
+definePageMeta({
+  layout: 'public',
+})
 const route = useRoute()
 const matchId = route.params.id as string
 
