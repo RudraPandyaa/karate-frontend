@@ -36,7 +36,7 @@ const handleLogout = async () => {
         <nav class="hidden items-center gap-6 md:flex">
 
           <NuxtLink
-            to="/live"
+            to="/dashboard"
             class="text-sm text-muted hover:text-foreground"
           >
             Live
