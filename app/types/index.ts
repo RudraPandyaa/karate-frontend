@@ -10,9 +10,7 @@ export type Role =
   | 'OPERATOR'
 
 export type TournamentStatus = 'DRAFT' | 'ONGOING' | 'COMPLETED' | 'CANCELLED'
-
 export type Discipline = 'KATA' | 'KUMITE' | 'TEAM_KATA' | 'TEAM_KUMITE'
-
 export type Gender = 'MALE' | 'FEMALE' | 'MIXED'
 
 export type MatchStatus =
@@ -34,6 +32,7 @@ export type MatchRound =
   | 'FINAL_MATCH'
   | 'REPECHAGE'
   | 'BRONZE'
+  | 'BRONZE_MEDAL'   // ← Fixed: properly added
 
 export type SenshuHolder = 'NONE' | 'RED' | 'BLUE'
 
@@ -88,6 +87,7 @@ export interface SafeUser {
   role?: Role
 }
 
+// Updated Match interface with missing fields
 export interface Match {
   id: string
   categoryId: string
@@ -117,11 +117,14 @@ export interface Match {
   completedAt: string | null
   createdAt: string
   updatedAt: string
+
+  // Added fields to fix backend errors
+  nextCorner?: Corner
+  loserNextMatchId?: string
+  loserNextCorner?: Corner
 }
 
-// Shape returned by GET /tournaments/:id/dashboard (or assembled client-side
-// from /matches?status=IN_PROGRESS). Adjust field names once the real
-// endpoint contract is shared.
+// Rest of your types (unchanged)
 export interface LiveMatchSummary {
   id: string
   tatami: Tatami
@@ -131,10 +134,9 @@ export interface LiveMatchSummary {
   blueAthlete: Athlete | null
   redScore: number
   blueScore: number
-  timeRemaining: number // seconds
+  timeRemaining: number
   status: MatchStatus
   discipline: Discipline
-  // Kata-specific (discipline === 'KATA' / 'TEAM_KATA')
   redKataScore?: number
   blueKataScore?: number
 }
@@ -158,10 +160,6 @@ export interface DashboardStats {
   runningMatches: number
 }
 
-// ===== TOURNAMENTS PAGE =====
-
-// Raw shape of GET /tournaments — confirmed against tournaments.service.ts.
-// _count comes from Prisma's `include: { _count: { select: { categories, tatamis } } }`.
 export interface RawTournamentListItem {
   id: string
   name: string
@@ -177,11 +175,6 @@ export interface RawTournamentListItem {
   }
 }
 
-// Display-only status, derived client-side since the schema's TournamentStatus
-// enum (DRAFT/ONGOING/COMPLETED/CANCELLED) has no "Upcoming" value but the
-// UI needs one. DRAFT + future startDate => Upcoming. Mapping lives in
-// utils/tournamentStatus.ts (deriveDisplayStatus) — shared by the list page
-// and the detail page, so update it there, not per-component.
 export type TournamentDisplayStatus = 'UPCOMING' | 'LIVE' | 'DRAFT' | 'COMPLETED' | 'CANCELLED'
 
 export interface TournamentRow {
@@ -202,8 +195,6 @@ export interface TournamentsPageStats {
   registeredAthletes: number
 }
 
-// Body for POST /tournaments — organizationId is a plain text field for now
-// (no organizations.controller.ts shared yet to build a real picker).
 export interface CreateTournamentPayload {
   name: string
   location: string
