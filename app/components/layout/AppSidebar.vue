@@ -39,7 +39,7 @@ const navLinkClass = (to: string) => [
   'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors border',
   isActive(to)
     ? 'bg-blue-600/15 text-blue-400 border-blue-600/30'
-    : 'text-muted hover:bg-surface hover:text-white border-transparent',
+    : 'text-muted hover:bg-surface hover:text-foreground border-transparent',
 ]
 </script>
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { X, Save, Loader2, Upload, Trash2 } from 'lucide-vue-next'
+import type { Category } from '~/composables/useCategories'
 
 interface Athlete {
   id?: string
@@ -8,23 +9,32 @@ interface Athlete {
   state: string
   country: string
   photoUrl?: string | null
+  categoryId?: string
 }
 
 const props = defineProps<{
   open: boolean
   loading?: boolean
   athlete?: Athlete | null
+  categories: Category[]
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'save', athlete: Athlete): void
+  (
+    e: 'save',
+    payload: {
+      athlete: Athlete
+      photoFile?: File
+    }
+  ): void
 }>()
 
 const form = ref<Athlete>({
   name: '',
   state: '',
   country: 'IND',
+  categoryId: '',
   photoUrl: null,
 })
 
@@ -44,6 +54,7 @@ watch(() => props.open, (value) => {
       name: props.athlete.name,
       state: props.athlete.state,
       country: props.athlete.country || 'IND',
+      categoryId: props.athlete.categoryId || '',
       photoUrl: props.athlete.photoUrl || null,
     }
     previewUrl.value = props.athlete.photoUrl || null
@@ -54,7 +65,7 @@ watch(() => props.open, (value) => {
 }, { immediate: true })
 
 function resetForm() {
-  form.value = { name: '', state: '', country: 'IND', photoUrl: null }
+  form.value = { name: '', state: '', country: 'IND',  categoryId: '', photoUrl: null }
   previewUrl.value = null
   selectedFile.value = null
 }
@@ -200,6 +211,35 @@ function submit() {
                 placeholder="IND"
                 class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600 text-foreground"
               />
+            </div>
+            <!-- Category -->
+            <div>
+              <label class="mb-2 block text-sm font-medium text-foreground">
+                Category
+              </label>
+
+              <select
+                v-model="form.categoryId"
+                class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600 text-foreground"
+              >
+                <option value="">
+                  Select Category
+                </option>
+
+                <option
+                  v-for="category in categories"
+                  :key="category.id"
+                  :value="category.id"
+                >
+                  {{ category.name }}
+                  -
+                  {{ category.ageGroup }}
+                  -
+                  {{ category.gender }}
+                  -
+                  {{ category.discipline }}
+                </option>
+              </select>
             </div>
           </div>
 

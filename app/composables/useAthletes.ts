@@ -17,6 +17,7 @@ export interface CreateAthleteDto {
   name: string
   state: string
   country?: string
+  categoryId?: string
 }
 
 export interface Enrollment {

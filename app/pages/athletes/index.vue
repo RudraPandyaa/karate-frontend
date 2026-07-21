@@ -15,8 +15,14 @@ const {
   createAthlete,
   updateAthlete,
   deleteAthlete,
-  uploadPhoto
+  uploadPhoto,
+  enrollAthlete,
 } = useAthletes()
+
+const {
+  rows: categories,
+  fetchCategories,
+} = useCategories()
 
 const search = useState('topbarSearch', () => '')
 
@@ -29,7 +35,10 @@ const deleteLoading = ref(false)
 const selectedAthlete = ref<Athlete | null>(null)
 
 onMounted(async () => {
-  await fetchAthletes()
+  await Promise.all([
+    fetchAthletes(),
+    fetchCategories(),
+  ])
 })
 
 function openCreateModal() {
@@ -61,22 +70,32 @@ function closeDeleteModal() {
   selectedAthlete.value = null
 }
 
-async function saveAthlete(payload: { athlete: any; photoFile?: File }) {
+async function saveAthlete(payload: {
+  athlete: any
+  photoFile?: File
+}) {
   modalLoading.value = true
+
   try {
-    const { athlete, photoFile } = payload
+    const {
+      athlete,
+      photoFile,
+    } = payload
 
     let savedAthlete: any
 
     if (selectedAthlete.value?.id) {
-      // Update
-      savedAthlete = await updateAthlete(selectedAthlete.value.id, {
-        name: athlete.name,
-        state: athlete.state,
-        country: athlete.country,
-      })
+      // Update existing athlete
+      savedAthlete = await updateAthlete(
+        selectedAthlete.value.id,
+        {
+          name: athlete.name,
+          state: athlete.state,
+          country: athlete.country,
+        }
+      )
     } else {
-      // Create
+      // Create athlete
       savedAthlete = await createAthlete({
         name: athlete.name,
         state: athlete.state,
@@ -84,23 +103,39 @@ async function saveAthlete(payload: { athlete: any; photoFile?: File }) {
       })
     }
 
-    // Important: Refresh to get the latest data (including photoUrl)
-    await fetchAthletes()
-
-    // Upload photo if selected
-    if (photoFile) {
-      // Find the latest version of this athlete
-      const freshAthlete = athletes.value.find(a => a.id === savedAthlete?.id || a.name === athlete.name)
-      if (freshAthlete?.id) {
-        await uploadPhoto(freshAthlete.id, photoFile)
-      }
+    // Upload photo
+    if (photoFile && savedAthlete?.id) {
+      await uploadPhoto(
+        savedAthlete.id,
+        photoFile
+      )
     }
 
+    // Enroll athlete into category
+    if (
+      athlete.categoryId &&
+      savedAthlete?.id
+    ) {
+      await enrollAthlete(
+        savedAthlete.id,
+        {
+          categoryId: athlete.categoryId,
+        }
+      )
+    }
+
+    await fetchAthletes()
+
     closeModal()
-    await fetchAthletes()   // Final refresh
+
   } catch (err: any) {
     console.error(err)
-    alert(err?.data?.message || err.message || 'Failed to save athlete')
+
+    alert(
+      err?.data?.message ||
+      err.message ||
+      'Failed to save athlete'
+    )
   } finally {
     modalLoading.value = false
   }
@@ -161,6 +196,7 @@ async function removeAthlete() {
       :open="showAthleteModal"
       :loading="modalLoading"
       :athlete="selectedAthlete"
+      :categories="categories"
       @close="closeModal"
       @save="saveAthlete"
     />

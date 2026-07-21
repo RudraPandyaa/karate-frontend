@@ -62,7 +62,7 @@ const filtered = computed(() => {
           <td class="px-6 py-4 font-medium text-foreground">{{ athlete.name }}</td>
           <td class="px-6 py-4 text-foreground">{{ athlete.country }}</td>
           <td class="px-6 py-4 text-sm text-muted">
-            {{ athlete.enrollments?.length ?? 0 }} enrolled
+              {{ athlete._count?.categories ?? 0 }} enrolled
           </td>
           <td class="px-6 py-4 text-right space-x-3 text-foreground">
             <button

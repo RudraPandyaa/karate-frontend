@@ -13,24 +13,48 @@ const handleLogout = async () => {
       <div class="mx-auto flex h-full max-w-7xl items-center justify-between">
 
         <!-- Logo -->
-        <NuxtLink
-          :to="isLoggedIn ? '/' : '/dashboard'"
-          class="flex items-center gap-3"
-        >
-          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600">
-            <span class="text-white font-bold">K</span>
-          </div>
+        <ClientOnly>
+          <NuxtLink
+            :to="isLoggedIn ? '/dashboard' : '/live'"
+            class="flex items-center gap-3"
+          >
+            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600">
+              <span class="text-white font-bold">K</span>
+            </div>
 
-          <div>
-            <p class="font-bold text-foreground">
-              Karate System
-            </p>
+            <div>
+              <p class="font-bold text-foreground">
+                Karate System
+              </p>
 
-            <p class="text-xs text-muted">
-              LIVE TOURNAMENT
-            </p>
-          </div>
-        </NuxtLink>
+              <p class="text-xs text-muted">
+                LIVE TOURNAMENT
+              </p>
+            </div>
+          </NuxtLink>
+
+          <!-- Server fallback -->
+          <template #fallback>
+            <NuxtLink
+              to="/live"
+              class="flex items-center gap-3"
+            >
+              <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600">
+                <span class="text-white font-bold">K</span>
+              </div>
+
+              <div>
+                <p class="font-bold text-foreground">
+                  Karate System
+                </p>
+
+                <p class="text-xs text-muted">
+                  LIVE TOURNAMENT
+                </p>
+              </div>
+            </NuxtLink>
+          </template>
+        </ClientOnly>
 
         <!-- Navigation -->
         <nav class="hidden items-center gap-6 md:flex">
@@ -49,31 +73,46 @@ const handleLogout = async () => {
             Matches
           </NuxtLink>
 
-          <!-- Logged out -->
-          <NuxtLink
-            v-if="!isLoggedIn"
-            to="/login"
-            class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            Login
-          </NuxtLink>
+          <!-- Auth-dependent content -->
+          <ClientOnly>
 
-          <!-- Logged in -->
-          <div
-            v-else
-            class="flex items-center gap-3"
-          >
-            <span class="hidden lg:block text-sm text-muted">
-              {{ user?.name || user?.email }}
-            </span>
-
-            <button
-              @click="handleLogout"
-              class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+            <!-- Logged out -->
+            <NuxtLink
+              v-if="!isLoggedIn"
+              to="/login"
+              class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
-              Logout
-            </button>
-          </div>
+              Login
+            </NuxtLink>
+
+            <!-- Logged in -->
+            <div
+              v-else
+              class="flex items-center gap-3"
+            >
+              <span class="hidden lg:block text-sm text-muted">
+                {{ user?.name || user?.email }}
+              </span>
+
+              <button
+                @click="handleLogout"
+                class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              >
+                Logout
+              </button>
+            </div>
+
+            <!-- Server fallback -->
+            <template #fallback>
+              <NuxtLink
+                to="/login"
+                class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                Login
+              </NuxtLink>
+            </template>
+
+          </ClientOnly>
 
         </nav>
       </div>

@@ -2,19 +2,24 @@
 definePageMeta({
   layout: 'auth',
 })
-const { login, isStaff } = useAuth()
+
+const { login } = useAuth()
+
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
 
 const handleLogin = async () => {
   loading.value = true
+
   const success = await login(email.value, password.value)
+
   if (success) {
-      await navigateTo(isStaff.value ? '/dashboard' : '/matches')
+    await navigateTo('/dashboard')
   } else {
     alert('Login failed')
   }
+
   loading.value = false
 }
 </script>

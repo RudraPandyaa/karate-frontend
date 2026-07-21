@@ -47,3 +47,12 @@
     @apply bg-panel text-foreground;
   }
 }
+
+.match-node {
+  position: relative;
+  z-index: 1;
+}
+
+.connector-path {
+  stroke: var(--color-line, #94a3b8);
+}

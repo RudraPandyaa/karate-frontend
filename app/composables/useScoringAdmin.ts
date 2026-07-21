@@ -1,17 +1,22 @@
 import { io, type Socket } from 'socket.io-client'
+import type { LiveMatch } from '~/composables/useLiveMatch'
 
-export type ScoreTypeValue = 'YUKO' | 'WAZA_ARI' | 'IPPON'
+export type ScoreTypeValue =
+  | 'YUKO'
+  | 'WAZA_ARI'
+  | 'IPPON'
 
 export function useScoringAdmin(matchId: string) {
   const { api } = useApi()
   const config = useRuntimeConfig()
 
+  const match = ref<LiveMatch | null>(null)
+
+  const pending = ref(true)
   const submitting = ref(false)
   const submitError = ref<string | null>(null)
 
   const notification = ref('')
-  const timer = ref(180)
-  const matchStatus = ref('PAUSED')
 
   let socket: Socket | null = null
   let notificationTimeout: ReturnType<typeof setTimeout> | null = null
@@ -30,55 +35,91 @@ export function useScoringAdmin(matchId: string) {
 
   async function loadInitialState() {
     try {
-      const data: any = await api(`/scoring/${matchId}/live`)
+      const data = await api<LiveMatch>(
+        `/scoring/${matchId}/live`,
+      )
 
-      timer.value = data.timeRemaining ?? data.match?.timeRemaining ?? 180
-
-      matchStatus.value =
-        data.status ??
-        data.match?.status ??
-        'PAUSED'
-    } catch (e) {
-      console.error(e)
+      match.value = data
+    } catch (err: any) {
+      submitError.value =
+        err?.data?.message ||
+        err?.message ||
+        'Failed to load match'
+    } finally {
+      pending.value = false
     }
   }
 
   function connect() {
-    socket = io(`${config.public.apiBase}/scoring`, {
-      transports: ['websocket'],
-    })
+    socket = io(
+      `${config.public.apiBase}/scoring`,
+      {
+        transports: ['websocket'],
+      },
+    )
 
-    socket.emit('joinMatch', { matchId })
+    socket.on('connect', () => {
+      console.log('Admin socket connected')
 
-    socket.on('timerUpdate', (data: any) => {
-      timer.value = data.timeRemaining
-    })
-
-    socket.on('timerStarted', (data: any) => {
-      matchStatus.value = 'IN_PROGRESS'
-      showNotification(data?.message ?? '▶ Match Started')
-    })
-
-    socket.on('timerPaused', (data: any) => {
-      matchStatus.value = 'PAUSED'
-      showNotification(data?.message ?? '⏸ Match Paused')
-    })
-
-    socket.on('timerEnded', (data: any) => {
-      matchStatus.value = 'COMPLETED'
-      showNotification(data?.message ?? '🏁 Time Up')
-    })
-
-    socket.on('timerAdjusted', (data: any) => {
-      timer.value = data.timeRemaining
-      showNotification(data.message)
+      socket?.emit('joinMatch', {
+        matchId,
+      })
     })
 
     socket.on('scoreUpdated', (data: any) => {
+      console.log('scoreUpdated:', data)
+
+      if (!match.value) return
+
       if (data.match) {
-        timer.value = data.match.timeRemaining
-        matchStatus.value = data.match.status
+        match.value = {
+          ...match.value,
+          ...data.match,
+        }
       }
+
+      showNotification('Score updated')
+    })
+
+    socket.on('timerStarted', () => {
+      if (!match.value) return
+
+      match.value.status = 'IN_PROGRESS'
+
+      showNotification('▶ Match Started')
+    })
+
+    socket.on('timerPaused', () => {
+      if (!match.value) return
+
+      match.value.status = 'PAUSED'
+
+      showNotification('⏸ Match Paused')
+    })
+
+    socket.on('timerEnded', () => {
+      if (!match.value) return
+
+      match.value.status = 'COMPLETED'
+      match.value.timeRemaining = 0
+
+      showNotification('🏁 Time Up')
+    })
+
+    socket.on('timerUpdate', (data: any) => {
+      if (!match.value) return
+
+      match.value.timeRemaining =
+        data.timeRemaining
+    })
+
+    socket.on('timerAdjusted', (data: any) => {
+      if (!match.value) return
+
+      match.value.timeRemaining =
+        data.timeRemaining
+
+      showNotification(data.message)
     })
   }
 
@@ -95,26 +136,27 @@ export function useScoringAdmin(matchId: string) {
     submitError.value = null
 
     try {
-    const payload = {
-      matchId,
-      entries: [
+      const result = await api(
+        '/scoring/exchange',
         {
-          corner,
-          type,
+          method: 'POST',
+          body: {
+            matchId,
+            entries: [
+              {
+                corner,
+                type,
+              },
+            ],
+          },
         },
-      ],
-    }
+      )
 
-    console.log(payload)
-
-    return await api('/scoring/exchange', {
-      method: 'POST',
-      body: payload,
-    })
+      return result
     } catch (err: any) {
       submitError.value =
-        err?.data?.message ??
-        err.message ??
+        err?.data?.message ||
+        err?.message ||
         'Failed to record score'
 
       throw err
@@ -123,22 +165,27 @@ export function useScoringAdmin(matchId: string) {
     }
   }
 
-  async function undoScore(scoreEventId: string) {
+  async function undoScore(
+    scoreEventId: string,
+  ) {
     submitting.value = true
     submitError.value = null
 
     try {
-      return await api('/scoring/undo', {
-        method: 'DELETE',
-        body: {
-          matchId,
-          scoreEventId,
+      return await api(
+        '/scoring/undo',
+        {
+          method: 'DELETE',
+          body: {
+            matchId,
+            scoreEventId,
+          },
         },
-      })
+      )
     } catch (err: any) {
       submitError.value =
-        err?.data?.message ??
-        err.message ??
+        err?.data?.message ||
+        err?.message ||
         'Failed to undo score'
 
       throw err
@@ -148,14 +195,20 @@ export function useScoringAdmin(matchId: string) {
   }
 
   function startTimer() {
-    socket?.emit('startTimer', { matchId })
+    socket?.emit('startTimer', {
+      matchId,
+    })
   }
 
   function pauseTimer() {
-    socket?.emit('pauseTimer', { matchId })
+    socket?.emit('pauseTimer', {
+      matchId,
+    })
   }
 
-  function adjustTime(deltaSeconds: number) {
+  function adjustTime(
+    deltaSeconds: number,
+  ) {
     socket?.emit('adjustTime', {
       matchId,
       deltaSeconds,
@@ -176,11 +229,11 @@ export function useScoringAdmin(matchId: string) {
   })
 
   return {
+    match,
+    pending,
     submitting,
     submitError,
     notification,
-    timer,
-    matchStatus,
     recordScore,
     undoScore,
     startTimer,
