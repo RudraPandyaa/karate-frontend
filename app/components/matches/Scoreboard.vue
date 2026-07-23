@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { LiveMatchState } from '~/composables/useLiveMatch'
+import type { LiveMatch } from '~/composables/useLiveMatch'
 
 const props = defineProps<{
-  match: LiveMatchState
+  match: LiveMatch
 }>()
 
 const minutes = computed(() => Math.floor(props.match.timeRemaining / 60))
@@ -14,7 +14,10 @@ const clock = computed(() => {
   return `${m}:${s}`
 })
 
-const isLowTime = computed(() => props.match.timeRemaining <= 15 && props.match.isRunning)
+const isLowTime = computed(() =>
+  props.match.timeRemaining <= 15 &&
+  props.match.status === 'IN_PROGRESS'
+)
 </script>
 
 <template>
@@ -24,10 +27,22 @@ const isLowTime = computed(() => props.match.timeRemaining <= 15 && props.match.
     <div class="mb-8 flex items-center gap-3">
       <span
         class="h-2.5 w-2.5 rounded-full"
-        :class="match.isRunning ? 'bg-green-500 animate-pulse text-white' : 'bg-yellow-500 text-white'"
+        :class="
+          match.status === 'IN_PROGRESS'
+            ? 'bg-green-500 animate-pulse'
+            : 'bg-yellow-500'
+        "
       />
       <span class="text-sm font-medium uppercase tracking-widest text-foreground/60">
-        {{ match.isRunning ? 'Live' : match.status }}
+        {{
+          match.status === 'IN_PROGRESS'
+            ? 'Live'
+            : match.status === 'PAUSED'
+              ? 'Paused'
+              : match.status === 'COMPLETED'
+                ? 'Finished'
+                : 'Ready'
+        }}
       </span>
     </div>
 
@@ -38,6 +53,31 @@ const isLowTime = computed(() => props.match.timeRemaining <= 15 && props.match.
     >
       {{ clock }}
     </div>
+
+          <div
+        v-if="match.status === 'COMPLETED'"
+        class="mb-8 rounded-2xl border border-line bg-panel px-6 py-4 text-center"
+      >
+        <p class="text-sm uppercase tracking-widest text-foreground/60">
+          Match Finished
+        </p>
+
+        <p class="mt-2 text-2xl font-bold">
+          Winner:
+          {{
+            match.winnerId === match.redAthlete?.id
+              ? match.redAthlete.name
+              : match.blueAthlete?.name
+          }}
+        </p>
+
+        <p
+          v-if="match.resultType"
+          class="mt-1 text-sm text-foreground/60"
+        >
+          Result: {{ match.resultType }}
+        </p>
+      </div>
 
     <!-- Score panels -->
     <div class="grid w-full max-w-4xl grid-cols-2 gap-6">

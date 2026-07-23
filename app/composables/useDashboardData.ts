@@ -81,6 +81,10 @@ export function useDashboardData() {
         api<any[]>('/athletes'),
       ])
 
+      console.log('MATCHES RESPONSE:', matches)
+      console.log('TOURNAMENTS RESPONSE:', tournaments)
+      console.log('ATHLETES RESPONSE:', athletes)
+      
       const live = matches
         .filter(m => m.status === 'IN_PROGRESS')
         .map(toLiveSummary)

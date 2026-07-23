@@ -48,5 +48,14 @@ export const useAuth = () => {
     }
   }
 
-  return { user, isLoggedIn, isStaff, isAdmin, login, logout, initAuth }
+  return {
+  user,
+  accessToken,
+  isLoggedIn,
+  isStaff,
+  isAdmin,
+  login,
+  logout,
+  initAuth,
+}
 }

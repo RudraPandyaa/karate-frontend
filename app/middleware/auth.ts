@@ -1,4 +1,4 @@
-export default defineNuxtRouteMiddleware((to) => {
+export default defineNuxtRouteMiddleware(async (to) => {
   const publicRoutes = [
     '/login',
     '/register',
@@ -11,9 +11,20 @@ export default defineNuxtRouteMiddleware((to) => {
     return
   }
 
-  const { isLoggedIn } = useAuth()
+  const { accessToken, user, initAuth } = useAuth()
 
-  if (!isLoggedIn.value) {
+  // No token means definitely not logged in
+  if (!accessToken.value) {
+    return navigateTo('/login')
+  }
+
+  // Token exists but user is not loaded yet
+  if (!user.value) {
+    await initAuth()
+  }
+
+  // Token may have been invalid
+  if (!user.value) {
     return navigateTo('/login')
   }
 })

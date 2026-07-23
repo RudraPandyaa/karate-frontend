@@ -12,6 +12,10 @@ export interface LiveMatch {
   timeRemaining: number
   senshu: 'NONE' | 'RED' | 'BLUE'
 
+  winnerId?: string | null
+  resultType?: string | null
+  completedAt?: string | null
+
   redAthlete: {
     id: string
     name: string
@@ -127,16 +131,20 @@ export function useLiveMatch(
       },
     )
 
-    socket.on(
+        socket.on(
       'timerEnded',
-      () => {
+      (data: any) => {
         if (!match.value) return
 
-        match.value.status =
-          'COMPLETED'
+        match.value.status = 'COMPLETED'
+        match.value.timeRemaining = 0
 
-        match.value.timeRemaining =
-          0
+        if (data.match) {
+          match.value = {
+            ...match.value,
+            ...data.match,
+          }
+        }
       },
     )
 

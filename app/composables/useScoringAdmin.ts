@@ -17,12 +17,17 @@ export function useScoringAdmin(matchId: string) {
   const submitError = ref<string | null>(null)
 
   const notification = ref('')
+  const notificationType = ref<'success' | 'error' | 'info'>('info')    
 
   let socket: Socket | null = null
   let notificationTimeout: ReturnType<typeof setTimeout> | null = null
 
-  function showNotification(message: string) {
+  function showNotification(
+    message: string,
+    type: 'success' | 'error' | 'info' = 'info',
+  ) {
     notification.value = message
+    notificationType.value = type
 
     if (notificationTimeout) {
       clearTimeout(notificationTimeout)
@@ -81,27 +86,43 @@ export function useScoringAdmin(matchId: string) {
       showNotification('Score updated')
     })
 
-    socket.on('timerStarted', () => {
-      if (!match.value) return
+  socket.on('timerStarted', () => {
+    if (!match.value) return
 
-      match.value.status = 'IN_PROGRESS'
+    match.value.status = 'IN_PROGRESS'
 
-      showNotification('▶ Match Started')
-    })
+    showNotification(
+      match.value.timeRemaining < 180
+        ? '▶ Match Resumed'
+        : '▶ Match Started',
+      'success',
+    )
+  })
+
 
     socket.on('timerPaused', () => {
       if (!match.value) return
 
       match.value.status = 'PAUSED'
 
-      showNotification('⏸ Match Paused')
+      showNotification(
+        '⏸ Match Paused',
+        'info',
+      )
     })
 
-    socket.on('timerEnded', () => {
+    socket.on('timerEnded', (data: any) => {
       if (!match.value) return
 
       match.value.status = 'COMPLETED'
       match.value.timeRemaining = 0
+
+      if (data.match) {
+        match.value = {
+          ...match.value,
+          ...data.match,
+        }
+      }
 
       showNotification('🏁 Time Up')
     })
@@ -119,8 +140,21 @@ export function useScoringAdmin(matchId: string) {
       match.value.timeRemaining =
         data.timeRemaining
 
-      showNotification(data.message)
+      showNotification(
+        data.message,
+        'success',
+      )
     })
+
+    socket.on(
+      'timerAdjustmentRejected',
+      (data: any) => {
+        showNotification(
+          data.message,
+          'error',
+        )
+      },
+    )
   }
 
   function disconnect() {
@@ -228,16 +262,17 @@ export function useScoringAdmin(matchId: string) {
     }
   })
 
-  return {
-    match,
-    pending,
-    submitting,
-    submitError,
-    notification,
-    recordScore,
-    undoScore,
-    startTimer,
-    pauseTimer,
-    adjustTime,
-  }
+return {
+  match,
+  pending,
+  submitting,
+  submitError,
+  notification,
+  notificationType,
+  recordScore,
+  undoScore,
+  startTimer,
+  pauseTimer,
+  adjustTime,
+}
 }

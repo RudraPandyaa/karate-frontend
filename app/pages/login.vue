@@ -10,17 +10,32 @@ const password = ref('')
 const loading = ref(false)
 
 const handleLogin = async () => {
+  console.log('1. Login button clicked')
+
   loading.value = true
 
-  const success = await login(email.value, password.value)
+  try {
+    console.log('2. Calling login API')
 
-  if (success) {
-    await navigateTo('/dashboard')
-  } else {
-    alert('Login failed')
+    const success = await login(email.value, password.value)
+
+    console.log('3. Login result:', success)
+
+    if (success) {
+      console.log('4. Navigating to dashboard')
+
+      await navigateTo('/dashboard')
+
+      console.log('5. Navigation completed')
+    } else {
+      console.log('Login returned false')
+      alert('Login failed')
+    }
+  } catch (error) {
+    console.error('Login handler error:', error)
+  } finally {
+    loading.value = false
   }
-
-  loading.value = false
 }
 </script>
 

@@ -1,7 +1,6 @@
 <script setup lang="ts">
-definePageMeta({
-  middleware: 'auth',
-})
+console.log('DASHBOARD PAGE LOADED')
+definePageMeta({})
 import { Trophy, Timer, Users, Zap } from 'lucide-vue-next'
 import TatamiDashboard from '~/components/tatami/TatamiDashboard.vue'
 
