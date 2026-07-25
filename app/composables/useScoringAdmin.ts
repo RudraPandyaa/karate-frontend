@@ -55,6 +55,16 @@ export function useScoringAdmin(matchId: string) {
     }
   }
 
+  function clampTime(value: unknown): number {
+    const time = Number(value)
+
+    if (!Number.isFinite(time)) {
+      return 0
+    }
+
+    return Math.max(0, Math.floor(time))
+  }
+
   function connect() {
     socket = io(
       `${config.public.apiBase}/scoring`,
@@ -131,14 +141,14 @@ export function useScoringAdmin(matchId: string) {
       if (!match.value) return
 
       match.value.timeRemaining =
-        data.timeRemaining
+        clampTime(data.timeRemaining)
     })
 
     socket.on('timerAdjusted', (data: any) => {
       if (!match.value) return
 
       match.value.timeRemaining =
-        data.timeRemaining
+          clampTime(data.timeRemaining)
 
       showNotification(
         data.message,

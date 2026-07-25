@@ -3,6 +3,15 @@ import {
   type Socket,
 } from 'socket.io-client'
 
+export interface LiveScoreEvent {
+  id: string
+  corner: 'RED' | 'BLUE'
+  type: 'YUKO' | 'WAZA_ARI' | 'IPPON'
+  points: number
+  timestamp: string
+  wasUndone: boolean
+}
+
 export interface LiveMatch {
   id: string
   round: string
@@ -11,6 +20,14 @@ export interface LiveMatch {
   blueScore: number
   timeRemaining: number
   senshu: 'NONE' | 'RED' | 'BLUE'
+
+  category?: {
+    id: string
+    name: string
+    ageGroup?: string
+    gender?: string
+    discipline?: string
+  } | null
 
   winnerId?: string | null
   resultType?: string | null
@@ -28,7 +45,7 @@ export interface LiveMatch {
     photoUrl?: string | null
   } | null
 
-  scoreEvents: any[]
+  scoreEvents: LiveScoreEvent[]
 }
 
 export function useLiveMatch(
@@ -96,6 +113,13 @@ export function useLiveMatch(
           match.value = {
             ...match.value,
             ...data.match,
+
+            // IMPORTANT:
+            // Replace events instead of appending them.
+            // Backend sends the full event history.
+            scoreEvents: data.scoreEvents
+              ? data.scoreEvents
+              : match.value.scoreEvents,
           }
         }
       },
@@ -107,7 +131,10 @@ export function useLiveMatch(
         if (!match.value) return
 
         match.value.timeRemaining =
-          data.timeRemaining
+          Math.max(
+            0,
+            data.timeRemaining,
+          )
       },
     )
 
@@ -131,19 +158,16 @@ export function useLiveMatch(
       },
     )
 
-        socket.on(
+    socket.on(
       'timerEnded',
       (data: any) => {
         if (!match.value) return
 
-        match.value.status = 'COMPLETED'
-        match.value.timeRemaining = 0
-
-        if (data.match) {
-          match.value = {
-            ...match.value,
-            ...data.match,
-          }
+        match.value = {
+          ...match.value,
+          ...(data.match ?? {}),
+          status: 'COMPLETED',
+          timeRemaining: 0,
         }
       },
     )
@@ -154,7 +178,10 @@ export function useLiveMatch(
         if (!match.value) return
 
         match.value.timeRemaining =
-          data.timeRemaining
+          Math.max(
+            0,
+            data.timeRemaining,
+          )
       },
     )
   }

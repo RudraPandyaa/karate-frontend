@@ -79,6 +79,7 @@ async function handleUndoLast() {
       :submitting="submitting"
       :submit-error="submitError"
       :can-undo="!!lastScoreEventId"
+      :notification-type="notificationType"
       @score="handleScore"
       @undo-last="handleUndoLast"
       @start="startTimer"

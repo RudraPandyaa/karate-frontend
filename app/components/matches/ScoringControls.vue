@@ -40,12 +40,25 @@ const scoreTypes = [
   },
 ] as const
 
-const formattedTime = computed(() => {
-  const mins = Math.floor(props.timer / 60)
-  const secs = props.timer % 60
+const safeTimer = computed(() =>
+  Math.max(0, props.timer),
+)
 
-  return `${mins}:${String(secs).padStart(2, '0')}`
-})
+const formattedTime = computed(() => {
+  const totalSeconds = Math.max(
+    0,  
+    Math.floor(Number(props.timer) || 0),
+  )
+
+  const mins = Math.floor(
+    totalSeconds / 60,
+  )
+
+  const secs =
+    totalSeconds % 60
+
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+})  
 
 const customSeconds = ref<number | null>(null)
 
