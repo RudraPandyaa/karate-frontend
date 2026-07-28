@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Eye, EyeOff } from 'lucide-vue-next'
 definePageMeta({
   layout: 'auth',
 })
@@ -8,7 +9,7 @@ const { login } = useAuth()
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
-
+const showPassword = ref(false)
 const handleLogin = async () => {
   console.log('1. Login button clicked')
 
@@ -53,13 +54,28 @@ const handleLogin = async () => {
           class="w-full bg-panel border border-line rounded-xl px-4 py-3 text-foreground"
         />
 
-        <input
-          v-model="password"
-          type="password"
-          placeholder="Password"
-          required
-          class="w-full bg-panel border border-line rounded-xl px-4 py-3 text-foreground"
-        />
+        <div class="relative">
+          <input
+            v-model="password"
+            :type="showPassword ? 'text' : 'password'"
+            placeholder="Password"
+            required
+            class="w-full bg-panel border border-line rounded-xl px-4 py-3 pr-12 text-foreground"
+          />
+
+          <button
+            v-if="password"
+            type="button"
+            @mousedown="showPassword = true"
+            @mouseup="showPassword = false"
+            @mouseleave="showPassword = false"
+            @touchstart.prevent="showPassword = true"
+            @touchend="showPassword = false"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+          >
+            <Eye class="w-5 h-5" />
+          </button>
+        </div>
 
         <button
           type="submit"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Eye, EyeOff } from 'lucide-vue-next'
 definePageMeta({
   layout: 'auth',
 })
@@ -13,6 +14,8 @@ const confirmPassword = ref('')
 const loading = ref(false)
 const error = ref('')
 const success = ref('')
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 
 const handleRegister = async () => {
   error.value = ''
@@ -85,22 +88,31 @@ const handleRegister = async () => {
           class="w-full bg-panel border border-line rounded-xl px-4 py-3 text-foreground"
         />
 
-        <input
-          v-model="password"
-          type="password"
-          placeholder="Password"
-          required
-          minlength="6"
-          class="w-full bg-panel border border-line rounded-xl px-4 py-3 text-foreground"
-        />
+        <button
+          v-if="password"
+          type="button"
+          @mousedown="showPassword = true"
+          @mouseup="showPassword = false"
+          @mouseleave="showPassword = false"
+          @touchstart.prevent="showPassword = true"
+          @touchend="showPassword = false"
+          class="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+        >
+          <Eye class="w-5 h-5" />
+        </button>
 
-        <input
-          v-model="confirmPassword"
-          type="password"
-          placeholder="Confirm Password"
-          required
-          class="w-full bg-panel border border-line rounded-xl px-4 py-3 text-foreground"
-        />
+        <button
+            v-if="confirmPassword"
+            type="button"
+            @mousedown="showConfirmPassword = true"
+            @mouseup="showConfirmPassword = false"
+            @mouseleave="showConfirmPassword = false"
+            @touchstart.prevent="showConfirmPassword = true"
+            @touchend="showConfirmPassword = false"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+          >
+            <Eye class="w-5 h-5" />
+          </button>
 
         <p
           v-if="error"
