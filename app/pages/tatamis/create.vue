@@ -1,7 +1,13 @@
 <script setup lang="ts">
 const route = useRoute()
 const router = useRouter()
+const { isAdmin } = useAuth()
 
+onMounted(() => {
+  if (!isAdmin.value) {
+    navigateTo('/tatami')
+  }
+})
 const tournamentId = route.query.tournamentId as string
 
 const form = ref({

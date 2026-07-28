@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Tatami } from '~/composables/useTatami'
 import CurrentMatch from '~/components/tatami/CurrentMatch.vue'
+const { isAdmin } = useAuth()
 const props = defineProps<{
   tatami: Tatami
 }>()
@@ -162,6 +163,7 @@ watch(
       </button>
 
       <button
+        v-if="isAdmin"
         @click="emit('edit', tatami)"
         class="rounded-xl bg-surface py-3 font-medium text-foreground hover:bg-surface-hover"
       >
@@ -169,6 +171,7 @@ watch(
       </button>
 
       <button
+        v-if="isAdmin"
         @click="emit('delete', tatami.id)"
         class="rounded-xl bg-red-700 py-3 font-medium hover:bg-red-600 text-white"
       >

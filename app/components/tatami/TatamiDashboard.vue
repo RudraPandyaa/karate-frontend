@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Tatami } from '~/composables/useTatami'
-
+const { isAdmin } = useAuth()
 import TatamiCard from '~/components/tatami/TatamiCard.vue'
 import TatamiFormModal from '~/components/tatami/TatamiFormModal.vue'
 
@@ -31,11 +31,15 @@ onMounted(async () => {
 })
 
 function openCreate() {
+  if (!isAdmin.value) return
+
   editingTatami.value = null
   showForm.value = true
 }
 
 function openEdit(tatami: Tatami) {
+  if (!isAdmin.value) return
+
   editingTatami.value = tatami
   showForm.value = true
 }
@@ -48,18 +52,18 @@ async function handleSaved() {
 }
 
 async function handleDelete(id: string) {
-  if (!confirm('Delete this tatami?')) {
-    return
-  }
+  if (!isAdmin.value) return
+
+  if (!confirm('Delete this tatami?')) return
 
   await deleteTatami(id)
-
   await fetchTatami(tournamentId)
 }
 
 async function handleAutoAssign() {
-  await autoAssign(tournamentId)
+  if (!isAdmin.value) return
 
+  await autoAssign(tournamentId)
   await fetchTatami(tournamentId)
 }
 
@@ -97,7 +101,10 @@ async function handleSubmit(payload: {
         Tatami Management
       </h1>
 
-      <div class="flex gap-3">
+      <div
+        v-if="isAdmin"
+        class="flex gap-3"
+      >
         <button
           class="bg-blue-600 px-5 py-3 rounded-xl text-white"
           @click="openCreate"
@@ -140,7 +147,7 @@ async function handleSubmit(payload: {
     </div>
 
     <TatamiFormModal
-      v-if="showForm"
+        v-if="showForm && isAdmin"
       :tournament-id="tournamentId"
       :tatami="editingTatami"
       :saving="saving"
