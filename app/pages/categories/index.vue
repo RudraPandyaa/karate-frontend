@@ -99,11 +99,13 @@ async function handleDelete() {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 p-6">
 
     <!-- Header -->
 
-    <div class="flex items-center justify-between">
+    <div
+        class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-panel p-6 shadow-sm"
+      >
 
       <div>
         <h1 class="text-3xl font-bold text-foreground">
@@ -116,7 +118,7 @@ async function handleDelete() {
       </div>
 
       <button
-        class="btn btn-primary flex items-center gap-2"
+        class="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-500"
         @click="openCreate"
       >
         <Plus class="h-4 w-4" />
@@ -135,41 +137,42 @@ async function handleDelete() {
       {{ error }}
     </div>
 
-    <!-- Toolbar -->
+<!-- Toolbar -->
 
-    <div class="flex flex-wrap gap-4">
+<div
+  class="rounded-2xl border border-line bg-panel p-5 shadow-sm"
+>
+  <div class="flex flex-wrap items-center gap-4">
 
-      <div class="relative flex-1 min-w-[280px]">
+    <div class="relative min-w-[280px] flex-1">
+      <Search
+        class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+      />
 
-        <Search
-          class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
-        />
-
-        <input
-          v-model="search"
-          placeholder="Search category..."
-          class="w-full rounded-full border border-line bg-surface py-3 pl-10 pr-4 text-sm outline-none transition focus:border-blue-600 text-foreground"
-        />
-
-      </div>
-
-      <button
-        class="btn btn-secondary flex items-center gap-2"
-      >
-        <Filter class="h-4 w-4" />
-
-        Filter
-      </button>
-
-      <button
-        class="btn btn-secondary flex items-center gap-2"
-      >
-        <Download class="h-4 w-4" />
-
-        Export
-      </button>
-
+      <input
+        v-model="search"
+        placeholder="Search category..."
+        class="w-full rounded-xl border border-line bg-canvas py-3 pl-10 pr-4 text-sm text-foreground outline-none transition focus:border-blue-500"
+      />
     </div>
+
+    <button
+      class="flex items-center gap-2 rounded-xl border border-line bg-surface px-5 py-3 text-foreground transition hover:bg-surface-hover"
+    >
+      <Filter class="h-4 w-4" />
+      Filter
+    </button>
+
+    <button
+      class="flex items-center gap-2 rounded-xl border border-line bg-surface px-5 py-3 text-foreground transition hover:bg-surface-hover"
+    >
+      <Download class="h-4 w-4" />
+      Export
+    </button>
+
+  </div>
+</div>
+
 
     <!-- Loading -->
 
@@ -197,12 +200,16 @@ async function handleDelete() {
 
     <!-- Table -->
 
-    <CategoriesTable
+    <div
       v-else
-      :rows="filteredRows"
-      @edit="openEdit"
-      @delete="openDelete"
-    />
+      class="overflow-hidden rounded-2xl border border-line bg-panel shadow-sm"
+    >
+      <CategoriesTable
+        :rows="filteredRows"
+        @edit="openEdit"
+        @delete="openDelete"
+      />
+    </div>
 
     <!-- Create / Edit -->
 

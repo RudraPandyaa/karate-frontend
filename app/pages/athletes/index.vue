@@ -168,7 +168,7 @@ async function removeAthlete() {
       </div>
 
       <button
-        class="btn btn-primary flex items-center gap-2"
+        class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
         @click="openCreateModal"
       >
         <Plus class="h-4 w-4" />

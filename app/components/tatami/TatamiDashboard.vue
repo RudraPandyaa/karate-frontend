@@ -5,19 +5,26 @@ import TatamiCard from '~/components/tatami/TatamiCard.vue'
 import TatamiFormModal from '~/components/tatami/TatamiFormModal.vue'
 
 const route = useRoute()
-const tournamentId = route.params.tournamentId as string
+
+const tournamentId =
+  route.params.tournamentId as string
 
 const {
   rows: tatamis,
   pending,
+  saving,
   error,
   fetchTatami,
+  createTatami,
+  updateTatami,
   deleteTatami,
   autoAssign,
 } = useTatami()
 
 const showForm = ref(false)
-const editingTatami = ref<Tatami | null>(null)
+
+const editingTatami =
+  ref<Tatami | null>(null)
 
 onMounted(async () => {
   await fetchTatami(tournamentId)
@@ -33,28 +40,53 @@ function openEdit(tatami: Tatami) {
   showForm.value = true
 }
 
-async function handleSave({ athlete, photoFile }: { athlete: Athlete; photoFile?: File }) {
-  const isEdit = !!athlete.id
-  const saved = isEdit
-    ? await updateAthlete(athlete.id!, { name: athlete.name, state: athlete.state, country: athlete.country })
-    : await createAthlete({ name: athlete.name, state: athlete.state, country: athlete.country })
+async function handleSaved() {
+  showForm.value = false
+  editingTatami.value = null
 
-  if (photoFile && saved?.id) {
-    await uploadPhoto(saved.id, photoFile)
-  }
-
-  showModal.value = false
+  await fetchTatami(tournamentId)
 }
 
 async function handleDelete(id: string) {
-  if (!confirm('Delete this tatami?')) return
+  if (!confirm('Delete this tatami?')) {
+    return
+  }
 
   await deleteTatami(id)
+
+  await fetchTatami(tournamentId)
 }
 
 async function handleAutoAssign() {
   await autoAssign(tournamentId)
+
   await fetchTatami(tournamentId)
+}
+
+async function handleSubmit(payload: {
+  number: number
+  name: string
+}) {
+  try {
+    if (editingTatami.value) {
+      await updateTatami(
+        editingTatami.value.id,
+        payload,
+      )
+    } else {
+      await createTatami({
+        tournamentId,
+        ...payload,
+      })
+    }
+
+    showForm.value = false
+    editingTatami.value = null
+
+    await fetchTatami(tournamentId)
+  } catch (err) {
+    console.error(err)
+  }
 }
 </script>
 
@@ -111,7 +143,9 @@ async function handleAutoAssign() {
       v-if="showForm"
       :tournament-id="tournamentId"
       :tatami="editingTatami"
-      @saved="handleSaved"
+      :saving="saving"
+      :error="error"
+      @submit="handleSubmit"
       @close="showForm = false"
     />
   </div>

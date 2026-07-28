@@ -7,6 +7,9 @@ export interface Category {
   name: string
   ageGroup: string
 
+  minAge: number
+  maxAge: number
+
   gender: 'MALE' | 'FEMALE' | 'MIXED'
   discipline: 'KATA' | 'KUMITE' | 'TEAM_KATA' | 'TEAM_KUMITE'
 
@@ -37,6 +40,9 @@ export interface CategoryPayload {
 
   name: string
   ageGroup: string
+
+  minAge: number
+  maxAge: number
 
   gender: 'MALE' | 'FEMALE' | 'MIXED'
   discipline: 'KATA' | 'KUMITE' | 'TEAM_KATA' | 'TEAM_KUMITE'
@@ -79,7 +85,8 @@ export const useCategories = () => {
 
   async function createCategory(payload: CategoryPayload) {
     saving.value = true
-
+    console.log('PAYLOAD SENT:', JSON.stringify(payload, null, 2))
+    
     try {
       await api('/categories', {
         method: 'POST',
@@ -87,6 +94,9 @@ export const useCategories = () => {
       })
 
       await fetchCategories()
+    } catch (err: any) {
+      console.log(err.data) // <-- Add this
+      throw err
     } finally {
       saving.value = false
     }

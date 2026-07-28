@@ -108,22 +108,26 @@ export function useTatami() {
   }
 
   async function createTatami(payload: TatamiPayload) {
-    saving.value = true
-    error.value = null
+  saving.value = true
+  error.value = null
 
-    try {
-      await api('/tatami', {
-        method: 'POST',
-        body: payload,
-      })
+  try {
+    const created = await api<Tatami>('/tatami', {
+      method: 'POST',
+      body: payload,
+    })
 
-      await fetchTatami(payload.tournamentId)
+    rows.value.push(created)
+
+    return created
     } catch (err: any) {
       console.error(err)
+
       error.value =
         err?.data?.message ||
         err?.message ||
         'Failed to create tatami'
+
       throw err
     } finally {
       saving.value = false

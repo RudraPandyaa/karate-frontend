@@ -40,6 +40,8 @@ async function loadOrganizations() {
 onMounted(loadOrganizations)
 
 function submit() {
+  console.log(form)
+
   if (
     !form.name ||
     !form.location ||
@@ -47,8 +49,11 @@ function submit() {
     !form.endDate ||
     !form.organizationId
   ) {
+    console.log('Validation failed')
     return
   }
+
+  console.log('Submitting')
 
   emit('submit', {
     ...form,

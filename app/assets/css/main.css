@@ -24,6 +24,62 @@
   --text-muted: #9ca3af;
 }
 
+@layer base {
+  html,
+  body {
+    @apply bg-canvas text-foreground;
+  }
+
+  body {
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  input,
+  textarea,
+  select {
+    @apply border border-line bg-canvas text-foreground;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--text-muted);
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    @apply border-blue-500;
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(59 130 246 / 20%);
+  }
+
+  table {
+    @apply text-foreground;
+  }
+
+  th {
+    @apply text-foreground;
+  }
+
+  td {
+    @apply text-foreground;
+  }
+
+  label {
+    @apply text-foreground;
+  }
+
+  svg {
+    color: inherit;
+  }
+
+  a {
+    color: inherit;
+  }
+}
+
 @layer components {
   .card {
     @apply bg-surface border border-line rounded-xl shadow-sm;
@@ -38,7 +94,13 @@
     @apply text-muted;
   }
   .input {
-    @apply bg-surface border border-line text-foreground;
+    @apply w-full rounded-xl border border-line bg-canvas px-4 py-3 text-foreground outline-none transition;
+  }
+  .select {
+    @apply w-full rounded-xl border border-line bg-canvas px-4 py-3 text-foreground outline-none transition;
+  }
+  .input:focus {
+    @apply border-blue-500;
   }
   .btn-primary {
     @apply bg-primary hover:opacity-90 text-white;

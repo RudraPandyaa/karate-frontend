@@ -4,19 +4,20 @@ import type { Tatami } from '~/composables/useTatami'
 const props = defineProps<{
   tournamentId: string
   tatami: Tatami | null
+  saving: boolean
+  error: string | null
 }>()
 
 const emit = defineEmits<{
   saved: []
   close: []
+  submit: [
+    payload: {
+      number: number
+      name: string
+    }
+  ]
 }>()
-
-const {
-  createTatami,
-  updateTatami,
-  saving,
-  error,
-} = useTatami()
 
 const isEdit = computed(() => !!props.tatami)
 
@@ -33,28 +34,14 @@ watch(
       name: tatami?.name ?? '',
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
-async function onSubmit() {
-  try {
-    if (isEdit.value && props.tatami) {
-      await updateTatami(props.tatami.id, {
-        number: form.value.number,
-        name: form.value.name,
-      })
-    } else {
-      await createTatami({
-        tournamentId: props.tournamentId,
-        number: form.value.number,
-        name: form.value.name,
-      })
-    }
-
-    emit('saved')
-  } catch (err) {
-    console.error(err)
-  }
+function onSubmit() {
+  emit('submit', {
+    number: form.value.number,
+    name: form.value.name,
+  })
 }
 </script>
 

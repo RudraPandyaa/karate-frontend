@@ -15,12 +15,26 @@ const emit = defineEmits<{
   delete: [category: Category]
 }>()
 
-function formatWeight(min: number | null, max: number | null) {
-  if (min == null && max == null) return '—'
-  if (min != null && max == null) return `+${min}kg`
-  if (min == null && max != null) return `-${max}kg`
-  return `${min}–${max}kg`
+function formatWeight(category: Category) {
+  if (
+    category.discipline === 'KATA' ||
+    category.discipline === 'TEAM_KATA'
+  ) {
+    return '—'
+  }
+
+  if (category.weightMin == null && category.weightMax == null)
+    return 'Open'
+
+  if (category.weightMin == null)
+    return `-${category.weightMax} kg`
+
+  if (category.weightMax == null)
+    return `+${category.weightMin} kg`
+
+  return `${category.weightMin} – ${category.weightMax} kg`
 }
+
 </script>
 
 <template>
@@ -69,7 +83,7 @@ function formatWeight(min: number | null, max: number | null) {
             </td>
 
             <td class="px-6 py-4 text-muted">
-              {{ formatWeight(category.weightMin, category.weightMax) }}
+              {{ formatWeight(category) }}
             </td>
 
             <td class="px-6 py-4 text-muted">
