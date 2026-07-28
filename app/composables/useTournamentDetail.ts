@@ -28,17 +28,17 @@ export const useTournamentDetail = (tournamentId: string) => {
       const athletesCount = globalAthletes.value.length
 
       tournament.value = {
-        id: tData.id,
-        name: tData.name,
-        location: tData.location,
-        startDate: tData.startDate,
-        endDate: tData.endDate,
-        status: tData.status,
+        ...tData,
+
         displayStatus: deriveDisplayStatus(tData),
+
         categoriesCount: cData.length,
+
         matchesCount: mData.length,
-        // Add this line
+
         athletesCount: athletesCount,
+
+        tatamis: tData.tatamis || [],
       }
 
       matches.value = mData

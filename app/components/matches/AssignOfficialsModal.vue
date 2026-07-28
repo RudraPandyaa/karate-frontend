@@ -33,8 +33,10 @@ async function loadStaff() {
   loading.value = true
 
   try {
+    console.log(referees.value)
+    console.log(scorekeepers.value)
     referees.value = await api('/users?role=REFEREE')
-    scorekeepers.value = await api('/users?role=SCOREKEEPER')
+    scorekeepers.value = await api('/users?role=SCOREKEEPER')   
 
     form.refereeId = props.match?.referee?.id || ''
     form.scorekeeperId = props.match?.scorekeeper?.id || ''
