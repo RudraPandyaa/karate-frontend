@@ -88,21 +88,41 @@ const handleRegister = async () => {
           class="w-full bg-panel border border-line rounded-xl px-4 py-3 text-foreground"
         />
 
-        <button
-          v-if="password"
-          type="button"
-          @mousedown="showPassword = true"
-          @mouseup="showPassword = false"
-          @mouseleave="showPassword = false"
-          @touchstart.prevent="showPassword = true"
-          @touchend="showPassword = false"
-          class="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
-        >
-          <Eye class="w-5 h-5" />
-        </button>
+        <div class="relative">
+          <input
+            v-model="password"
+            :type="showPassword ? 'text' : 'password'"
+            placeholder="Password"
+            required
+            minlength="6"
+            class="w-full bg-panel border border-line rounded-xl px-4 py-3 pr-12 text-foreground"
+          />
 
-        <button
-            v-if="confirmPassword"
+          <button
+            v-if="password.length > 0"
+            type="button"
+            @mousedown="showPassword = true"
+            @mouseup="showPassword = false"
+            @mouseleave="showPassword = false"
+            @touchstart.prevent="showPassword = true"
+            @touchend="showPassword = false"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+          >
+            <Eye class="h-5 w-5" />
+          </button>
+        </div>
+
+        <div class="relative">
+          <input
+            v-model="confirmPassword"
+            :type="showConfirmPassword ? 'text' : 'password'"
+            placeholder="Confirm Password"
+            required
+            class="w-full bg-panel border border-line rounded-xl px-4 py-3 pr-12 text-foreground"
+          />
+
+          <button
+            v-if="confirmPassword.length > 0"
             type="button"
             @mousedown="showConfirmPassword = true"
             @mouseup="showConfirmPassword = false"
@@ -111,8 +131,9 @@ const handleRegister = async () => {
             @touchend="showConfirmPassword = false"
             class="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
           >
-            <Eye class="w-5 h-5" />
+            <Eye class="h-5 w-5" />
           </button>
+        </div>
 
         <p
           v-if="error"
