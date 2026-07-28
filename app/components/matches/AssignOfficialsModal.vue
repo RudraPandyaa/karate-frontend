@@ -31,16 +31,20 @@ const form = reactive({
 
 async function loadStaff() {
   loading.value = true
+  error.value = ''
 
   try {
-    console.log(referees.value)
-    console.log(scorekeepers.value)
-    referees.value = await api('/users?role=REFEREE')
-    scorekeepers.value = await api('/users?role=SCOREKEEPER')   
+    // const refResponse = await api('/users/by-role/REFEREE')
+    // const scoreResponse = await api('/users/by-role/SCOREKEEPER')
+    const users = await api('/users')
 
+    referees.value = users
+    scorekeepers.value = users
     form.refereeId = props.match?.referee?.id || ''
     form.scorekeeperId = props.match?.scorekeeper?.id || ''
   } catch (err: any) {
+    console.error('LOAD STAFF ERROR', err)
+
     error.value =
       err?.data?.message ||
       err?.message ||
