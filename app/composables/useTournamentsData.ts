@@ -30,18 +30,17 @@ export function useTournamentsData() {
     error.value = null
     try {
       const data = await api<RawTournamentListItem[]>('/tournaments')
-
       rows.value = data.map((t): TournamentRow => ({
         id: t.id,
         name: t.name,
-        subtitle: t.location, // no dedicated subtitle field in schema
+        subtitle: t.location,
         location: t.location,
         startDate: t.startDate,
         endDate: t.endDate,
         status: t.status,
         displayStatus: deriveDisplayStatus(t),
         categoriesCount: t._count?.categories ?? 0,
-        athletesCount: 0, // no athlete count on this endpoint yet — see note below
+        athletesCount: t.athletesCount ?? 0,
       }))
 
       stats.value = {

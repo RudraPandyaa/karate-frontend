@@ -173,6 +173,7 @@ export interface RawTournamentListItem {
     categories: number
     tatamis: number
   }
+  athletesCount: number
 }
 
 export type TournamentDisplayStatus = 'UPCOMING' | 'LIVE' | 'DRAFT' | 'COMPLETED' | 'CANCELLED'
