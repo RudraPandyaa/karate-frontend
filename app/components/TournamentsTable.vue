@@ -14,18 +14,18 @@ const emit = defineEmits<{
   (e: 'edit', tournament: TournamentRow): void
 }>()
 
-const filteredRows = computed(() => {
-  const keyword = props.search.trim().toLowerCase()
-  if (!keyword) return props.rows
+// const filteredRows = computed(() => {
+//   const keyword = props.search.trim().toLowerCase()
+//   if (!keyword) return props.rows
 
-  return props.rows.filter((tournament) => {
-    return (
-      (tournament.name ?? '').toLowerCase().includes(keyword) ||
-      (tournament.location ?? '').toLowerCase().includes(keyword) ||
-      (tournament.subtitle ?? '').toLowerCase().includes(keyword)
-    )
-  })
-})
+//   return props.rows.filter((tournament) => {
+//     return (
+//       (tournament.name ?? '').toLowerCase().includes(keyword) ||
+//       (tournament.location ?? '').toLowerCase().includes(keyword) ||
+//       (tournament.subtitle ?? '').toLowerCase().includes(keyword)
+//     )
+//   })
+// })
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString('en-GB', {
@@ -39,7 +39,7 @@ function formatDate(date: string) {
 <template>
   <div class="overflow-hidden rounded-3xl border border-line bg-panel">
     <!-- Empty State -->
-    <div v-if="filteredRows.length === 0" class="py-20 text-center">
+    <div v-if="props.rows.length === 0" class="py-20 text-center">
       <h3 class="text-lg font-semibold text-foreground">No tournaments found</h3>
       <p class="mt-2 text-muted">Try another search or create a new tournament.</p>
     </div>
@@ -58,7 +58,7 @@ function formatDate(date: string) {
       </thead>
       <tbody>
         <tr
-          v-for="tournament in filteredRows"
+          v-for="tournament in props.rows"
           :key="tournament.id"
           class="border-b border-line transition hover:bg-surface/50"
         >

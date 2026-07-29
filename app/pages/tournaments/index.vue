@@ -22,8 +22,24 @@ const showFilterMenu = ref(false)
 const statusFilter = ref<string | null>(null)
 
 const filteredRows = computed(() => {
-  if (!statusFilter.value) return rows.value
-  return rows.value.filter((t: any) => t.status === statusFilter.value)
+  let filtered = rows.value
+
+  if (statusFilter.value) {
+    filtered = filtered.filter(
+      t => t.displayStatus === statusFilter.value
+    )
+  }
+
+  if (search.value.trim()) {
+    const keyword = search.value.toLowerCase()
+
+    filtered = filtered.filter(t =>
+      t.name.toLowerCase().includes(keyword) ||
+      t.location.toLowerCase().includes(keyword)
+    )
+  }
+
+  return filtered
 })
 
 onMounted(async () => {
@@ -163,6 +179,12 @@ function exportToCsv() {
             @click="statusFilter = 'ONGOING'; showFilterMenu = false"
           >
             Ongoing
+          </button>
+          <button
+            class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
+            @click="statusFilter = 'UPCOMING'; showFilterMenu = false"
+          >
+            Upcoming
           </button>
           <button
             class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
