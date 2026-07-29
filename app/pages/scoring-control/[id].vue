@@ -24,20 +24,11 @@ const {
 const lastScoreEventId =
   ref<string | null>(null)
 
-async function handleScore(
+function handleScore(
   corner: 'RED' | 'BLUE',
   type: 'YUKO' | 'WAZA_ARI' | 'IPPON',
 ) {
-  const result: any =
-    await recordScore(corner, type)
-
-  const events =
-    result?.scoreEvents
-
-  if (events?.length) {
-    lastScoreEventId.value =
-      events[events.length - 1].id
-  }
+  recordScore(corner, type)
 }
 
 async function handleUndoLast() {

@@ -82,18 +82,20 @@ export function useScoringAdmin(matchId: string) {
     })
 
     socket.on('scoreUpdated', (data: any) => {
-      console.log('scoreUpdated:', data)
-
       if (!match.value) return
 
-      if (data.match) {
-        match.value = {
-          ...match.value,
-          ...data.match,
-        }
+      match.value = {
+        ...match.value,
+        ...data.match,
       }
 
-      showNotification('Score updated')
+      // Save last score event for Undo
+      if (data.exchange?.length) {
+        lastScoreEventId.value =
+          data.exchange[data.exchange.length - 1].id
+      }
+
+      showNotification('Score updated', 'success')
     })
 
   socket.on('timerStarted', () => {
@@ -172,41 +174,21 @@ export function useScoringAdmin(matchId: string) {
     socket = null
   }
 
-  async function recordScore(
+  function recordScore(
     corner: 'RED' | 'BLUE',
     type: ScoreTypeValue,
   ) {
-    submitting.value = true
     submitError.value = null
 
-    try {
-      const result = await api(
-        '/scoring/exchange',
+    socket?.emit('recordExchange', {
+      matchId,
+      entries: [
         {
-          method: 'POST',
-          body: {
-            matchId,
-            entries: [
-              {
-                corner,
-                type,
-              },
-            ],
-          },
+          corner,
+          type,
         },
-      )
-
-      return result
-    } catch (err: any) {
-      submitError.value =
-        err?.data?.message ||
-        err?.message ||
-        'Failed to record score'
-
-      throw err
-    } finally {
-      submitting.value = false
-    }
+      ],
+    })
   }
 
   async function undoScore(
