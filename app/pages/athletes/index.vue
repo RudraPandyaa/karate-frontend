@@ -47,6 +47,7 @@ function openCreateModal() {
 }
 
 function openEditModal(athlete: Athlete) {
+  console.log('Selected athlete:', athlete)
   selectedAthlete.value = athlete
   showAthleteModal.value = true
 }
@@ -77,63 +78,69 @@ async function saveAthlete(payload: {
   modalLoading.value = true
 
   try {
-    const {
-      athlete,
-      photoFile,
-    } = payload
+    const { athlete, photoFile } = payload
+
+    // Map frontend form → backend DTO
+    const dto: any = {
+      firstName: athlete.firstName,
+      middleName: athlete.middleName || undefined,
+      lastName: athlete.lastName,
+      gender: athlete.gender,
+      dateOfBirth: athlete.dateOfBirth,
+      bloodGroup: athlete.bloodGroup || undefined,
+      disability: athlete.disability || undefined,
+      phone: athlete.phone || undefined,
+      email: athlete.email || undefined,
+      address: athlete.address || undefined,
+      city: athlete.city || undefined,
+      state: athlete.state,
+      postalCode: athlete.postalCode || undefined,
+      country: athlete.country || 'IND',
+      guardianName: athlete.guardianName || undefined,
+      emergencyContact: athlete.emergencyContact || undefined,
+      emergencyPhone: athlete.emergencyPhone || undefined,
+      style: athlete.style || undefined,
+      currentRank: athlete.currentRank || undefined,
+      federationId: athlete.federationId || undefined,
+      dojoId: athlete.dojoId || undefined,
+      coachId: athlete.coachId || undefined,
+    }
 
     let savedAthlete: any
 
     if (selectedAthlete.value?.id) {
-      // Update existing athlete
-      savedAthlete = await updateAthlete(
-        selectedAthlete.value.id,
-        {
-          name: athlete.name,
-          state: athlete.state,
-          country: athlete.country,
-        }
-      )
+      // UPDATE
+      savedAthlete = await updateAthlete(selectedAthlete.value.id, dto)
     } else {
-      // Create athlete
-      savedAthlete = await createAthlete({
-        name: athlete.name,
-        state: athlete.state,
-        country: athlete.country,
-      })
+      // CREATE
+      savedAthlete = await createAthlete(dto)
     }
 
-    // Upload photo
+    // Upload photo (if selected)
     if (photoFile && savedAthlete?.id) {
-      await uploadPhoto(
-        savedAthlete.id,
-        photoFile
-      )
+      await uploadPhoto(savedAthlete.id, photoFile)
     }
 
-    // Enroll athlete into category
-    if (
-      athlete.categoryId &&
-      savedAthlete?.id
-    ) {
-      await enrollAthlete(
-        savedAthlete.id,
-        {
+    // Enroll into category (if selected)
+    if (athlete.categoryId && savedAthlete?.id) {
+      try {
+        await enrollAthlete(savedAthlete.id, {
           categoryId: athlete.categoryId,
-        }
-      )
+        })
+      } catch (enrollErr: any) {
+        // Ignore "already enrolled" error on edit
+        console.warn('Enrollment:', enrollErr?.data?.message || enrollErr.message)
+      }
     }
 
     await fetchAthletes()
-
     closeModal()
 
   } catch (err: any) {
     console.error(err)
-
     alert(
       err?.data?.message ||
-      err.message ||
+      err?.message ||
       'Failed to save athlete'
     )
   } finally {
@@ -204,7 +211,7 @@ async function removeAthlete() {
     <DeleteAthleteModal
       :open="showDeleteModal"
       :loading="deleteLoading"
-      :athlete-name="selectedAthlete?.name"
+      :athlete-name="selectedAthlete?.fullName || `${selectedAthlete?.firstName || ''} ${selectedAthlete?.lastName || ''}`.trim()"
       @close="closeDeleteModal"
       @delete="removeAthlete"
     />

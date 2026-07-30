@@ -14,7 +14,7 @@ const props = defineProps<{
   categories: any[]
   athletes: any[]
   tatamis?: any[]
-  matchToEdit?: Match |null
+  matchToEdit?: Match | null
 }>()
 
 const { athletes, categories, tatamis } = toRefs(props)
@@ -42,6 +42,13 @@ const roundOptions: MatchRound[] = [
   'BRONZE_MEDAL',
 ]
 
+const statusOptions: MatchStatus[] = [
+  'SCHEDULED',
+  'IN_PROGRESS',
+  'COMPLETED',
+  'CANCELLED',
+] as MatchStatus[]
+
 const form = ref<CreateMatchPayload>({
   categoryId: '',
   tatamiId: '',
@@ -55,9 +62,41 @@ const editingId = ref<string | null>(null)
 const saving = ref(false)
 const formError = ref('')
 
+/* -----------------------------
+ * Athlete Lists
+ * ----------------------------- */
+
 const safeAthletes = computed(() =>
   Array.isArray(athletes.value) ? athletes.value : []
 )
+
+const safeCategories = computed(() =>
+  Array.isArray(categories.value) ? categories.value : []
+)
+
+const safeTatamis = computed(() =>
+  Array.isArray(tatamis.value) ? tatamis.value : []
+)
+
+/**
+ * Prevent selecting the same athlete
+ * in both AKA and AO corners.
+ */
+const redAthletes = computed(() =>
+  safeAthletes.value.filter(
+    athlete => athlete.id !== form.value.blueAthleteId
+  )
+)
+
+const blueAthletes = computed(() =>
+  safeAthletes.value.filter(
+    athlete => athlete.id !== form.value.redAthleteId
+  )
+)
+
+/* -----------------------------
+ * Selected Athletes
+ * ----------------------------- */
 
 const selectedRedAthlete = computed(() =>
   safeAthletes.value.find(
@@ -71,12 +110,16 @@ const selectedBlueAthlete = computed(() =>
   )
 )
 
+/* -----------------------------
+ * Helpers
+ * ----------------------------- */
+
 function resetForm() {
   form.value = {
     categoryId: '',
     tatamiId: '',
     round: 'ROUND_1',
-    status: 'SCHEDULED',
+    status: 'SCHEDULED' as MatchStatus,
     redAthleteId: '',
     blueAthleteId: '',
   }
@@ -102,6 +145,10 @@ function openEdit(match: Match) {
   }
 }
 
+/**
+ * Automatically load match data
+ * when editing.
+ */
 watch(
   () => props.matchToEdit,
   match => {
@@ -116,21 +163,43 @@ watch(
   }
 )
 
+/**
+ * Convert a country code (IN, JP, FR...)
+ * into an emoji flag. Falls back to an empty
+ * string for missing/invalid codes so we never
+ * render mojibake for undefined values.
+ */
+function countryFlag(code?: string) {
+  if (!code || code.length !== 2) return ''
+
+  return code
+    .toUpperCase()
+    .replace(/./g, char =>
+      String.fromCodePoint(127397 + char.charCodeAt(0))
+    )
+}
+
+/* -----------------------------
+ * Submit Form
+ * ----------------------------- */
+
 async function submit() {
   formError.value = ''
 
+  // Required category
   if (!form.value.categoryId) {
     formError.value = 'Please select a category.'
     return
   }
 
+  // Prevent same athlete in both corners
   if (
     form.value.redAthleteId &&
     form.value.blueAthleteId &&
     form.value.redAthleteId === form.value.blueAthleteId
   ) {
     formError.value =
-      'Red and Blue athletes must be different.'
+      'AKA (Red) and AO (Blue) athletes must be different.'
     return
   }
 
@@ -142,10 +211,13 @@ async function submit() {
       tatamiId: form.value.tatamiId || undefined,
       round: form.value.round,
       status: form.value.status,
+
       redAthleteId: form.value.redAthleteId || undefined,
       blueAthleteId: form.value.blueAthleteId || undefined,
+
       refereeId: form.value.refereeId || undefined,
       scorekeeperId: form.value.scorekeeperId || undefined,
+
       bracketSlot: form.value.bracketSlot,
       timerSeconds: form.value.timerSeconds,
     }
@@ -162,13 +234,15 @@ async function submit() {
     emit('close')
   } catch (err: any) {
     formError.value =
-      err?.data?.message ||
-      err?.message ||
-      'Failed to save match.'
+      err?.data?.message || err?.message || 'Failed to save match.'
   } finally {
     saving.value = false
   }
 }
+
+/* -----------------------------
+ * Expose
+ * ----------------------------- */
 
 defineExpose({
   resetForm,
@@ -176,252 +250,209 @@ defineExpose({
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-    <div class="w-full max-w-2xl overflow-hidden rounded-3xl border border-line bg-panel">
-
-      <!-- Header -->
-      <div class="flex items-center justify-between border-b border-line px-6 py-5">
-        <h2 class="text-xl font-semibold text-foreground">
-          {{ editingId ? 'Edit Match' : 'Create New Match' }}
-        </h2>
-
-        <button
-          class="text-muted transition hover:text-foreground"
-          @click="$emit('close')"
+  <div class="grid gap-6 md:grid-cols-2">
+    <!-- Category -->
+    <div>
+      <label class="mb-1 block text-sm text-gray-400">Category</label>
+      <select
+        v-model="form.categoryId"
+        class="w-full rounded-xl border border-gray-600 bg-surface px-4 py-3 focus:border-primary-500"
+      >
+        <option value="">Select category</option>
+        <option
+          v-for="category in safeCategories"
+          :key="category.id"
+          :value="category.id"
         >
-          ✕
-        </button>
-      </div>
+          {{ category.name }}
+        </option>
+      </select>
+    </div>
 
-      <!-- Body -->
-      <div class="space-y-6 p-6">
-
-        <div
-          v-if="formError"
-          class="rounded-xl border border-red-700 bg-red-950/60 px-4 py-3 text-sm text-red-300"
+    <!-- Tatami -->
+    <div>
+      <label class="mb-1 block text-sm text-gray-400">Tatami</label>
+      <select
+        v-model="form.tatamiId"
+        class="w-full rounded-xl border border-gray-600 bg-surface px-4 py-3 focus:border-primary-500"
+      >
+        <option value="">Select tatami</option>
+        <option
+          v-for="tatami in safeTatamis"
+          :key="tatami.id"
+          :value="tatami.id"
         >
-          {{ formError }}
+          {{ tatami.name }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Round -->
+    <div>
+      <label class="mb-1 block text-sm text-gray-400">Round</label>
+      <select
+        v-model="form.round"
+        class="w-full rounded-xl border border-gray-600 bg-surface px-4 py-3 focus:border-primary-500"
+      >
+        <option v-for="round in roundOptions" :key="round" :value="round">
+          {{ round }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Status -->
+    <div>
+      <label class="mb-1 block text-sm text-gray-400">Status</label>
+      <select
+        v-model="form.status"
+        class="w-full rounded-xl border border-gray-600 bg-surface px-4 py-3 focus:border-primary-500"
+      >
+        <option v-for="status in statusOptions" :key="status" :value="status">
+          {{ status }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Athlete Selection -->
+    <div class="col-span-2 grid gap-6 md:grid-cols-2">
+      <!-- RED CORNER -->
+      <div class="rounded-2xl border border-red-600/40 bg-red-950/20 p-4">
+        <div class="mb-3 flex items-center justify-between">
+          <h3 class="font-semibold text-red-400">AKA (Red)</h3>
+
+          <button
+            v-if="form.redAthleteId"
+            type="button"
+            class="text-xs text-red-300 hover:text-red-200"
+            @click="form.redAthleteId = ''"
+          >
+            Clear
+          </button>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-
-          <!-- Category -->
-          <div>
-            <label class="mb-1 block text-xs text-foreground/50">
-              Category
-            </label>
-
-            <select
-              v-model="form.categoryId"
-              class="w-full rounded-xl border border-line bg-surface px-4 py-3"
-            >
-              <option value="">
-                Select category
-              </option>
-
-              <option
-                v-for="category in categories"
-                :key="category.id"
-                :value="category.id"
-              >
-                {{ category.name }}
-              </option>
-
-            </select>
+        <!-- Preview -->
+        <div class="mb-4 flex items-center gap-3">
+          <img
+            v-if="selectedRedAthlete?.photoUrl"
+            :src="selectedRedAthlete.photoUrl"
+            class="h-14 w-14 rounded-full border border-red-600 object-cover"
+          >
+          <div
+            v-else
+            class="flex h-14 w-14 items-center justify-center rounded-full bg-red-900 text-xl"
+          >
+            👤
           </div>
 
-          <!-- Tatami -->
           <div>
-            <label class="mb-1 block text-xs text-foreground/50">
-              Tatami
-            </label>
+            <div class="font-medium">
+              {{ selectedRedAthlete?.name || 'No athlete selected' }}
+            </div>
 
-            <select
-              v-model="form.tatamiId"
-              class="w-full rounded-xl border border-line bg-surface px-4 py-3"
-            >
-              <option value="">
-                Unassigned
-              </option>
-
-              <option
-                v-for="tatami in tatamis"
-                :key="tatami.id"
-                :value="tatami.id"
-              >
-                Tatami {{ tatami.number }}
-              </option>
-
-            </select>
-          </div>
-
-          <!-- Round -->
-          <div>
-            <label class="mb-1 block text-xs text-foreground/50">
-              Round
-            </label>
-
-            <select
-              v-model="form.round"
-              class="w-full rounded-xl border border-line bg-surface px-4 py-3"
-            >
-
-              <option
-                v-for="round in roundOptions"
-                :key="round"
-                :value="round"
-              >
-                {{ round.replaceAll('_', ' ') }}
-              </option>
-
-            </select>
-          </div>
-
-          <!-- Status -->
-          <div>
-            <label class="mb-1 block text-xs text-foreground/50">
-              Status
-            </label>
-
-            <select
-              v-model="form.status"
-              class="w-full rounded-xl border border-line bg-surface px-4 py-3"
-            >
-              <option value="SCHEDULED">
-                Scheduled
-              </option>
-
-              <option value="IN_PROGRESS">
-                In Progress
-              </option>
-
-              <option value="PAUSED">
-                Paused
-              </option>
-
-              <option value="COMPLETED">
-                Completed
-              </option>
-
-            </select>
-          </div>
-
-          <!-- Red Athlete -->
-          <div>
-            <label class="mb-1 block text-xs text-foreground/50">
-              Red Corner Athlete
-            </label>
-
-            <div class="flex items-center gap-3">
-
-              <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-line bg-surface">
-
-                <img
-                  v-if="selectedRedAthlete?.photoUrl"
-                  :src="selectedRedAthlete.photoUrl"
-                  class="h-full w-full object-cover"
-                >
-
-                <div
-                  v-else
-                  class="text-xs text-muted"
-                >
-                  —
-                </div>
-
-              </div>
-
-              <select
-                v-model="form.redAthleteId"
-                class="flex-1 rounded-xl border border-line bg-surface px-4 py-3"
-              >
-                <option value="">
-                  TBD
-                </option>
-
-                <option
-                  v-for="athlete in safeAthletes"
-                  :key="athlete.id"
-                  :value="athlete.id"
-                >
-                  {{ athlete.name }}
-                </option>
-
-              </select>
-
+            <div class="text-sm text-gray-400">
+              {{ countryFlag(selectedRedAthlete?.country) }}
+              {{ selectedRedAthlete?.country }}
             </div>
           </div>
-
-          <!-- Blue Athlete -->
-          <div>
-            <label class="mb-1 block text-xs text-foreground/50">
-              Blue Corner Athlete
-            </label>
-
-            <div class="flex items-center gap-3">
-
-              <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-line bg-surface">
-
-                <img
-                  v-if="selectedBlueAthlete?.photoUrl"
-                  :src="selectedBlueAthlete.photoUrl"
-                  class="h-full w-full object-cover"
-                >
-
-                <div
-                  v-else
-                  class="text-xs text-muted"
-                >
-                  —
-                </div>
-
-              </div>
-
-              <select
-                v-model="form.blueAthleteId"
-                class="flex-1 rounded-xl border border-line bg-surface px-4 py-3"
-              >
-                <option value="">
-                  TBD
-                </option>
-
-                <option
-                  v-for="athlete in safeAthletes"
-                  :key="athlete.id"
-                  :value="athlete.id"
-                >
-                  {{ athlete.name }}
-                </option>
-
-              </select>
-
-            </div>
-          </div>
-
         </div>
 
+        <!-- Select -->
+        <select
+          v-model="form.redAthleteId"
+          class="w-full rounded-xl border border-red-600 bg-surface px-4 py-3 focus:border-red-500"
+        >
+          <option value="">Select AKA Athlete</option>
+          <option
+            v-for="athlete in redAthletes"
+            :key="athlete.id"
+            :value="athlete.id"
+          >
+            {{ athlete.name }} {{ countryFlag(athlete.country) }}
+          </option>
+        </select>
       </div>
 
-      <!-- Footer -->
-      <div class="flex justify-end gap-3 border-t border-line px-6 py-5">
+      <!-- BLUE CORNER -->
+      <div class="rounded-2xl border border-blue-600/40 bg-blue-950/20 p-4">
+        <div class="mb-3 flex items-center justify-between">
+          <h3 class="font-semibold text-blue-400">AO (Blue)</h3>
 
-        <button
-          class="rounded-2xl bg-surface px-6 py-3 font-medium transition hover:bg-surface-hover"
-          @click="$emit('close')"
+          <button
+            v-if="form.blueAthleteId"
+            type="button"
+            class="text-xs text-blue-300 hover:text-blue-200"
+            @click="form.blueAthleteId = ''"
+          >
+            Clear
+          </button>
+        </div>
+
+        <!-- Preview -->
+        <div class="mb-4 flex items-center gap-3">
+          <img
+            v-if="selectedBlueAthlete?.photoUrl"
+            :src="selectedBlueAthlete.photoUrl"
+            class="h-14 w-14 rounded-full border border-blue-600 object-cover"
+          >
+          <div
+            v-else
+            class="flex h-14 w-14 items-center justify-center rounded-full bg-blue-900 text-xl"
+          >
+            👤
+          </div>
+
+          <div>
+            <div class="font-medium">
+              {{ selectedBlueAthlete?.name || 'No athlete selected' }}
+            </div>
+
+            <div class="text-sm text-gray-400">
+              {{ countryFlag(selectedBlueAthlete?.country) }}
+              {{ selectedBlueAthlete?.country }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Select -->
+        <select
+          v-model="form.blueAthleteId"
+          class="w-full rounded-xl border border-blue-600 bg-surface px-4 py-3 focus:border-blue-500"
         >
-          Cancel
-        </button>
-
-        <button
-          :disabled="saving"
-          class="rounded-2xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50"
-          @click="submit"
-        >
-          {{ saving ? 'Saving...' : editingId ? 'Save Changes' : 'Create Match' }}
-        </button>
-
+          <option value="">Select AO Athlete</option>
+          <option
+            v-for="athlete in blueAthletes"
+            :key="athlete.id"
+            :value="athlete.id"
+          >
+            {{ athlete.name }} {{ countryFlag(athlete.country) }}
+          </option>
+        </select>
       </div>
+    </div>
 
+    <!-- Error -->
+    <p v-if="formError" class="col-span-2 text-sm text-red-400">
+      {{ formError }}
+    </p>
+
+    <!-- Actions -->
+    <div class="col-span-2 flex justify-end gap-3">
+      <button
+        type="button"
+        class="rounded-xl border border-gray-600 px-4 py-2 text-gray-300 hover:bg-gray-800"
+        @click="emit('close')"
+      >
+        Cancel
+      </button>
+
+      <button
+        type="button"
+        :disabled="saving"
+        class="rounded-xl bg-primary-600 px-4 py-2 font-medium text-white hover:bg-primary-500 disabled:opacity-50"
+        @click="submit"
+      >
+        {{ saving ? 'Saving…' : editingId ? 'Update Match' : 'Create Match' }}
+      </button>
     </div>
   </div>
 </template>

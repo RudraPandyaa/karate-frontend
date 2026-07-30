@@ -1,13 +1,32 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { X, Save, Loader2, Upload, Trash2 } from 'lucide-vue-next'
-import type { Category } from '~/composables/useCategories'
-
-interface Athlete {
+import CountryFlag from 'vue-country-flag-next'
+import { COUNTRIES, COUNTRY_CODE_MAP } from '~/utils/countries'
+interface AthleteForm {
   id?: string
-  name: string
+  firstName: string
+  middleName?: string
+  lastName: string
+  gender: 'MALE' | 'FEMALE' | 'MIXED' | ''
+  dateOfBirth: string
+  bloodGroup?: string
+  disability?: string
+  phone?: string
+  email?: string
+  address?: string
+  city?: string
   state: string
+  postalCode?: string
   country: string
+  guardianName?: string
+  emergencyContact?: string
+  emergencyPhone?: string
+  style?: string
+  currentRank?: string
+  federationId?: string
+  dojoId?: string
+  coachId?: string
   photoUrl?: string | null
   categoryId?: string
 }
@@ -15,57 +34,139 @@ interface Athlete {
 const props = defineProps<{
   open: boolean
   loading?: boolean
-  athlete?: Athlete | null
-  categories: Category[]
+  athlete?: any | null
+  categories: any[]
+  dojos?: any[]
+  coaches?: any[]
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (
-    e: 'save',
-    payload: {
-      athlete: Athlete
-      photoFile?: File
-    }
-  ): void
+  (e: 'save', payload: { athlete: AthleteForm; photoFile?: File }): void
 }>()
 
-const form = ref<Athlete>({
-  name: '',
-  state: '',
-  country: 'IND',
-  categoryId: '',
-  photoUrl: null,
-})
-
+const form = ref<AthleteForm>(getEmptyForm())
 const previewUrl = ref<string | null>(null)
 const selectedFile = ref<File | null>(null)
-const errors = ref({ name: '', state: '' })
+const errors = ref<Record<string, string>>({})
 
-const isEdit = computed(() => !!props.athlete)
+const isEdit = computed(() => !!props.athlete?.id)
 
-// Watch for modal open
+const age = computed(() => {
+  if (!form.value.dateOfBirth) return null
+  const today = new Date()
+  const dob = new Date(form.value.dateOfBirth)
+  let a = today.getFullYear() - dob.getFullYear()
+  const m = today.getMonth() - dob.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) a--
+  return a
+})
+
+const isMinor = computed(() => age.value !== null && age.value < 18)
+
+const karateStyles = [
+  { value: 'SHITO_RYU', label: 'Shito-Ryu' },
+  { value: 'SHOTO_KAN', label: 'Shotokan' },
+  { value: 'GOJU_RYU', label: 'Goju-Ryu' },
+  { value: 'WADO_RYU', label: 'Wado-Ryu' },
+  { value: 'KYOKUSHIN', label: 'Kyokushin' },
+  { value: 'UECHI_RYU', label: 'Uechi-Ryu' },
+  { value: 'OTHER', label: 'Other' },
+]
+
+const karateRanks = [
+  'WHITE', 'YELLOW', 'ORANGE', 'GREEN', 'BLUE', 'PURPLE', 'BROWN',
+  'BLACK_1_DAN', 'BLACK_2_DAN', 'BLACK_3_DAN', 'BLACK_4_DAN', 'BLACK_5_DAN',
+  'BLACK_6_DAN', 'BLACK_7_DAN', 'BLACK_8_DAN', 'BLACK_9_DAN', 'BLACK_10_DAN',
+]
+
+const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+
+// Watch country change → update phone prefix
+watch(() => form.value.country, (newCountry) => {
+  const selected = COUNTRIES.find(c => c.code === newCountry)
+  if (!selected) return
+
+  const currentPhone = form.value.phone || ''
+
+  // Remove any existing +xx prefix
+  const phoneWithoutCode = currentPhone.replace(/^\+\d+\s*/, '').trim()
+
+  // Set new prefix
+  form.value.phone = `${selected.phoneCode} ${phoneWithoutCode}`.trim()
+})
+
+function getEmptyForm(): AthleteForm {
+  return {
+    firstName: '',
+    middleName: '',
+    lastName: '',
+    gender: '',
+    dateOfBirth: '',
+    bloodGroup: '',
+    disability: '',
+    phone: '',
+    email: '',
+    address: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: 'IND',
+    guardianName: '',
+    emergencyContact: '',
+    emergencyPhone: '',
+    style: '',
+    currentRank: '',
+    federationId: '',
+    dojoId: '',
+    coachId: '',
+    photoUrl: null,
+    categoryId: '',
+  }
+}
+
 watch(() => props.open, (value) => {
   if (!value) return
 
   if (props.athlete) {
     form.value = {
       id: props.athlete.id,
-      name: props.athlete.name,
-      state: props.athlete.state,
+      firstName: props.athlete.firstName || '',
+      middleName: props.athlete.middleName || '',
+      lastName: props.athlete.lastName || '',
+      gender: props.athlete.gender || '',
+      dateOfBirth: props.athlete.dateOfBirth
+        ? props.athlete.dateOfBirth.substring(0, 10)
+        : '',
+      bloodGroup: props.athlete.bloodGroup || '',
+      disability: props.athlete.disability || '',
+      phone: props.athlete.phone || '',
+      email: props.athlete.email || '',
+      address: props.athlete.address || '',
+      city: props.athlete.city || '',
+      state: props.athlete.state || '',
+      postalCode: props.athlete.postalCode || '',
       country: props.athlete.country || 'IND',
-      categoryId: props.athlete.categoryId || '',
+      guardianName: props.athlete.guardianName || '',
+      emergencyContact: props.athlete.emergencyContact || '',
+      emergencyPhone: props.athlete.emergencyPhone || '',
+      style: props.athlete.style || '',
+      currentRank: props.athlete.currentRank || '',
+      federationId: props.athlete.federationId || '',
+      dojoId: props.athlete.dojoId || props.athlete.dojo?.id || '',
+      coachId: props.athlete.coachId || props.athlete.coach?.id || '',
       photoUrl: props.athlete.photoUrl || null,
+      categoryId: props.athlete.categoryId || '',
     }
     previewUrl.value = props.athlete.photoUrl || null
   } else {
     resetForm()
   }
-  errors.value = { name: '', state: '' }
+  errors.value = {}
 }, { immediate: true })
 
 function resetForm() {
-  form.value = { name: '', state: '', country: 'IND',  categoryId: '', photoUrl: null }
+  form.value = getEmptyForm()
   previewUrl.value = null
   selectedFile.value = null
 }
@@ -74,12 +175,10 @@ function onFileSelect(e: Event) {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0]
   if (!file) return
-
   if (!file.type.startsWith('image/')) {
     alert('Please select an image file')
     return
   }
-
   selectedFile.value = file
   previewUrl.value = URL.createObjectURL(file)
 }
@@ -91,29 +190,54 @@ function removePhoto() {
 }
 
 function validate() {
-  errors.value.name = ''
-  errors.value.state = ''
+  errors.value = {}
   let valid = true
 
-  if (!form.value.name.trim()) {
-    errors.value.name = 'Athlete name is required'
+  if (!form.value.firstName.trim()) {
+    errors.value.firstName = 'First name is required'
+    valid = false
+  }
+  if (!form.value.lastName.trim()) {
+    errors.value.lastName = 'Last name is required'
+    valid = false
+  }
+  if (!form.value.gender) {
+    errors.value.gender = 'Gender is required'
+    valid = false
+  }
+  if (!form.value.dateOfBirth) {
+    errors.value.dateOfBirth = 'Date of birth is required'
     valid = false
   }
   if (!form.value.state.trim()) {
     errors.value.state = 'State is required'
     valid = false
   }
+
+  if (isMinor.value && !form.value.guardianName?.trim()) {
+    errors.value.guardianName = 'Guardian name is required for minors'
+    valid = false
+  }
+
   return valid
 }
 
 function submit() {
   if (!validate()) return
-
   emit('save', {
-    athlete: form.value,
-    photoFile: selectedFile.value || undefined
+    athlete: { ...form.value },
+    photoFile: selectedFile.value || undefined,
   })
 }
+watch(
+  () => props.athlete,
+  (athlete) => {
+    console.log('Athlete =', athlete)
+    console.log('country =', athlete?.country)
+    console.log('keys =', Object.keys(athlete ?? {}))
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -126,16 +250,19 @@ function submit() {
       leave-from-class="opacity-100"
       leave-to-class="opacity-0"
     >
-      <div v-if="open" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="w-full max-w-lg rounded-3xl border border-line bg-panel shadow-2xl">
+      <div
+        v-if="open"
+        class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+      >
+        <div class="w-full max-w-3xl rounded-3xl border border-line bg-panel shadow-2xl my-8">
           <!-- Header -->
-          <div class="flex items-center justify-between border-b border-line px-6 py-5">
+          <div class="flex items-center justify-between border-b border-line px-6 py-5 sticky top-0 bg-panel z-10 rounded-t-3xl">
             <div>
               <h2 class="text-xl font-bold text-foreground">
                 {{ isEdit ? 'Edit Athlete' : 'Register Athlete' }}
               </h2>
               <p class="mt-1 text-sm text-muted">
-                {{ isEdit ? 'Update athlete information' : 'Create a new athlete' }}
+                {{ isEdit ? 'Update athlete information' : 'Create a new athlete profile' }}
               </p>
             </div>
             <button @click="emit('close')" class="rounded-lg p-2 hover:bg-surface transition">
@@ -144,29 +271,24 @@ function submit() {
           </div>
 
           <!-- Body -->
-          <div class="space-y-6 p-6">
-            <!-- Photo Upload -->
+          <div class="p-6 space-y-8 max-h-[70vh] overflow-y-auto">
+
+            <!-- Photo -->
             <div>
-              <label class="mb-2 block text-sm font-medium text-foreground">Profile Photo</label>
+              <label class="mb-2 block text-sm font-medium">Profile Photo</label>
               <div class="flex items-center gap-4">
-                <div class="w-24 h-24 rounded-2xl overflow-hidden border border-line bg-surface">
-                  <img
-                    v-if="previewUrl"
-                    :src="previewUrl"
-                    class="w-full h-full object-cover"
-                  />
+                <div class="w-24 h-24 rounded-2xl overflow-hidden border border-line bg-surface shrink-0">
+                  <img v-if="previewUrl" :src="previewUrl" class="w-full h-full object-cover" />
                   <div v-else class="w-full h-full flex items-center justify-center text-muted">
                     <Upload class="w-8 h-8" />
                   </div>
                 </div>
-
                 <div class="space-y-2">
                   <label class="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-surface px-5 py-2.5 hover:bg-surface-hover transition">
                     <Upload class="w-4 h-4" />
                     <span class="text-sm">Choose Photo</span>
                     <input type="file" accept="image/*" class="hidden" @change="onFileSelect" />
                   </label>
-
                   <button
                     v-if="previewUrl"
                     @click="removePhoto"
@@ -178,82 +300,189 @@ function submit() {
               </div>
             </div>
 
-            <!-- Name -->
+            <!-- Personal Details -->
             <div>
-              <label class="mb-2 block text-sm font-medium text-foreground">Athlete Name</label>
-              <input
-                v-model="form.name"
-                type="text"
-                placeholder="Rahul Sharma"
-                class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600 text-foreground"
-              />
-              <p v-if="errors.name" class="mt-2 text-sm text-red-400">{{ errors.name }}</p>
+              <h3 class="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Personal Details</h3>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">First Name *</label>
+                  <input v-model="form.firstName" type="text" class="input" placeholder="Rahul" />
+                  <p v-if="errors.firstName" class="mt-1 text-sm text-red-400">{{ errors.firstName }}</p>
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">Middle Name</label>
+                  <input v-model="form.middleName" type="text" class="input" placeholder="Kumar" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">Last Name *</label>
+                  <input v-model="form.lastName" type="text" class="input" placeholder="Sharma" />
+                  <p v-if="errors.lastName" class="mt-1 text-sm text-red-400">{{ errors.lastName }}</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">Gender *</label>
+                  <select v-model="form.gender" class="input">
+                    <option value="">Select</option>
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="MIXED">Mixed</option>
+                  </select>
+                  <p v-if="errors.gender" class="mt-1 text-sm text-red-400">{{ errors.gender }}</p>
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">Date of Birth *</label>
+                  <input v-model="form.dateOfBirth" type="date" class="input" />
+                  <p v-if="errors.dateOfBirth" class="mt-1 text-sm text-red-400">{{ errors.dateOfBirth }}</p>
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">Blood Group</label>
+                  <select v-model="form.bloodGroup" class="input">
+                    <option value="">Select</option>
+                    <option v-for="bg in bloodGroups" :key="bg" :value="bg">{{ bg }}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="mt-4">
+                <label class="mb-1.5 block text-sm font-medium">Disabilities (if any)</label>
+                <input v-model="form.disability" type="text" class="input" placeholder="None / describe if any" />
+              </div>
             </div>
 
-            <!-- State -->
+            <!-- Contact -->
             <div>
-              <label class="mb-2 block text-sm font-medium text-foreground">State</label>
-              <input
-                v-model="form.state"
-                type="text"
-                placeholder="Gujarat"
-                class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600 text-foreground"
-              />
-              <p v-if="errors.state" class="mt-2 text-sm text-red-400">{{ errors.state }}</p>
+              <h3 class="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Contact</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">Phone</label>
+                  <input v-model="form.phone" type="tel" class="input" placeholder="+91 98765 43210" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">Email</label>
+                  <input v-model="form.email" type="email" class="input" placeholder="athlete@email.com" />
+                </div>
+              </div>
+
+              <div class="mt-4">
+                <label class="mb-1.5 block text-sm font-medium">Address</label>
+                <input v-model="form.address" type="text" class="input" placeholder="Street address" />
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">City</label>
+                  <input v-model="form.city" type="text" class="input" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">State *</label>
+                  <input v-model="form.state" type="text" class="input" placeholder="Gujarat" />
+                  <p v-if="errors.state" class="mt-1 text-sm text-red-400">{{ errors.state }}</p>
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">Postal Code</label>
+                  <input v-model="form.postalCode" type="text" class="input" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">Country</label>
+                  <div class="flex items-center gap-3">
+                    <CountryFlag :country="COUNTRY_CODE_MAP[form.country]" size="medium" />
+
+                    <select v-model="form.country" class="input flex-1">
+                      <option v-for="c in COUNTRIES" :key="c.code" :value="c.code">
+                        {{ c.name }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <!-- Country -->
+            <!-- Guardian / Emergency -->
             <div>
-              <label class="mb-2 block text-sm font-medium text-foreground">Country</label>
-              <input
-                v-model="form.country"
-                type="text"
-                placeholder="IND"
-                class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600 text-foreground"
-              />
+              <h3 class="text-sm font-semibold text-muted uppercase tracking-wider mb-4">
+                {{ isMinor ? 'Guardian (Minor)' : 'Emergency Contact' }}
+              </h3>
+
+              <div v-if="isMinor" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">Guardian Name *</label>
+                  <input v-model="form.guardianName" type="text" class="input" />
+                  <p v-if="errors.guardianName" class="mt-1 text-sm text-red-400">{{ errors.guardianName }}</p>
+                </div>
+              </div>
+
+              <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">Emergency Contact Name</label>
+                  <input v-model="form.emergencyContact" type="text" class="input" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">Emergency Phone</label>
+                  <input v-model="form.emergencyPhone" type="tel" class="input" />
+                </div>
+              </div>
             </div>
-            <!-- Category -->
+
+            <!-- Karate Details -->
             <div>
-              <label class="mb-2 block text-sm font-medium text-foreground">
-                Category
-              </label>
+              <h3 class="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Karate Details</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">Karate Style</label>
+                  <select v-model="form.style" class="input">
+                    <option value="">Select Style</option>
+                    <option v-for="s in karateStyles" :key="s.value" :value="s.value">
+                      {{ s.label }}
+                    </option>
+                  </select>
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">Current Rank / Credentials</label>
+                  <select v-model="form.currentRank" class="input">
+                    <option value="">Select Rank</option>
+                    <option v-for="r in karateRanks" :key="r" :value="r">
+                      {{ r.replaceAll('_', ' ') }}
+                    </option>
+                  </select>
+                </div>
+              </div>
 
-              <select
-                v-model="form.categoryId"
-                class="w-full rounded-xl border border-line bg-surface px-4 py-3 outline-none focus:border-blue-600 text-foreground"
-              >
-                <option value="">
-                  Select Category
-                </option>
-
-                <option
-                  v-for="category in categories"
-                  :key="category.id"
-                  :value="category.id"
-                >
-                  {{ category.name }}
-                  -
-                  {{ category.ageGroup }}
-                  -
-                  {{ category.gender }}
-                  -
-                  {{ category.discipline }}
-                </option>
-              </select>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">Federation ID</label>
+                  <input v-model="form.federationId" type="text" class="input" />
+                </div>
+                <div>
+                  <label class="mb-1.5 block text-sm font-medium">Category (optional)</label>
+                  <select v-model="form.categoryId" class="input">
+                    <option value="">Select Category</option>
+                    <option
+                      v-for="category in categories"
+                      :key="category.id"
+                      :value="category.id"
+                    >
+                      {{ category.name }} – {{ category.ageGroup }} – {{ category.gender }} – {{ category.discipline }}
+                    </option>
+                  </select>
+                </div>
+              </div>
             </div>
+
           </div>
 
           <!-- Footer -->
-          <div class="flex items-center justify-end gap-3 border-t border-line px-6 py-5">
+          <div class="flex items-center justify-end gap-3 border-t border-line px-6 py-5 sticky bottom-0 bg-panel rounded-b-3xl">
             <button
-              class="rounded-xl border border-line px-5 py-2 hover:bg-surface transition"
+              class="rounded-xl border border-line px-5 py-2.5 hover:bg-surface transition"
               @click="emit('close')"
             >
               Cancel
             </button>
             <button
               :disabled="loading"
-              class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-white hover:bg-blue-700 disabled:opacity-60"
               @click="submit"
             >
               <Loader2 v-if="loading" class="h-4 w-4 animate-spin" />
@@ -266,3 +495,9 @@ function submit() {
     </Transition>
   </Teleport>
 </template>
+
+<style scoped>
+.input {
+  @apply w-full rounded-xl border border-line bg-surface px-4 py-2.5 outline-none focus:border-blue-600 text-foreground;
+}
+</style>

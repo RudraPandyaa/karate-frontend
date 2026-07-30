@@ -12,6 +12,8 @@ import {
   BarChart3,
   Settings,
   Sparkles,
+  Shield,
+  GraduationCap,
 } from 'lucide-vue-next'
 
 interface NavItem {
@@ -27,6 +29,8 @@ const mainNav: NavItem[] = [
   { label: 'Tournaments', to: '/tournaments', icon: Trophy },
   { label: 'Categories', to: '/categories', icon: Tags },
   { label: 'Athletes', to: '/athletes', icon: Users },
+  { label: 'Referees', to: '/referees', icon: Shield },
+  { label: 'Coaches', to: '/coaches', icon: GraduationCap },
   { label: 'Tatamis', to: '/tatamis', icon: Waypoints },
   { label: 'Matches', to: '/admin/matches', icon: Swords },
   { label: 'Live Scoring', to: '/live', icon: Tv },

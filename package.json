@@ -13,10 +13,13 @@
     "@nuxtjs/color-mode": "^4.0.1",
     "@vueuse/core": "^14.3.0",
     "@vueuse/nuxt": "^14.3.0",
+    "country-flag-icons": "^1.6.20",
+    "flag-icons": "^7.5.0",
     "lucide-vue-next": "^1.0.0",
     "nuxt": "^4.4.8",
     "socket.io-client": "^4.8.3",
     "vue": "^3.5.39",
+    "vue-country-flag-next": "^2.3.2",
     "vue-router": "^5.1.0"
   },
   "devDependencies": {
