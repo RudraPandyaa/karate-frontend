@@ -20,6 +20,33 @@ const form = reactive({
 
 const selectedCategory = computed(() => categories.value.find((c) => c.id === form.categoryId))
 
+// Athlete records don't reliably have `name` or `fullName` populated —
+// fall back through the available name fields so the dropdown never
+// renders a blank option.
+function athleteName(a: any): string {
+  if (!a) return ''
+  if (a.fullName) return a.fullName
+  if (a.name) return a.name
+  const parts = [a.firstName, a.middleName, a.lastName].filter(Boolean)
+  if (parts.length) return parts.join(' ')
+  return `Unnamed athlete (${a.id.slice(0, 6)})`
+}
+
+// Prevent the same athlete being picked for both corners.
+const redAthleteOptions = computed(() =>
+  athletes.value.filter((a) => a.id !== form.blueAthleteId)
+)
+const blueAthleteOptions = computed(() =>
+  athletes.value.filter((a) => a.id !== form.redAthleteId)
+)
+
+const selectedRedAthlete = computed(() =>
+  athletes.value.find((a) => a.id === form.redAthleteId)
+)
+const selectedBlueAthlete = computed(() =>
+  athletes.value.find((a) => a.id === form.blueAthleteId)
+)
+
 // Tatami is tournament-scoped — refetch whenever the chosen category's
 // tournament changes, since there's no flat GET /tatami endpoint.
 watch(() => form.categoryId, async (newId) => {
@@ -57,6 +84,15 @@ async function submit() {
   formError.value = null
   if (!form.categoryId || !form.round) {
     formError.value = 'Category and round are required.'
+    return
+  }
+
+  if (
+    form.redAthleteId &&
+    form.blueAthleteId &&
+    form.redAthleteId === form.blueAthleteId
+  ) {
+    formError.value = 'Red and Blue corner athletes must be different.'
     return
   }
 
@@ -144,20 +180,28 @@ onMounted(() => {
             </select>
           </div>
 
+          <!-- Red Corner -->
           <div>
             <label class="text-xs text-foreground/50 block mb-1">Red Corner Athlete</label>
-            <select v-model="form.redAthleteId" class="w-full bg-surface rounded-lg px-3 py-2 text-foreground">
+            <select v-model="form.redAthleteId" class="w-full bg-surface rounded-lg px-3 py-2 text-foreground border border-red-800/40">
               <option value="">TBD</option>
-              <option v-for="a in athletes" :key="a.id" :value="a.id">{{ a.name }}</option>
+              <option v-for="a in redAthleteOptions" :key="a.id" :value="a.id">{{ athleteName(a) }}</option>
             </select>
+            <p v-if="selectedRedAthlete" class="text-xs text-red-400 mt-1">
+              Selected: {{ athleteName(selectedRedAthlete) }}
+            </p>
           </div>
 
+          <!-- Blue Corner -->
           <div>
             <label class="text-xs text-foreground/50 block mb-1">Blue Corner Athlete</label>
-            <select v-model="form.blueAthleteId" class="w-full bg-surface rounded-lg px-3 py-2 text-foreground">
+            <select v-model="form.blueAthleteId" class="w-full bg-surface rounded-lg px-3 py-2 text-foreground border border-blue-800/40">
               <option value="">TBD</option>
-              <option v-for="a in athletes" :key="a.id" :value="a.id">{{ a.name }}</option>
+              <option v-for="a in blueAthleteOptions" :key="a.id" :value="a.id">{{ athleteName(a) }}</option>
             </select>
+            <p v-if="selectedBlueAthlete" class="text-xs text-blue-400 mt-1">
+              Selected: {{ athleteName(selectedBlueAthlete) }}
+            </p>
           </div>
         </div>
 
@@ -194,7 +238,7 @@ onMounted(() => {
           >
             <div>
               <p class="font-medium text-foreground">
-                {{ m.redAthlete?.name ?? 'TBD' }} vs {{ m.blueAthlete?.name ?? 'TBD' }}
+                {{ m.redAthlete ? athleteName(m.redAthlete) : 'TBD' }} vs {{ m.blueAthlete ? athleteName(m.blueAthlete) : 'TBD' }}
               </p>
               <p class="text-xs text-foreground/50">
                 {{ m.category?.name }} • {{ m.round }} • {{ m.status }}

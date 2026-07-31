@@ -34,6 +34,10 @@ export interface Athlete {
   _count?: {
     categories: number
   }
+  // Enrolled categories, if the /athletes endpoint returns them inline.
+  // Used by AthleteTable to show category names instead of just a count,
+  // and to support filtering the athlete list by category.
+  categories?: { id: string; name: string }[]
 }
 
 export interface AthleteHistory {

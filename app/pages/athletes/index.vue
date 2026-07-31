@@ -17,6 +17,7 @@ const {
   deleteAthlete,
   uploadPhoto,
   enrollAthlete,
+  unenrollAthlete,
 } = useAthletes()
 
 const {
@@ -71,6 +72,37 @@ function closeDeleteModal() {
   selectedAthlete.value = null
 }
 
+/**
+ * Enroll the athlete into any newly-checked categories and unenroll
+ * them from any that were unchecked, comparing against whatever they
+ * were enrolled in before this save (empty for a brand-new athlete).
+ */
+async function syncCategoryEnrollments(athleteId: string, selectedIds: string[]) {
+  const existingIds: string[] = Array.isArray(selectedAthlete.value?.categories)
+    ? selectedAthlete.value!.categories!.map((c: any) => c.id)
+    : []
+
+  const toEnroll = selectedIds.filter((id) => !existingIds.includes(id))
+  const toUnenroll = existingIds.filter((id) => !selectedIds.includes(id))
+
+  for (const categoryId of toEnroll) {
+    try {
+      await enrollAthlete(athleteId, { categoryId })
+    } catch (enrollErr: any) {
+      // Ignore "already enrolled" races; log anything else
+      console.warn('Enrollment:', enrollErr?.data?.message || enrollErr.message)
+    }
+  }
+
+  for (const categoryId of toUnenroll) {
+    try {
+      await unenrollAthlete(athleteId, categoryId)
+    } catch (unenrollErr: any) {
+      console.warn('Unenrollment:', unenrollErr?.data?.message || unenrollErr.message)
+    }
+  }
+}
+
 async function saveAthlete(payload: {
   athlete: any
   photoFile?: File
@@ -121,16 +153,15 @@ async function saveAthlete(payload: {
       await uploadPhoto(savedAthlete.id, photoFile)
     }
 
-    // Enroll into category (if selected)
-    if (athlete.categoryId && savedAthlete?.id) {
-      try {
-        await enrollAthlete(savedAthlete.id, {
-          categoryId: athlete.categoryId,
-        })
-      } catch (enrollErr: any) {
-        // Ignore "already enrolled" error on edit
-        console.warn('Enrollment:', enrollErr?.data?.message || enrollErr.message)
-      }
+    // Sync category enrollments (categories are now required, so this
+    // always runs — enrolling newly checked categories and unenrolling
+    // any that were unchecked when editing).
+    const athleteId = savedAthlete?.id || selectedAthlete.value?.id
+    if (athleteId) {
+      const selectedCategoryIds: string[] = Array.isArray(athlete.categoryIds)
+        ? athlete.categoryIds
+        : []
+      await syncCategoryEnrollments(athleteId, selectedCategoryIds)
     }
 
     await fetchAthletes()
@@ -194,6 +225,7 @@ async function removeAthlete() {
       :athletes="athletes"
       :loading="pending"
       :search="search"
+      :categories="categories"
       @view="viewAthlete"
       @edit="openEditModal"
       @delete="openDeleteModal"

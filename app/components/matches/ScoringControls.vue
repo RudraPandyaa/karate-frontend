@@ -73,247 +73,218 @@ const customTimeDelta = computed(() => {
 
   return customSeconds.value
 })
+
+function getAthleteName(athlete?: any) {
+  if (!athlete) return 'TBD'
+  return (
+    athlete.fullName ||
+    athlete.name ||
+    [athlete.firstName, athlete.lastName].filter(Boolean).join(' ') ||
+    'TBD'
+  )
+}
 </script>
 
 <template>
-  <div class="mx-auto max-w-6xl space-y-8 text-foreground">
+  <div class="mx-auto max-w-7xl space-y-4 text-foreground">
 
-    <!-- Notification -->
-    <Transition name="fade">
-      <div
-        v-if="notification"
-        class="rounded-xl px-5 py-3 text-center font-semibold"
-        :class="{
-          'border border-green-500 bg-green-900/30 text-green-200':
-            notificationType === 'success',
-
-          'border border-red-500 bg-red-900/30 text-red-200':
-            notificationType === 'error',
-
-          'border border-blue-500 bg-blue-900/30 text-blue-200':
-            notificationType === 'info',
-        }"
-      >
-        {{ notification }}
+    <!-- Top bar -->
+    <div class="flex items-center justify-between rounded-2xl border border-line bg-panel px-5 py-3">
+      <div class="flex items-center gap-3">
+        <span
+          class="rounded-full px-3 py-1 text-xs font-bold"
+          :class="match.status === 'IN_PROGRESS' ? 'bg-green-600 text-white' : 'bg-surface text-muted'"
+        >
+          {{ match.status === 'IN_PROGRESS' ? 'LIVE' : match.status }}
+        </span>
+        <div>
+          <p class="font-semibold">
+            {{ match.category?.name || 'Match' }}
+          </p>
+          <p class="text-xs text-muted">
+            {{ match.round }} · Tatami {{ match.tatami?.number || match.tatami?.name || '—' }}
+          </p>
+        </div>
       </div>
-    </Transition>
 
-    <!-- Error -->
-    <div
-      v-if="submitError"
-      class="rounded-xl border border-red-600 bg-red-950/40 px-5 py-3 text-red-300"
-    >
+      <button
+        :disabled="!canUndo || submitting"
+        class="rounded-xl bg-surface px-4 py-2 text-sm hover:bg-surface-hover disabled:opacity-50"
+        @click="emit('undoLast')"
+      >
+        ↩ Undo Last
+      </button>
+    </div>
+
+    <!-- Notification / Error -->
+    <div v-if="notification" class="rounded-xl border border-blue-500/40 bg-blue-950/30 px-4 py-2 text-center text-sm">
+      {{ notification }}
+    </div>
+    <div v-if="submitError" class="rounded-xl border border-red-600 bg-red-950/40 px-4 py-2 text-red-300 text-sm">
       {{ submitError }}
     </div>
 
-    <!-- Timer -->
-    <div class="rounded-3xl border border-line bg-panel p-8 text-center">
-      <h2 class="text-7xl font-black tracking-wider text-foreground">
-        {{ formattedTime }}
-      </h2>
+    <!-- Main board: RED | TIMER | BLUE -->
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
 
-      <p
-        class="mt-3 text-xl font-bold"
-        :class="{
-          'text-green-400': match.status === 'IN_PROGRESS',
-          'text-yellow-400': match.status === 'PAUSED',
-          'text-red-400': match.status === 'COMPLETED',
-          'text-blue-400': match.status === 'SCHEDULED',
-        }"
-      >
-        {{
-          match.status === 'IN_PROGRESS'
-            ? 'LIVE'
-            : match.status === 'PAUSED'
-              ? 'PAUSED'
-              : match.status === 'COMPLETED'
-                ? 'FINISHED'
-                : 'READY'
-        }}
-      </p>
-    </div>
+      <!-- AKA RED -->
+      <div class="rounded-3xl border-4 border-red-600 bg-red-950/25 p-5">
+        <div class="mb-3 text-center text-sm font-bold tracking-widest text-red-400">AKA</div>
 
-    <!-- Timer Controls -->
-    <div
-      class="flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-line bg-panel p-6"
-    >
-
-      <!-- Start / Resume -->
-      <button
-        @click="emit('start')"
-        :disabled="
-          submitting ||
-          match.status === 'IN_PROGRESS' ||
-          match.status === 'COMPLETED'
-        "
-        class="rounded-lg bg-green-600 px-6 py-3 font-semibold text-white hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {{ match.status === 'PAUSED' ? '▶ Resume' : '▶ Start' }}
-      </button>
-
-      <!-- Pause -->
-      <button
-        @click="emit('pause')"
-        :disabled="
-          submitting ||
-          match.status !== 'IN_PROGRESS'
-        "
-        class="rounded-lg bg-yellow-600 px-6 py-3 font-semibold text-white hover:bg-yellow-500 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        ⏸ Pause
-      </button>
-
-      <!-- Custom Seconds Input -->
-      <input
-        v-model.number="customSeconds"
-        type="number"
-        min="1"
-        step="1"
-        placeholder="Seconds"
-        :disabled="
-          submitting ||
-          match.status !== 'PAUSED'
-        "
-        class="w-32 rounded-lg border border-line bg-surface px-4 py-3 text-center font-semibold text-foreground outline-none focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-      />
-
-      <!-- Decrease Time -->
-      <button
-        :disabled="
-          submitting ||
-          match.status !== 'PAUSED' ||
-          customTimeDelta === null
-        "
-        @click="
-          customTimeDelta !== null &&
-          emit('adjustTime', -customTimeDelta)
-        "
-        class="rounded-lg bg-red-700 px-5 py-3 font-semibold text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        − Decrease
-      </button>
-
-      <!-- Increase Time -->
-      <button
-        :disabled="
-          submitting ||
-          match.status !== 'PAUSED' ||
-          customTimeDelta === null
-        "
-        @click="
-          customTimeDelta !== null &&
-          emit('adjustTime', customTimeDelta)
-        "
-        class="rounded-lg bg-green-700 px-5 py-3 font-semibold text-white hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        + Increase
-      </button>
-    </div>
-
-    <!-- Main Score Area -->
-    <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-
-      <!-- RED CORNER -->
-      <div
-        class="rounded-3xl border-4 border-red-600 bg-red-950/30 p-8 text-center"
-      >
-        <!-- Athlete Photo -->
-        <div
-          class="mx-auto mb-6 h-40 w-40 overflow-hidden rounded-2xl border-4 border-red-500 shadow-xl"
-        >
+        <div class="mx-auto mb-3 h-24 w-24 overflow-hidden rounded-2xl border-2 border-red-500">
           <img
-            :src="
-              match.redAthlete?.photoUrl ||
-              '/default-athlete-red.png'
-            "
+            :src="match.redAthlete?.photoUrl || '/default-athlete-red.png'"
             class="h-full w-full object-cover"
-            alt="Red Athlete"
           />
         </div>
 
-        <!-- Athlete Name -->
-        <h2 class="mb-4 text-3xl font-bold text-red-100">
-          {{ match.redAthlete?.name ?? 'Red Corner' }}
+        <h2 class="mb-1 text-center text-xl font-bold text-red-100">
+          {{ getAthleteName(match.redAthlete) }}
         </h2>
+        <p class="mb-4 text-center text-sm text-red-300/80">
+          {{ match.redAthlete?.country || '' }}
+        </p>
 
-        <!-- Score -->
-        <div class="mb-8 text-8xl font-black text-red-400">
+        <div class="mb-5 text-center text-7xl font-black text-red-400">
           {{ match.redScore ?? 0 }}
         </div>
 
-        <!-- Score Buttons -->
-        <div class="space-y-3">
+        <div class="space-y-2">
           <button
             v-for="s in scoreTypes"
-            :key="s.type"
-            class="w-full rounded-2xl bg-red-700 py-5 text-xl font-bold text-white hover:bg-red-600 disabled:opacity-50"
-            :disabled="
-              submitting ||
-              match.status !== 'IN_PROGRESS'
-            "
+            :key="'R-' + s.type"
+            class="w-full rounded-xl bg-red-700 py-3 font-bold text-white hover:bg-red-600 disabled:opacity-50"
+            :disabled="submitting || match.status !== 'IN_PROGRESS'"
             @click="emit('score', 'RED', s.type)"
           >
             {{ s.label }} (+{{ s.points }})
           </button>
         </div>
+
+        <!-- Foul placeholder (visual for now) -->
+        <div class="mt-4 rounded-xl border border-red-800/50 bg-red-950/40 p-3">
+          <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-red-300">Penalties</p>
+          <div class="flex gap-2">
+            <span class="rounded bg-red-900 px-2 py-1 text-xs">C1</span>
+            <span class="rounded bg-red-900/40 px-2 py-1 text-xs text-muted">C2</span>
+            <span class="rounded bg-red-900/40 px-2 py-1 text-xs text-muted">HC</span>
+          </div>
+        </div>
       </div>
 
-      <!-- BLUE CORNER -->
-      <div
-        class="rounded-3xl border-4 border-blue-600 bg-blue-950/30 p-8 text-center"
-      >
-        <!-- Athlete Photo -->
-        <div
-          class="mx-auto mb-6 h-40 w-40 overflow-hidden rounded-2xl border-4 border-blue-500 shadow-xl"
-        >
+      <!-- CENTER TIMER + CONTROLS -->
+      <div class="flex flex-col gap-4">
+        <div class="rounded-3xl border border-line bg-panel p-6 text-center">
+          <p class="text-sm text-muted">TIME</p>
+          <h2 class="mt-2 text-6xl font-black tracking-wider">
+            {{ formattedTime }}
+          </h2>
+          <p
+            class="mt-2 font-bold"
+            :class="{
+              'text-green-400': match.status === 'IN_PROGRESS',
+              'text-yellow-400': match.status === 'PAUSED',
+              'text-red-400': match.status === 'COMPLETED',
+              'text-blue-400': match.status === 'SCHEDULED',
+            }"
+          >
+            {{
+              match.status === 'IN_PROGRESS' ? 'LIVE'
+              : match.status === 'PAUSED' ? 'PAUSED'
+              : match.status === 'COMPLETED' ? 'FINISHED'
+              : 'READY'
+            }}
+          </p>
+        </div>
+
+        <div class="rounded-2xl border border-line bg-panel p-4 space-y-3">
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              class="rounded-xl bg-green-600 py-3 font-semibold text-white hover:bg-green-500 disabled:opacity-50"
+              :disabled="submitting || match.status === 'IN_PROGRESS' || match.status === 'COMPLETED'"
+              @click="emit('start')"
+            >
+              {{ match.status === 'PAUSED' ? '▶ Resume' : '▶ Start' }}
+            </button>
+            <button
+              class="rounded-xl bg-yellow-600 py-3 font-semibold text-white hover:bg-yellow-500 disabled:opacity-50"
+              :disabled="submitting || match.status !== 'IN_PROGRESS'"
+              @click="emit('pause')"
+            >
+              ⏸ Pause
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <input
+              v-model.number="customSeconds"
+              type="number"
+              min="1"
+              placeholder="Sec"
+              class="w-full rounded-xl border border-line bg-surface px-3 py-2 text-center disabled:opacity-50"
+              :disabled="submitting || match.status !== 'PAUSED'"
+            />
+            <button
+              class="rounded-xl bg-red-700 px-3 py-2 text-white disabled:opacity-50"
+              :disabled="submitting || match.status !== 'PAUSED' || customTimeDelta === null"
+              @click="customTimeDelta !== null && emit('adjustTime', -customTimeDelta)"
+            >
+              −
+            </button>
+            <button
+              class="rounded-xl bg-green-700 px-3 py-2 text-white disabled:opacity-50"
+              :disabled="submitting || match.status !== 'PAUSED' || customTimeDelta === null"
+              @click="customTimeDelta !== null && emit('adjustTime', customTimeDelta)"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AO BLUE -->
+      <div class="rounded-3xl border-4 border-blue-600 bg-blue-950/25 p-5">
+        <div class="mb-3 text-center text-sm font-bold tracking-widest text-blue-400">AO</div>
+
+        <div class="mx-auto mb-3 h-24 w-24 overflow-hidden rounded-2xl border-2 border-blue-500">
           <img
-            :src="
-              match.blueAthlete?.photoUrl ||
-              '/default-athlete-blue.png'
-            "
+            :src="match.blueAthlete?.photoUrl || '/default-athlete-blue.png'"
             class="h-full w-full object-cover"
-            alt="Blue Athlete"
           />
         </div>
 
-        <!-- Athlete Name -->
-        <h2 class="mb-4 text-3xl font-bold text-blue-100">
-          {{ match.blueAthlete?.name ?? 'Blue Corner' }}
+        <h2 class="mb-1 text-center text-xl font-bold text-blue-100">
+          {{ getAthleteName(match.blueAthlete) }}
         </h2>
+        <p class="mb-4 text-center text-sm text-blue-300/80">
+          {{ match.blueAthlete?.country || '' }}
+        </p>
 
-        <!-- Score -->
-        <div class="mb-8 text-8xl font-black text-blue-400">
+        <div class="mb-5 text-center text-7xl font-black text-blue-400">
           {{ match.blueScore ?? 0 }}
         </div>
 
-        <!-- Score Buttons -->
-        <div class="space-y-3">
+        <div class="space-y-2">
           <button
             v-for="s in scoreTypes"
-            :key="s.type"
-            class="w-full rounded-2xl bg-blue-700 py-5 text-xl font-bold text-white hover:bg-blue-600 disabled:opacity-50"
-            :disabled="
-              submitting ||
-              match.status !== 'IN_PROGRESS'
-            "
+            :key="'B-' + s.type"
+            class="w-full rounded-xl bg-blue-700 py-3 font-bold text-white hover:bg-blue-600 disabled:opacity-50"
+            :disabled="submitting || match.status !== 'IN_PROGRESS'"
             @click="emit('score', 'BLUE', s.type)"
           >
             {{ s.label }} (+{{ s.points }})
           </button>
         </div>
+
+        <div class="mt-4 rounded-xl border border-blue-800/50 bg-blue-950/40 p-3">
+          <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-300">Penalties</p>
+          <div class="flex gap-2">
+            <span class="rounded bg-blue-900 px-2 py-1 text-xs">C1</span>
+            <span class="rounded bg-blue-900/40 px-2 py-1 text-xs text-muted">C2</span>
+            <span class="rounded bg-blue-900/40 px-2 py-1 text-xs text-muted">HC</span>
+          </div>
+        </div>
       </div>
     </div>
-
-    <!-- Undo -->
-    <div class="flex justify-center">
-      <button
-        :disabled="!canUndo || submitting"
-        @click="emit('undoLast')"
-        class="rounded-2xl bg-surface px-10 py-5 text-lg font-semibold hover:bg-surface-hover disabled:opacity-50"
-      >
-        ↩ Undo Last Score
-      </button>
-    </div>
-
   </div>
 </template>

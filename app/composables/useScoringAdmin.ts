@@ -15,7 +15,7 @@ export function useScoringAdmin(matchId: string) {
   const pending = ref(true)
   const submitting = ref(false)
   const submitError = ref<string | null>(null)
-
+  const lastScoreEventId = ref<string | null>(null) 
   const notification = ref('')
   const notificationType = ref<'success' | 'error' | 'info'>('info')    
 
@@ -81,18 +81,36 @@ export function useScoringAdmin(matchId: string) {
       })
     })
 
+
+    // inside connect(), scoreUpdated handler:
     socket.on('scoreUpdated', (data: any) => {
       if (!match.value) return
 
-      match.value = {
-        ...match.value,
-        ...data.match,
+      // merge match state
+      if (data.match) {
+        match.value = {
+          ...match.value,
+          ...data.match,
+        }
+      } else {
+        // some backends send the match fields at top level
+        match.value = {
+          ...match.value,
+          ...data,
+        }
       }
 
-      // Save last score event for Undo
-      if (data.exchange?.length) {
-        lastScoreEventId.value =
-          data.exchange[data.exchange.length - 1].id
+      // Try multiple possible payload shapes for last event id
+      const eventId =
+        data?.lastScoreEventId ||
+        data?.scoreEvent?.id ||
+        data?.exchange?.[data.exchange.length - 1]?.id ||
+        data?.scoreEvents?.[data.scoreEvents.length - 1]?.id ||
+        data?.events?.[data.events.length - 1]?.id ||
+        null
+
+      if (eventId) {
+        lastScoreEventId.value = eventId
       }
 
       showNotification('Score updated', 'success')
@@ -191,29 +209,38 @@ export function useScoringAdmin(matchId: string) {
     })
   }
 
-  async function undoScore(
-    scoreEventId: string,
-  ) {
+  function undoLastScore() {
+    if (!lastScoreEventId.value) {
+      showNotification('No score to undo', 'error')
+      return
+    }
+
     submitting.value = true
     submitError.value = null
 
+    socket?.emit('undoScore', {
+      matchId,
+      scoreEventId: lastScoreEventId.value,
+    })
+
+    // optimistic clear; will refresh on scoreUpdated
+    lastScoreEventId.value = null
+    submitting.value = false
+  }
+
+  async function undoScore(scoreEventId: string) {
+    submitting.value = true
+    submitError.value = null
     try {
-      return await api(
-        '/scoring/undo',
-        {
-          method: 'DELETE',
-          body: {
-            matchId,
-            scoreEventId,
-          },
-        },
-      )
+      // Prefer socket
+      socket?.emit('undoScore', {
+        matchId,
+        scoreEventId,
+      })
+      lastScoreEventId.value = null
     } catch (err: any) {
       submitError.value =
-        err?.data?.message ||
-        err?.message ||
-        'Failed to undo score'
-
+        err?.data?.message || err?.message || 'Failed to undo score'
       throw err
     } finally {
       submitting.value = false
@@ -261,8 +288,10 @@ return {
   submitError,
   notification,
   notificationType,
+  lastScoreEventId,
   recordScore,
   undoScore,
+  undoLastScore,
   startTimer,
   pauseTimer,
   adjustTime,

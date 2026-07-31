@@ -163,20 +163,28 @@ watch(
   }
 )
 
-/**
- * Convert a country code (IN, JP, FR...)
- * into an emoji flag. Falls back to an empty
- * string for missing/invalid codes so we never
- * render mojibake for undefined values.
- */
-function countryFlag(code?: string) {
-  if (!code || code.length !== 2) return ''
+function getAthleteName(athlete?: any): string {
+  if (!athlete) return 'No athlete selected'
+  if (athlete.fullName) return athlete.fullName
+  if (athlete.name) return athlete.name
+  const parts = [athlete.firstName, athlete.middleName, athlete.lastName].filter(Boolean)
+  if (parts.length) return parts.join(' ')
+  return `Athlete (${String(athlete.id || '').slice(0, 6)})`
+}
 
-  return code
-    .toUpperCase()
-    .replace(/./g, char =>
-      String.fromCodePoint(127397 + char.charCodeAt(0))
-    )
+const ISO3_TO_ISO2: Record<string, string> = {
+  IND: 'IN', JPN: 'JP', KOR: 'KR', CHN: 'CN', USA: 'US',
+  GBR: 'GB', FRA: 'FR', GER: 'DE', BRA: 'BR', AUS: 'AU',
+  JOR: 'JO', ITA: 'IT',
+}
+
+function countryFlag(code?: string) {
+  if (!code) return ''
+  const iso2 = code.length === 2 ? code.toUpperCase() : ISO3_TO_ISO2[code.toUpperCase()]
+  if (!iso2 || iso2.length !== 2) return ''
+  return iso2.replace(/./g, (char) =>
+    String.fromCodePoint(127397 + char.charCodeAt(0)),
+  )
 }
 
 /* -----------------------------
@@ -336,7 +344,7 @@ defineExpose({
             v-if="selectedRedAthlete?.photoUrl"
             :src="selectedRedAthlete.photoUrl"
             class="h-14 w-14 rounded-full border border-red-600 object-cover"
-          >
+          />
           <div
             v-else
             class="flex h-14 w-14 items-center justify-center rounded-full bg-red-900 text-xl"
@@ -346,9 +354,8 @@ defineExpose({
 
           <div>
             <div class="font-medium">
-              {{ selectedRedAthlete?.name || 'No athlete selected' }}
+              {{ getAthleteName(selectedRedAthlete) }}
             </div>
-
             <div class="text-sm text-gray-400">
               {{ countryFlag(selectedRedAthlete?.country) }}
               {{ selectedRedAthlete?.country }}
@@ -367,7 +374,7 @@ defineExpose({
             :key="athlete.id"
             :value="athlete.id"
           >
-            {{ athlete.name }} {{ countryFlag(athlete.country) }}
+            {{ getAthleteName(athlete) }} {{ countryFlag(athlete.country) }}
           </option>
         </select>
       </div>
@@ -393,7 +400,7 @@ defineExpose({
             v-if="selectedBlueAthlete?.photoUrl"
             :src="selectedBlueAthlete.photoUrl"
             class="h-14 w-14 rounded-full border border-blue-600 object-cover"
-          >
+          />
           <div
             v-else
             class="flex h-14 w-14 items-center justify-center rounded-full bg-blue-900 text-xl"
@@ -403,9 +410,8 @@ defineExpose({
 
           <div>
             <div class="font-medium">
-              {{ selectedBlueAthlete?.name || 'No athlete selected' }}
+              {{ getAthleteName(selectedBlueAthlete) }}
             </div>
-
             <div class="text-sm text-gray-400">
               {{ countryFlag(selectedBlueAthlete?.country) }}
               {{ selectedBlueAthlete?.country }}
@@ -424,7 +430,7 @@ defineExpose({
             :key="athlete.id"
             :value="athlete.id"
           >
-            {{ athlete.name }} {{ countryFlag(athlete.country) }}
+            {{ getAthleteName(athlete) }} {{ countryFlag(athlete.country) }}
           </option>
         </select>
       </div>

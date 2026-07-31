@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, nextTick } from 'vue'
 import { X, Save, Loader2, Upload, Trash2 } from 'lucide-vue-next'
 import CountryFlag from 'vue-country-flag-next'
 import { COUNTRIES, COUNTRY_CODE_MAP } from '~/utils/countries'
@@ -28,7 +28,10 @@ interface AthleteForm {
   dojoId?: string
   coachId?: string
   photoUrl?: string | null
-  categoryId?: string
+  // An athlete can be enrolled in multiple categories — this holds the
+  // full set of selected category IDs, submitted as enrollments by
+  // whatever page handles the 'save' event.
+  categoryIds: string[]
 }
 
 const props = defineProps<{
@@ -49,6 +52,11 @@ const form = ref<AthleteForm>(getEmptyForm())
 const previewUrl = ref<string | null>(null)
 const selectedFile = ref<File | null>(null)
 const errors = ref<Record<string, string>>({})
+
+// Guards the country->phone-code watcher so it doesn't fire while we're
+// programmatically populating the form (e.g. loading an existing athlete),
+// which would otherwise stomp on their real saved phone number.
+let skipPhoneSync = false
 
 const isEdit = computed(() => !!props.athlete?.id)
 
@@ -82,18 +90,26 @@ const karateRanks = [
 
 const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 
-// Watch country change → update phone prefix
-watch(() => form.value.country, (newCountry) => {
-  const selected = COUNTRIES.find(c => c.code === newCountry)
+/**
+ * Replace (or insert) the leading "+xx" calling code on form.phone
+ * to match the given country, preserving whatever digits the user
+ * already typed.
+ */
+function applyCountryCode(countryCode: string) {
+  const selected = COUNTRIES.find(c => c.code === countryCode)
   if (!selected) return
 
   const currentPhone = form.value.phone || ''
-
-  // Remove any existing +xx prefix
   const phoneWithoutCode = currentPhone.replace(/^\+\d+\s*/, '').trim()
 
-  // Set new prefix
   form.value.phone = `${selected.phoneCode} ${phoneWithoutCode}`.trim()
+}
+
+// Fires on manual country changes made by the user while the modal is
+// open (not during programmatic form population — see skipPhoneSync).
+watch(() => form.value.country, (newCountry) => {
+  if (skipPhoneSync) return
+  applyCountryCode(newCountry)
 })
 
 function getEmptyForm(): AthleteForm {
@@ -121,12 +137,14 @@ function getEmptyForm(): AthleteForm {
     dojoId: '',
     coachId: '',
     photoUrl: null,
-    categoryId: '',
+    categoryIds: [],
   }
 }
 
 watch(() => props.open, (value) => {
   if (!value) return
+
+  skipPhoneSync = true
 
   if (props.athlete) {
     form.value = {
@@ -156,19 +174,29 @@ watch(() => props.open, (value) => {
       dojoId: props.athlete.dojoId || props.athlete.dojo?.id || '',
       coachId: props.athlete.coachId || props.athlete.coach?.id || '',
       photoUrl: props.athlete.photoUrl || null,
-      categoryId: props.athlete.categoryId || '',
+      categoryIds: Array.isArray(props.athlete.categories)
+        ? props.athlete.categories.map((c: any) => c.id)
+        : [],
     }
     previewUrl.value = props.athlete.photoUrl || null
   } else {
     resetForm()
   }
   errors.value = {}
+
+  nextTick(() => {
+    skipPhoneSync = false
+  })
 }, { immediate: true })
 
 function resetForm() {
   form.value = getEmptyForm()
   previewUrl.value = null
   selectedFile.value = null
+  // New athlete forms default to India — make sure the +91 code shows
+  // up immediately instead of waiting for the user to touch the
+  // country dropdown.
+  applyCountryCode(form.value.country)
 }
 
 function onFileSelect(e: Event) {
@@ -188,6 +216,8 @@ function removePhoto() {
   selectedFile.value = null
   form.value.photoUrl = null
 }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function validate() {
   errors.value = {}
@@ -214,6 +244,41 @@ function validate() {
     valid = false
   }
 
+  // Phone: must have at least a few digits beyond the country code
+  const phoneDigits = (form.value.phone || '').replace(/\D/g, '')
+  if (!form.value.phone?.trim() || phoneDigits.length < 6) {
+    errors.value.phone = 'Phone number is required'
+    valid = false
+  }
+
+  if (!form.value.email?.trim()) {
+    errors.value.email = 'Email is required'
+    valid = false
+  } else if (!EMAIL_RE.test(form.value.email.trim())) {
+    errors.value.email = 'Enter a valid email address'
+    valid = false
+  }
+
+  if (!form.value.address?.trim()) {
+    errors.value.address = 'Address is required'
+    valid = false
+  }
+
+  if (!form.value.city?.trim()) {
+    errors.value.city = 'City is required'
+    valid = false
+  }
+
+  if (!form.value.style) {
+    errors.value.style = 'Karate style is required'
+    valid = false
+  }
+
+  if (!form.value.categoryIds.length) {
+    errors.value.categoryIds = 'Select at least one category'
+    valid = false
+  }
+
   if (isMinor.value && !form.value.guardianName?.trim()) {
     errors.value.guardianName = 'Guardian name is required for minors'
     valid = false
@@ -229,15 +294,6 @@ function submit() {
     photoFile: selectedFile.value || undefined,
   })
 }
-watch(
-  () => props.athlete,
-  (athlete) => {
-    console.log('Athlete =', athlete)
-    console.log('country =', athlete?.country)
-    console.log('keys =', Object.keys(athlete ?? {}))
-  },
-  { immediate: true }
-)
 </script>
 
 <template>
@@ -356,24 +412,28 @@ watch(
               <h3 class="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Contact</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label class="mb-1.5 block text-sm font-medium">Phone</label>
+                  <label class="mb-1.5 block text-sm font-medium">Phone *</label>
                   <input v-model="form.phone" type="tel" class="input" placeholder="+91 98765 43210" />
+                  <p v-if="errors.phone" class="mt-1 text-sm text-red-400">{{ errors.phone }}</p>
                 </div>
                 <div>
-                  <label class="mb-1.5 block text-sm font-medium">Email</label>
+                  <label class="mb-1.5 block text-sm font-medium">Email *</label>
                   <input v-model="form.email" type="email" class="input" placeholder="athlete@email.com" />
+                  <p v-if="errors.email" class="mt-1 text-sm text-red-400">{{ errors.email }}</p>
                 </div>
               </div>
 
               <div class="mt-4">
-                <label class="mb-1.5 block text-sm font-medium">Address</label>
+                <label class="mb-1.5 block text-sm font-medium">Address *</label>
                 <input v-model="form.address" type="text" class="input" placeholder="Street address" />
+                <p v-if="errors.address" class="mt-1 text-sm text-red-400">{{ errors.address }}</p>
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
                 <div>
-                  <label class="mb-1.5 block text-sm font-medium">City</label>
+                  <label class="mb-1.5 block text-sm font-medium">City *</label>
                   <input v-model="form.city" type="text" class="input" />
+                  <p v-if="errors.city" class="mt-1 text-sm text-red-400">{{ errors.city }}</p>
                 </div>
                 <div>
                   <label class="mb-1.5 block text-sm font-medium">State *</label>
@@ -430,13 +490,14 @@ watch(
               <h3 class="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Karate Details</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label class="mb-1.5 block text-sm font-medium">Karate Style</label>
+                  <label class="mb-1.5 block text-sm font-medium">Karate Style *</label>
                   <select v-model="form.style" class="input">
                     <option value="">Select Style</option>
                     <option v-for="s in karateStyles" :key="s.value" :value="s.value">
                       {{ s.label }}
                     </option>
                   </select>
+                  <p v-if="errors.style" class="mt-1 text-sm text-red-400">{{ errors.style }}</p>
                 </div>
                 <div>
                   <label class="mb-1.5 block text-sm font-medium">Current Rank / Credentials</label>
@@ -455,17 +516,26 @@ watch(
                   <input v-model="form.federationId" type="text" class="input" />
                 </div>
                 <div>
-                  <label class="mb-1.5 block text-sm font-medium">Category (optional)</label>
-                  <select v-model="form.categoryId" class="input">
-                    <option value="">Select Category</option>
-                    <option
+                  <label class="mb-1.5 block text-sm font-medium">Categories *</label>
+                  <div class="max-h-40 overflow-y-auto rounded-xl border border-line bg-surface p-2 space-y-1">
+                    <label
                       v-for="category in categories"
                       :key="category.id"
-                      :value="category.id"
+                      class="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-hover cursor-pointer text-sm"
                     >
-                      {{ category.name }} – {{ category.ageGroup }} – {{ category.gender }} – {{ category.discipline }}
-                    </option>
-                  </select>
+                      <input
+                        type="checkbox"
+                        :value="category.id"
+                        v-model="form.categoryIds"
+                        class="rounded border-line"
+                      />
+                      <span>{{ category.name }} – {{ category.ageGroup }} – {{ category.gender }} – {{ category.discipline }}</span>
+                    </label>
+                    <p v-if="!categories?.length" class="px-2 py-1.5 text-sm text-muted">
+                      No categories available
+                    </p>
+                  </div>
+                  <p v-if="errors.categoryIds" class="mt-1 text-sm text-red-400">{{ errors.categoryIds }}</p>
                 </div>
               </div>
             </div>

@@ -19,28 +19,24 @@ const {
   pauseTimer,
   adjustTime,
   notification,
+  notificationType,
+  lastScoreEventId,
 } = useScoringAdmin(matchId)
 
-const lastScoreEventId =
-  ref<string | null>(null)
+// const lastScoreEventId =
+//   ref<string | null>(null)
 
-function handleScore(
-  corner: 'RED' | 'BLUE',
-  type: 'YUKO' | 'WAZA_ARI' | 'IPPON',
-) {
+function handleScore(corner: 'RED' | 'BLUE', type: 'YUKO' | 'WAZA_ARI' | 'IPPON') {
   recordScore(corner, type)
 }
 
 async function handleUndoLast() {
   if (!lastScoreEventId.value) {
+    alert('No score to undo')
     return
   }
 
-  await undoScore(
-    lastScoreEventId.value,
-  )
-
-  lastScoreEventId.value = null
+  await undoScore(lastScoreEventId.value)
 }
 </script>
 
