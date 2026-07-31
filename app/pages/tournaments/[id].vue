@@ -356,7 +356,12 @@ const formatDate = (date?: string) => {
 
       <!-- Athletes -->
       <div v-else-if="activeTab === 'athletes'">
-        <AthletesTable :athletes="athletes" />
+        <AthletesTable
+          :athletes="athletes"
+          @view="viewAthlete"
+          @edit="editAthlete"
+          @delete="deleteAthlete"
+        />
       </div>
 
       <!-- Categories -->

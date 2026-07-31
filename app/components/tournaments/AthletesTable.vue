@@ -6,6 +6,12 @@ const props = defineProps<{
   athletes: Athlete[]
 }>()
 
+const emit = defineEmits<{
+  (e: 'view', athlete: Athlete): void
+  (e: 'edit', athlete: Athlete): void
+  (e: 'delete', athlete: Athlete): void
+}>()
+
 const search = ref('')
 
 const filteredAthletes = computed(() => {
@@ -74,6 +80,7 @@ function calculateAge(dateOfBirth: string | null | undefined): number | string {
             <th class="px-6 py-4">Country</th>
             <th class="px-6 py-4">Gender</th>
             <th class="px-6 py-4">Age</th>
+            <th class="px-6 py-4 text-right">Actions</th>
           </tr>
         </thead>
 
@@ -121,6 +128,27 @@ function calculateAge(dateOfBirth: string | null | undefined): number | string {
 
             <td class="px-6 py-4">
               {{ athlete.age }}
+            </td>
+
+            <td class="px-6 py-4 text-right space-x-3">
+              <button
+                class="text-blue-400 hover:text-blue-300 text-sm"
+                @click="emit('view', athlete)"
+              >
+                View
+              </button>
+              <button
+                class="text-muted hover:text-foreground text-sm"
+                @click="emit('edit', athlete)"
+              >
+                Edit
+              </button>
+              <button
+                class="text-red-400 hover:text-red-300 text-sm"
+                @click="emit('delete', athlete)"
+              >
+                Delete
+              </button>
             </td>
           </tr>
         </tbody>
