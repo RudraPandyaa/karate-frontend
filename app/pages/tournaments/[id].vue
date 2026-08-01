@@ -4,13 +4,17 @@ import type { Match } from '~/types'
 import { Calendar, MapPin, Trophy } from 'lucide-vue-next'
 import StatusBadge from '~/components/tournaments/StatusBadge.vue'
 import TournamentStaffDashboard from '~/components/tournaments/TournamentStaffDashboard.vue'
+import TournamentOverview from '~/components/TournamentOverview.vue'
 import CreateMatchModal from '~/components/matches/CreateMatchModal.vue'
 import AssignOfficialsModal from '~/components/matches/AssignOfficialsModal.vue'
 import BadgeToolbar from '~/components/event-badges/BadgeToolbar.vue'
 import EventBadgeTable from '~/components/event-badges/EventBadgeTable.vue'
 import GenerateBadgeModal from '~/components/event-badges/GenerateBadgeModal.vue'
 import BadgePreviewModal from '~/components/event-badges/BadgePreviewModal.vue'
-
+import AthleteModal from '~/components/athletes/AthleteModal.vue'
+import DeleteAthleteModal from '~/components/athletes/DeleteAthleteModal.vue'
+import { useAthletes } from '~/composables/useAthletes'
+import AthletesTable from '~/components/athletes/AthletesTable.vue'
 const route = useRoute()
 const id = route.params.id as string
 const activeTab = ref<
@@ -23,17 +27,7 @@ const showGenerateModal = ref(false)
 const showBadgePreview = ref(false)
 const selectedBadge = ref<any | null>(null)
 
-const {
-  badges,
-  loading: badgesLoading,
-  generating,
-  exporting,
-  fetchBadges,
-  generateBadges,
-  markPrinted,
-  exportPdf,
-  exportExcel,
-} = useEventBadges(id)
+const { badges, loading: badgesLoading, generating, exportingPdf, exportingExcel, fetchBadges, generateBadges, markPrinted, exportPdf, exportExcel } = useEventBadges(id)
 
 watch(activeTab, (tab) => {
   if (tab === 'badges') fetchBadges(badgeRole.value || undefined)
@@ -133,6 +127,24 @@ const tabs = [
   { id: 'categories', label: 'Categories' },
 ]
 
+function getAthleteName(athlete: any) {
+  if (!athlete) return 'TBD'
+  return athlete.fullName || [athlete.firstName, athlete.lastName].filter(Boolean).join(' ') || 'Unknown'
+}
+
+function statusClass(status: string) {
+  const s = (status || '').toUpperCase()
+  if (s.includes('PROGRESS') || s.includes('LIVE')) return 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+  if (s.includes('COMPLETE') || s.includes('FINISH')) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+  if (s.includes('CANCEL')) return 'bg-red-500/10 text-red-400 border-red-500/30'
+  return 'bg-surface text-muted border-line' // SCHEDULED / PENDING / default
+}
+
+function humanize(value?: string | null) {
+  if (!value) return '—'
+  return value.replaceAll('_', ' ')
+}
+
 const formatDate = (date?: string) => {
   if (!date) return ''
   return new Date(date).toLocaleDateString('en-GB', {
@@ -141,6 +153,137 @@ const formatDate = (date?: string) => {
     year: 'numeric',
   })
 }
+
+// --- Athletes tab: view/edit/delete wiring ---
+// Separate useAthletes() instance for CRUD actions triggered from this tab
+// (the `athletes` list itself still comes from useTournamentDetail)
+const {
+  createAthlete,
+  updateAthlete,
+  deleteAthlete: deleteAthleteApi,
+  uploadPhoto,
+  enrollAthlete,
+  unenrollAthlete,
+} = useAthletes()
+
+const showAthleteModal = ref(false)
+const showDeleteAthleteModal = ref(false)
+const athleteModalLoading = ref(false)
+const athleteDeleteLoading = ref(false)
+const selectedAthleteForEdit = ref<any>(null)
+
+function openEditAthleteModal(athlete: any) {
+  selectedAthleteForEdit.value = athlete
+  showAthleteModal.value = true
+}
+
+function openDeleteAthleteModal(athlete: any) {
+  selectedAthleteForEdit.value = athlete
+  showDeleteAthleteModal.value = true
+}
+
+function viewAthleteFromTournament(athlete: any) {
+  navigateTo(`/athletes/${athlete.id}`)
+}
+
+function closeAthleteModal() {
+  showAthleteModal.value = false
+  selectedAthleteForEdit.value = null
+}
+
+function closeDeleteAthleteModal() {
+  showDeleteAthleteModal.value = false
+  selectedAthleteForEdit.value = null
+}
+
+async function syncAthleteCategoryEnrollments(athleteId: string, selectedIds: string[]) {
+  const existingIds: string[] = Array.isArray(selectedAthleteForEdit.value?.categories)
+    ? selectedAthleteForEdit.value.categories.map((c: any) => c.id)
+    : []
+
+  const toEnroll = selectedIds.filter((id) => !existingIds.includes(id))
+  const toUnenroll = existingIds.filter((id) => !selectedIds.includes(id))
+
+  for (const categoryId of toEnroll) {
+    try { await enrollAthlete(athleteId, { categoryId }) }
+    catch (e: any) { console.warn('Enrollment:', e?.data?.message || e.message) }
+  }
+  for (const categoryId of toUnenroll) {
+    try { await unenrollAthlete(athleteId, categoryId) }
+    catch (e: any) { console.warn('Unenrollment:', e?.data?.message || e.message) }
+  }
+}
+
+async function saveAthleteFromTournament(payload: { athlete: any; photoFile?: File }) {
+  athleteModalLoading.value = true
+  try {
+    const { athlete, photoFile } = payload
+
+    const dto: any = {
+      firstName: athlete.firstName,
+      middleName: athlete.middleName || undefined,
+      lastName: athlete.lastName,
+      gender: athlete.gender,
+      dateOfBirth: athlete.dateOfBirth,
+      bloodGroup: athlete.bloodGroup || undefined,
+      disability: athlete.disability || undefined,
+      phone: athlete.phone || undefined,
+      email: athlete.email || undefined,
+      address: athlete.address || undefined,
+      city: athlete.city || undefined,
+      state: athlete.state,
+      postalCode: athlete.postalCode || undefined,
+      country: athlete.country || 'IND',
+      guardianName: athlete.guardianName || undefined,
+      emergencyContact: athlete.emergencyContact || undefined,
+      emergencyPhone: athlete.emergencyPhone || undefined,
+      style: athlete.style || undefined,
+      currentRank: athlete.currentRank || undefined,
+      federationId: athlete.federationId || undefined,
+      dojoId: athlete.dojoId || undefined,
+      coachId: athlete.coachId || undefined,
+    }
+
+    let saved: any
+    if (selectedAthleteForEdit.value?.id) {
+      saved = await updateAthlete(selectedAthleteForEdit.value.id, dto)
+    } else {
+      saved = await createAthlete(dto)
+    }
+
+    if (photoFile && saved?.id) {
+      await uploadPhoto(saved.id, photoFile)
+    }
+
+    const athleteId = saved?.id || selectedAthleteForEdit.value?.id
+    if (athleteId && Array.isArray(athlete.categoryIds)) {
+      await syncAthleteCategoryEnrollments(athleteId, athlete.categoryIds)
+    }
+
+    await refresh()
+    closeAthleteModal()
+  } catch (err: any) {
+    console.error(err)
+    alert(err?.data?.message || err?.message || 'Failed to save athlete')
+  } finally {
+    athleteModalLoading.value = false
+  }
+}
+
+async function removeAthleteFromTournament() {
+  if (!selectedAthleteForEdit.value) return
+  athleteDeleteLoading.value = true
+  try {
+    await deleteAthleteApi(selectedAthleteForEdit.value.id)
+    await refresh()
+    closeDeleteAthleteModal()
+  } catch (err) {
+    console.error(err)
+  } finally {
+    athleteDeleteLoading.value = false
+  }
+}
+// --- end athletes tab wiring ---
 </script>
 
 <template>
@@ -225,9 +368,84 @@ const formatDate = (date?: string) => {
       </div>
 
       <!-- Matches -->
-      <div v-else-if="activeTab === 'matches'" class="rounded-xl border border-line p-6">
-        <h2 class="text-xl font-semibold">Matches</h2>
-        <p class="mt-2">Total Matches: {{ matches.length }}</p>
+      <div v-else-if="activeTab === 'matches'" class="space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-semibold text-foreground">Matches</h2>
+            <p class="text-sm text-muted mt-1">{{ matches.length }} match{{ matches.length !== 1 ? 'es' : '' }} in this tournament</p>
+          </div>
+        </div>
+
+        <div v-if="matches.length === 0" class="rounded-2xl border border-line bg-surface py-16 text-center text-muted">
+          No matches scheduled yet.
+        </div>
+
+        <div v-else class="rounded-2xl border border-line bg-surface overflow-hidden">
+          <table class="w-full">
+            <thead class="bg-canvas/60">
+              <tr>
+                <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-muted">Round</th>
+                <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-muted">Category</th>
+                <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-muted">Tatami</th>
+                <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-muted">Athletes</th>
+                <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-muted">Score</th>
+                <th class="px-5 py-3 text-left text-xs font-semibold uppercase text-muted">Status</th>
+                <th class="px-5 py-3 text-right text-xs font-semibold uppercase text-muted">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="match in matches"
+                :key="match.id"
+                class="border-t border-line hover:bg-surface-hover"
+              >
+                <td class="px-5 py-3 text-sm">{{ humanize(match.round) }}</td>
+
+                <td class="px-5 py-3 text-sm">
+                  {{ match.category?.name || '—' }}
+                  <span v-if="match.category" class="block text-xs text-muted">
+                    {{ match.category.ageGroup }} · {{ match.category.gender }} · {{ match.category.discipline }}
+                  </span>
+                </td>
+
+                <td class="px-5 py-3 text-sm text-muted">{{ match.tatami?.name || '—' }}</td>
+
+                <td class="px-5 py-3 text-sm">
+                  <span :class="match.winnerId === match.redAthleteId ? 'font-semibold text-red-400' : ''">
+                    {{ getAthleteName(match.redAthlete) }}
+                  </span>
+                  <span class="text-muted mx-1">vs</span>
+                  <span :class="match.winnerId === match.blueAthleteId ? 'font-semibold text-blue-400' : ''">
+                    {{ getAthleteName(match.blueAthlete) }}
+                  </span>
+                </td>
+
+                <td class="px-5 py-3 text-sm font-mono">
+                  {{ match.redScore }} – {{ match.blueScore }}
+                </td>
+
+                <td class="px-5 py-3">
+                  <span
+                    class="rounded-lg border px-2.5 py-1 text-xs font-medium"
+                    :class="statusClass(match.status)"
+                  >
+                    {{ humanize(match.status) }}
+                  </span>
+                </td>
+
+                <td class="px-5 py-3 text-right">
+                  <button
+                    v-if="isStaff"
+                    class="text-sm text-blue-400 hover:text-blue-300"
+                    @click="handleAssignOfficials(match)"
+                  >
+                    Assign Officials
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
           <!-- Participants (Category-wise) -->
@@ -336,11 +554,11 @@ const formatDate = (date?: string) => {
             Generate and manage IDs for athletes, coaches, officials and referees
           </p>
         </div>
-
         <BadgeToolbar
           v-model:active-role="badgeRole"
           :generating="generating"
-          :exporting="exporting"
+          :exporting-pdf="exportingPdf"
+          :exporting-excel="exportingExcel"
           @generate="showGenerateModal = true"
           @export-pdf="exportPdf(badgeRole || undefined)"
           @export-excel="exportExcel(badgeRole || undefined)"
@@ -356,12 +574,13 @@ const formatDate = (date?: string) => {
 
       <!-- Athletes -->
       <div v-else-if="activeTab === 'athletes'">
-        <AthletesTable
-          :athletes="athletes"
-          @view="viewAthlete"
-          @edit="editAthlete"
-          @delete="deleteAthlete"
-        />
+          <AthletesTable
+            :athletes="athletes"
+            :categories="categories"
+            @view="viewAthleteFromTournament"
+            @edit="openEditAthleteModal"
+            @delete="openDeleteAthleteModal"
+          />
       </div>
 
       <!-- Categories -->
@@ -413,6 +632,24 @@ const formatDate = (date?: string) => {
       }
     "
   />
+
+  <AthleteModal
+    :open="showAthleteModal"
+    :loading="athleteModalLoading"
+    :athlete="selectedAthleteForEdit"
+    :categories="categories"
+    @close="closeAthleteModal"
+    @save="saveAthleteFromTournament"
+  />
+
+  <DeleteAthleteModal
+    :open="showDeleteAthleteModal"
+    :loading="athleteDeleteLoading"
+    :athlete-name="`${selectedAthleteForEdit?.firstName || ''} ${selectedAthleteForEdit?.lastName || ''}`.trim()"
+    @close="closeDeleteAthleteModal"
+    @delete="removeAthleteFromTournament"
+  />
+
   <GenerateBadgeModal
   :open="showGenerateModal"
   :loading="generating"

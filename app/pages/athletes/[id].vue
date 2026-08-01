@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { ref, watch, computed, onMounted } from 'vue'
 import { Plus, X, Trophy, Pencil, Trash2 } from 'lucide-vue-next'
 import { useAthletes } from '~/composables/useAthletes'
 import { useCategories } from '~/composables/useCategories'
 import CountryFlag from 'vue-country-flag-next'
 import { COUNTRY_CODE_MAP } from '~/utils/countries'
 import EnrollAthleteModal from '~/components/athletes/EnrollAthleteModal.vue'
+
 const route = useRoute()
 const athleteId = route.params.id as string
 
@@ -37,6 +39,14 @@ const historyForm = ref({
   position: undefined as number | undefined,
   tournamentId: '',
   categoryId: '',
+})
+
+// Auto-fill position based on medal; leave it untouched/empty when medal is cleared
+watch(() => historyForm.value.medal, (medal) => {
+  if (medal === 'GOLD') historyForm.value.position = 1
+  else if (medal === 'SILVER') historyForm.value.position = 2
+  else if (medal === 'BRONZE') historyForm.value.position = 3
+  else historyForm.value.position = undefined
 })
 
 onMounted(async () => {

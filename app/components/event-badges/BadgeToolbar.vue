@@ -5,7 +5,8 @@ import { ROLES, roleLabel } from '~/utils/badges'
 const props = defineProps<{
   activeRole: string
   generating?: boolean
-  exporting?: boolean
+  exportingPdf?: boolean
+  exportingExcel?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -45,20 +46,20 @@ const emit = defineEmits<{
     <!-- Actions -->
     <div class="flex items-center gap-2">
       <button
-        :disabled="exporting"
+        :disabled="exportingExcel"
         class="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2 text-sm hover:bg-surface transition disabled:opacity-60"
         @click="emit('export-excel')"
       >
-        <Loader2 v-if="exporting" class="h-4 w-4 animate-spin" />
+        <Loader2 v-if="exportingExcel" class="h-4 w-4 animate-spin" />
         <FileSpreadsheet v-else class="h-4 w-4" />
         Excel
       </button>
       <button
-        :disabled="exporting"
+        :disabled="exportingPdf"
         class="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2 text-sm hover:bg-surface transition disabled:opacity-60"
         @click="emit('export-pdf')"
       >
-        <Loader2 v-if="exporting" class="h-4 w-4 animate-spin" />
+        <Loader2 v-if="exportingPdf" class="h-4 w-4 animate-spin" />
         <FileText v-else class="h-4 w-4" />
         PDF
       </button>

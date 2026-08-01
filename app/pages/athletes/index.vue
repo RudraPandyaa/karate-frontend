@@ -233,19 +233,19 @@ async function removeAthlete() {
 
     <AthleteModal
       :open="showAthleteModal"
-      :loading="modalLoading"
-      :athlete="selectedAthlete"
+      :loading="athleteModalLoading"
+      :athlete="selectedAthleteForEdit"
       :categories="categories"
-      @close="closeModal"
-      @save="saveAthlete"
+      @close="closeAthleteModal"
+      @save="saveAthleteFromTournament"
     />
 
     <DeleteAthleteModal
-      :open="showDeleteModal"
-      :loading="deleteLoading"
-      :athlete-name="selectedAthlete?.fullName || `${selectedAthlete?.firstName || ''} ${selectedAthlete?.lastName || ''}`.trim()"
-      @close="closeDeleteModal"
-      @delete="removeAthlete"
+      :open="showDeleteAthleteModal"
+      :loading="athleteDeleteLoading"
+      :athlete-name="`${selectedAthleteForEdit?.firstName || ''} ${selectedAthleteForEdit?.lastName || ''}`.trim()"
+      @close="closeDeleteAthleteModal"
+      @delete="removeAthleteFromTournament"
     />
 
   </div>
