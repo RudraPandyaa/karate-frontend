@@ -69,7 +69,6 @@ function flagUrl(country?: string | null): string | null {
         >
           <div>
             <p class="text-foreground font-semibold flex items-center gap-2 flex-wrap">
-              <!-- Red -->
               <span class="inline-flex items-center gap-1.5">
                 <img
                   v-if="flagUrl(m.redAthlete?.country)"
@@ -78,12 +77,15 @@ function flagUrl(country?: string | null): string | null {
                   class="w-5 h-auto rounded-sm"
                   loading="lazy"
                 />
-                {{ athleteDisplayName(m.redAthlete) }}
+                {{
+                  m.redAthlete?.fullName
+                    || [m.redAthlete?.firstName, m.redAthlete?.lastName].filter(Boolean).join(' ')
+                    || 'TBD'
+                }}
               </span>
 
               <span class="text-muted font-normal">vs</span>
 
-              <!-- Blue -->
               <span class="inline-flex items-center gap-1.5">
                 <img
                   v-if="flagUrl(m.blueAthlete?.country)"
@@ -92,7 +94,11 @@ function flagUrl(country?: string | null): string | null {
                   class="w-5 h-auto rounded-sm"
                   loading="lazy"
                 />
-                {{ athleteDisplayName(m.blueAthlete) }}
+                {{
+                  m.blueAthlete?.fullName
+                    || [m.blueAthlete?.firstName, m.blueAthlete?.lastName].filter(Boolean).join(' ')
+                    || 'TBD'
+                }}
               </span>
             </p>
             <p class="text-sm text-muted">

@@ -70,7 +70,7 @@ function getAthleteName(athlete?: {
               {{ m.redScore }} - {{ m.blueScore }}
             </span>
             <span class="text-foreground font-semibold truncate max-w-[40%] text-right">
-              {{ getAthleteName(m.redAthlete) }}
+              {{ getAthleteName(m.blueAthlete) }}
             </span>
           </div>
         </NuxtLink>
