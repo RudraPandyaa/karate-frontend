@@ -14,6 +14,10 @@ const emit = defineEmits<{
   (e: 'delete', coach: Coach): void
 }>()
 
+// Only Admins can edit or delete coach records — everyone who can reach
+// this page can still view them.
+const { isAdmin } = useAuth()
+
 function getDisplayName(coach: Coach) {
   return [coach.firstName, coach.lastName].filter(Boolean).join(' ') || '—'
 }
@@ -84,8 +88,10 @@ const filtered = computed(() => {
 
           <td class="px-6 py-4 text-right space-x-3">
             <button class="text-blue-400 hover:text-blue-300 text-sm" @click="emit('view', coach)">View</button>
-            <button class="text-muted hover:text-foreground text-sm" @click="emit('edit', coach)">Edit</button>
-            <button class="text-red-400 hover:text-red-300 text-sm" @click="emit('delete', coach)">Delete</button>
+            <template v-if="isAdmin">
+              <button class="text-muted hover:text-foreground text-sm" @click="emit('edit', coach)">Edit</button>
+              <button class="text-red-400 hover:text-red-300 text-sm" @click="emit('delete', coach)">Delete</button>
+            </template>
           </td>
         </tr>
       </tbody>

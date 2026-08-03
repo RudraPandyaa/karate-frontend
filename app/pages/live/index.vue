@@ -3,6 +3,20 @@ definePageMeta({
   layout: 'public',
 })
 const { matches, pending, error } = useLiveMatches()
+function getAthleteName(athlete?: {
+  fullName?: string | null
+  name?: string | null
+  firstName?: string | null
+  lastName?: string | null
+} | null) {
+  if (!athlete) return 'TBD'
+  return (
+    athlete.fullName ||
+    athlete.name ||
+    [athlete.firstName, athlete.lastName].filter(Boolean).join(' ') ||
+    'TBD'
+  )
+}
 </script>
 
 <template>
@@ -50,13 +64,13 @@ const { matches, pending, error } = useLiveMatches()
 
           <div class="flex items-center justify-between">
             <span class="text-foreground font-semibold truncate max-w-[40%]">
-              {{ m.redAthlete?.name ?? 'TBD' }}
+              {{ getAthleteName(m.redAthlete) }}
             </span>
             <span class="text-foreground font-mono text-lg">
               {{ m.redScore }} - {{ m.blueScore }}
             </span>
             <span class="text-foreground font-semibold truncate max-w-[40%] text-right">
-              {{ m.blueAthlete?.name ?? 'TBD' }}
+              {{ getAthleteName(m.redAthlete) }}
             </span>
           </div>
         </NuxtLink>

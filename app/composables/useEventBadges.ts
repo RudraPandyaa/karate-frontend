@@ -67,20 +67,38 @@ export function useEventBadges(tournamentId: string) {
     await fetchBadges(role)
   }
 
+  /**
+   * Fetch a file through the authenticated `api` client (so the Bearer
+   * token from useApi's onRequest hook is actually attached — unlike
+   * window.open(), which is a plain browser navigation with no auth
+   * headers and was causing the 401) and save it client-side.
+   */
+  async function downloadFile(path: string, query: string, filename: string) {
+    const blob = await api<Blob>(`${path}${query}`, {
+      responseType: 'blob',
+    })
+
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   async function exportPdf(role?: string) {
     exportingPdf.value = true
 
     try {
-      const config = useRuntimeConfig()
-
-      const query = role
-        ? `?role=${encodeURIComponent(role)}`
-        : ''
-
-      window.open(
-        `${config.public.apiBase}/tournaments/${tournamentId}/badges/export/pdf${query}`,
-        '_blank',
+      const query = role ? `?role=${encodeURIComponent(role)}` : ''
+      await downloadFile(
+        `/tournaments/${tournamentId}/badges/export/pdf`,
+        query,
+        `badges-${tournamentId}${role ? `-${role}` : ''}.pdf`,
       )
+    } catch (err: any) {
+      console.error(err)
+      alert(err?.data?.message || err?.message || 'Failed to export PDF')
     } finally {
       exportingPdf.value = false
     }
@@ -90,16 +108,15 @@ export function useEventBadges(tournamentId: string) {
     exportingExcel.value = true
 
     try {
-      const config = useRuntimeConfig()
-
-      const query = role
-        ? `?role=${encodeURIComponent(role)}`
-        : ''
-
-      window.open(
-        `${config.public.apiBase}/tournaments/${tournamentId}/badges/export/excel${query}`,
-        '_blank',
+      const query = role ? `?role=${encodeURIComponent(role)}` : ''
+      await downloadFile(
+        `/tournaments/${tournamentId}/badges/export/excel`,
+        query,
+        `badges-${tournamentId}${role ? `-${role}` : ''}.xlsx`,
       )
+    } catch (err: any) {
+      console.error(err)
+      alert(err?.data?.message || err?.message || 'Failed to export Excel')
     } finally {
       exportingExcel.value = false
     }

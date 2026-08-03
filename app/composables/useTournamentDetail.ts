@@ -44,6 +44,7 @@ export const useTournamentDetail = (tournamentId: string) => {
       matches.value = mData
       categories.value = cData
       athletes.value = globalAthletes.value
+      console.log('categories:', JSON.stringify(athletes.value[0]?.categories))
 
     } catch (err: any) {
       console.error('Tournament fetch error:', err)

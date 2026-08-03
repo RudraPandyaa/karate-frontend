@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, nextTick } from 'vue'
 import { X, Save, Loader2 } from 'lucide-vue-next'
+import CountryFlag from 'vue-country-flag-next'
+import { COUNTRIES, COUNTRY_CODE_MAP } from '~/utils/countries'
 
 interface CoachForm {
   id?: string
@@ -8,6 +10,7 @@ interface CoachForm {
   lastName: string
   phone?: string
   email?: string
+  country: string
   dojoId?: string
 }
 
@@ -26,7 +29,34 @@ const emit = defineEmits<{
 const form = ref<CoachForm>(getEmptyForm())
 const errors = ref<Record<string, string>>({})
 
+// Guards the country->phone-code watcher so it doesn't fire while we're
+// programmatically populating the form (e.g. loading an existing coach),
+// which would otherwise stomp on their real saved phone number.
+let skipPhoneSync = false
+
 const isEdit = computed(() => !!props.coach?.id)
+
+/**
+ * Replace (or insert) the leading "+xx" calling code on form.phone
+ * to match the given country, preserving whatever digits the user
+ * already typed.
+ */
+function applyCountryCode(countryCode: string) {
+  const selected = COUNTRIES.find(c => c.code === countryCode)
+  if (!selected) return
+
+  const currentPhone = form.value.phone || ''
+  const phoneWithoutCode = currentPhone.replace(/^\+\d+\s*/, '').trim()
+
+  form.value.phone = `${selected.phoneCode} ${phoneWithoutCode}`.trim()
+}
+
+// Fires on manual country changes made by the user while the modal is
+// open (not during programmatic form population — see skipPhoneSync).
+watch(() => form.value.country, (newCountry) => {
+  if (skipPhoneSync) return
+  applyCountryCode(newCountry)
+})
 
 function getEmptyForm(): CoachForm {
   return {
@@ -34,12 +64,15 @@ function getEmptyForm(): CoachForm {
     lastName: '',
     phone: '',
     email: '',
+    country: 'IND',
     dojoId: '',
   }
 }
 
 watch(() => props.open, (value) => {
   if (!value) return
+
+  skipPhoneSync = true
 
   if (props.coach) {
     form.value = {
@@ -48,13 +81,24 @@ watch(() => props.open, (value) => {
       lastName: props.coach.lastName || '',
       phone: props.coach.phone || '',
       email: props.coach.email || '',
+      country: props.coach.country || 'IND',
       dojoId: props.coach.dojoId || props.coach.dojo?.id || '',
     }
   } else {
     form.value = getEmptyForm()
+    // New coach forms default to India — make sure the +91 code shows
+    // up immediately instead of waiting for the user to touch the
+    // country dropdown.
+    applyCountryCode(form.value.country)
   }
   errors.value = {}
+
+  nextTick(() => {
+    skipPhoneSync = false
+  })
 }, { immediate: true })
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function validate() {
   errors.value = {}
@@ -68,8 +112,18 @@ function validate() {
     errors.value.lastName = 'Last name is required'
     valid = false
   }
-  if (form.value.email && !/^\S+@\S+\.\S+$/.test(form.value.email)) {
-    errors.value.email = 'Enter a valid email'
+
+  const phoneDigits = (form.value.phone || '').replace(/\D/g, '')
+  if (!form.value.phone?.trim() || phoneDigits.length < 6) {
+    errors.value.phone = 'Phone number is required'
+    valid = false
+  }
+
+  if (!form.value.email?.trim()) {
+    errors.value.email = 'Email is required'
+    valid = false
+  } else if (!EMAIL_RE.test(form.value.email.trim())) {
+    errors.value.email = 'Enter a valid email address'
     valid = false
   }
 
@@ -129,13 +183,27 @@ function submit() {
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="mb-1.5 block text-sm font-medium">Phone</label>
+                <label class="mb-1.5 block text-sm font-medium">Phone *</label>
                 <input v-model="form.phone" type="tel" class="input" placeholder="+91 98765 43210" />
+                <p v-if="errors.phone" class="mt-1 text-sm text-red-400">{{ errors.phone }}</p>
               </div>
               <div>
-                <label class="mb-1.5 block text-sm font-medium">Email</label>
+                <label class="mb-1.5 block text-sm font-medium">Email *</label>
                 <input v-model="form.email" type="email" class="input" placeholder="coach@email.com" />
                 <p v-if="errors.email" class="mt-1 text-sm text-red-400">{{ errors.email }}</p>
+              </div>
+            </div>
+
+            <div>
+              <label class="mb-1.5 block text-sm font-medium">Country</label>
+              <div class="flex items-center gap-3">
+                <CountryFlag :country="COUNTRY_CODE_MAP[form.country]" size="medium" />
+
+                <select v-model="form.country" class="input flex-1">
+                  <option v-for="c in COUNTRIES" :key="c.code" :value="c.code">
+                    {{ c.name }}
+                  </option>
+                </select>
               </div>
             </div>
 

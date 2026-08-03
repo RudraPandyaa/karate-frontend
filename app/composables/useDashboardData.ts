@@ -11,30 +11,43 @@ interface RawMatch {
   category: { name: string; discipline?: Discipline } | null
   tatami: { number: number } | null
   round: string
-  redAthlete: { id: string; name: string; state?: string; country?: string } | null
-  blueAthlete: { id: string; name: string; state?: string; country?: string } | null
+  redAthlete: {
+    id: string
+    name?: string
+    fullName?: string
+    firstName?: string
+    lastName?: string
+    state?: string
+    country?: string
+  } | null
+  blueAthlete: {
+    id: string
+    name?: string
+    fullName?: string
+    firstName?: string
+    lastName?: string
+    state?: string
+    country?: string
+  } | null
   status: MatchStatus
   redScore: number
   blueScore: number
   timeRemaining: number
 }
 
-function toLiveSummary(raw: RawMatch): LiveMatchSummary {
+function athleteLabel(a: any): { id: string; name: string; country: string } {
+  if (!a) return { id: '', name: 'TBD', country: '' }
+
+  const name =
+    a.fullName ||
+    a.name ||
+    [a.firstName, a.lastName].filter(Boolean).join(' ') ||
+    'TBD'
+
   return {
-    id: raw.id,
-    tatami: { 
-      id: raw.tatami?.id || '', 
-      number: raw.tatami?.number ?? 0 
-    },
-    category: { name: raw.category?.name || 'Unknown' },
-    round: raw.round,
-    discipline: raw.category?.discipline ?? 'KUMITE',
-    redAthlete: raw.redAthlete,
-    blueAthlete: raw.blueAthlete,
-    redScore: raw.redScore,
-    blueScore: raw.blueScore,
-    timeRemaining: raw.timeRemaining,
-    status: raw.status,
+    id: a.id || '',
+    name,
+    country: a.country || '',
   }
 }
 
@@ -45,8 +58,27 @@ function toUpcomingRow(raw: RawMatch): UpcomingMatchRow {
     categoryName: raw.category?.name || 'Unknown',
     round: raw.round,
     tatamiNumber: raw.tatami?.number ?? 0,
-    redAthlete: raw.redAthlete || { id: '', name: 'TBD', state: '', country: '' },
-    blueAthlete: raw.blueAthlete || { id: '', name: 'TBD', state: '', country: '' },
+    redAthlete: athleteLabel(raw.redAthlete),
+    blueAthlete: athleteLabel(raw.blueAthlete),
+  }
+}
+
+function toLiveSummary(raw: RawMatch): LiveMatchSummary {
+  return {
+    id: raw.id,
+    tatami: {
+      id: (raw.tatami as any)?.id || '',
+      number: raw.tatami?.number ?? 0,
+    },
+    category: { name: raw.category?.name || 'Unknown' },
+    round: raw.round,
+    discipline: raw.category?.discipline ?? 'KUMITE',
+    redAthlete: athleteLabel(raw.redAthlete),
+    blueAthlete: athleteLabel(raw.blueAthlete),
+    redScore: raw.redScore,
+    blueScore: raw.blueScore,
+    timeRemaining: raw.timeRemaining,
+    status: raw.status,
   }
 }
 

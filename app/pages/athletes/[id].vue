@@ -63,12 +63,26 @@ function getDisplayName(a: any) {
   return a?.fullName || [a?.firstName, a?.lastName].filter(Boolean).join(' ') || 'Athlete'
 }
 
+const enrolledCategoryIds = computed(() =>
+  enrollments.value.map((e) => e.categoryId),
+)
+
 async function handleEnroll(payload: { categoryId: string; seed?: number }) {
   try {
     await enrollAthlete(athleteId, payload)
     showEnrollModal.value = false
-  } catch (err) {
-    console.error(err)
+  } catch (err: any) {
+    const status = err?.statusCode || err?.status || err?.response?.status
+    const msg =
+      err?.data?.message ||
+      err?.message ||
+      'Failed to enroll'
+
+    if (status === 409 || String(msg).toLowerCase().includes('already')) {
+      alert('Already enrolled in this category.')
+    } else {
+      alert(msg)
+    }
   }
 }
 
@@ -311,6 +325,7 @@ const medalColor: Record<string, string> = {
       :loading="saving"
       :tournaments="tournaments"
       :categories="categories"
+      :enrolled-category-ids="enrolledCategoryIds"
       @close="showEnrollModal = false"
       @submit="handleEnroll"
     />

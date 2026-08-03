@@ -8,6 +8,8 @@ import DeleteRefereeModal from '~/components/referees/DeleteRefereeModal.vue'
 
 import { useReferees, type Referee } from '~/composables/useReferees'
 
+const { isAdmin } = useAuth()
+
 const {
   referees,
   pending,
@@ -127,6 +129,7 @@ async function removeReferee() {
       </div>
 
       <button
+        v-if="isAdmin"
         class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-white hover:bg-blue-700"
         @click="openCreateModal"
       >

@@ -3,11 +3,12 @@ import type { Category } from '~/composables/useCategories'
 
 export interface BracketAthlete {
   id: string
-  name: string
-  state: string
+  fullName?: string
+  firstName?: string
+  lastName?: string
+  state?: string
   country?: string
-}
-
+ }
 export interface BracketMatch {
   id: string
   round: string
@@ -72,6 +73,24 @@ export const useBracket = () => {
     }
   }
 
+  async function regenerateBracket(categoryId: string) {
+    generating.value = true
+    error.value = null
+
+    try {
+      await api('/bracket/regenerate', {
+        method: 'POST',
+        body: { categoryId },
+      })
+      await fetchCategoryBracket(categoryId)
+    } catch (err: any) {
+      error.value = err?.data?.message || err.message || 'Unable to regenerate bracket'
+      throw err
+    } finally {
+      generating.value = false
+    }
+}
+
   return {
     category,
     matches,
@@ -80,5 +99,6 @@ export const useBracket = () => {
     error,
     fetchCategoryBracket,
     generateBracket,
+    regenerateBracket
   }
 }

@@ -78,18 +78,30 @@ const safeTatamis = computed(() =>
   Array.isArray(tatamis.value) ? tatamis.value : []
 )
 
+// Only athletes enrolled in the selected category should be selectable —
+// picking a category first narrows the pool instead of showing everyone
+// in the tournament.
+const athletesInCategory = computed(() => {
+  if (!form.value.categoryId) return []
+  return safeAthletes.value.filter(
+    (athlete) =>
+      Array.isArray(athlete.categories) &&
+      athlete.categories.some((c: any) => c.id === form.value.categoryId)
+  )
+})
+
 /**
  * Prevent selecting the same athlete
  * in both AKA and AO corners.
  */
 const redAthletes = computed(() =>
-  safeAthletes.value.filter(
+  athletesInCategory.value.filter(
     athlete => athlete.id !== form.value.blueAthleteId
   )
 )
 
 const blueAthletes = computed(() =>
-  safeAthletes.value.filter(
+  athletesInCategory.value.filter(
     athlete => athlete.id !== form.value.redAthleteId
   )
 )
@@ -160,6 +172,33 @@ watch(
   },
   {
     immediate: true,
+  }
+)
+
+// If the category changes and a previously-selected corner athlete isn't
+// enrolled in the new category, clear that corner. Checking membership
+// (rather than clearing unconditionally) means openEdit()'s pre-filled
+// athletes survive this watcher firing, since they're already valid for
+// the match's own category.
+watch(
+  () => form.value.categoryId,
+  (newCategoryId) => {
+    const validIds = new Set(
+      safeAthletes.value
+        .filter(
+          (a) =>
+            Array.isArray(a.categories) &&
+            a.categories.some((c: any) => c.id === newCategoryId)
+        )
+        .map((a) => a.id)
+    )
+
+    if (form.value.redAthleteId && !validIds.has(form.value.redAthleteId)) {
+      form.value.redAthleteId = ''
+    }
+    if (form.value.blueAthleteId && !validIds.has(form.value.blueAthleteId)) {
+      form.value.blueAthleteId = ''
+    }
   }
 )
 
@@ -367,8 +406,11 @@ defineExpose({
         <select
           v-model="form.redAthleteId"
           class="w-full rounded-xl border border-red-600 bg-surface px-4 py-3 focus:border-red-500"
+          :disabled="!form.categoryId"
         >
-          <option value="">Select AKA Athlete</option>
+          <option value="">
+            {{ form.categoryId ? 'Select AKA Athlete' : 'Select a category first' }}
+          </option>
           <option
             v-for="athlete in redAthletes"
             :key="athlete.id"
@@ -377,6 +419,9 @@ defineExpose({
             {{ getAthleteName(athlete) }} {{ countryFlag(athlete.country) }}
           </option>
         </select>
+        <p v-if="form.categoryId && redAthletes.length === 0" class="mt-1 text-xs text-red-300">
+          No athletes enrolled in this category yet.
+        </p>
       </div>
 
       <!-- BLUE CORNER -->
@@ -423,8 +468,11 @@ defineExpose({
         <select
           v-model="form.blueAthleteId"
           class="w-full rounded-xl border border-blue-600 bg-surface px-4 py-3 focus:border-blue-500"
+          :disabled="!form.categoryId"
         >
-          <option value="">Select AO Athlete</option>
+          <option value="">
+            {{ form.categoryId ? 'Select AO Athlete' : 'Select a category first' }}
+          </option>
           <option
             v-for="athlete in blueAthletes"
             :key="athlete.id"
@@ -433,6 +481,9 @@ defineExpose({
             {{ getAthleteName(athlete) }} {{ countryFlag(athlete.country) }}
           </option>
         </select>
+        <p v-if="form.categoryId && blueAthletes.length === 0" class="mt-1 text-xs text-blue-300">
+          No athletes enrolled in this category yet.
+        </p>
       </div>
     </div>
 

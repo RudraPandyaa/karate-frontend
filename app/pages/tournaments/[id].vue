@@ -15,6 +15,7 @@ import AthleteModal from '~/components/athletes/AthleteModal.vue'
 import DeleteAthleteModal from '~/components/athletes/DeleteAthleteModal.vue'
 import { useAthletes } from '~/composables/useAthletes'
 import AthletesTable from '~/components/athletes/AthletesTable.vue'
+import CollapsibleSection from '~/components/ui/CollapsibleSection.vue'
 const route = useRoute()
 const id = route.params.id as string
 const activeTab = ref<
@@ -42,7 +43,11 @@ function openBadgePreview(badge: any) {
   showBadgePreview.value = true
 }
 
-async function handleGenerateBadges(payload: { role: string; referenceIds: string[] }) {
+ async function handleGenerateBadges(payload: { role: string; referenceIds: string[] }) {
+  if (!isAdmin.value) {
+    alert('Only admins can generate badges.')
+    return
+}
   try {
     await generateBadges(payload.role, payload.referenceIds)
     showGenerateModal.value = false
@@ -173,11 +178,13 @@ const athleteDeleteLoading = ref(false)
 const selectedAthleteForEdit = ref<any>(null)
 
 function openEditAthleteModal(athlete: any) {
+  if (!isAdmin.value) return
   selectedAthleteForEdit.value = athlete
   showAthleteModal.value = true
 }
 
 function openDeleteAthleteModal(athlete: any) {
+  if (!isAdmin.value) return
   selectedAthleteForEdit.value = athlete
   showDeleteAthleteModal.value = true
 }
@@ -448,7 +455,7 @@ async function removeAthleteFromTournament() {
         </div>
       </div>
 
-          <!-- Participants (Category-wise) -->
+      <!-- Participants (Category-wise) -->
       <div v-else-if="activeTab === 'participants'" class="space-y-6">
         <div class="flex items-center justify-between">
           <div>
@@ -474,13 +481,12 @@ async function removeAthleteFromTournament() {
         </div>
 
         <div v-else class="space-y-6">
-          <div
-            v-for="cat in participants"
+          <CollapsibleSection
+            v-for="(cat, index) in participants"
             :key="cat.categoryId"
-            class="rounded-2xl border border-line bg-surface overflow-hidden"
+            :default-open="index === 0"
           >
-            <!-- Category header -->
-            <div class="bg-canvas/60 px-6 py-4 flex items-center justify-between">
+            <template #header>
               <div>
                 <h3 class="font-semibold text-foreground">
                   {{ cat.categoryName }}
@@ -492,10 +498,10 @@ async function removeAthleteFromTournament() {
                   </span>
                 </p>
               </div>
-              <span class="text-sm font-medium text-muted">
+              <span class="text-sm font-medium text-muted mr-3">
                 {{ cat.totalAthletes }} athlete{{ cat.totalAthletes !== 1 ? 's' : '' }}
               </span>
-            </div>
+            </template>
 
             <!-- Athletes list -->
             <div v-if="cat.athletes.length === 0" class="px-6 py-8 text-center text-muted text-sm">
@@ -542,7 +548,7 @@ async function removeAthleteFromTournament() {
                 </NuxtLink>
               </div>
             </div>
-          </div>
+          </CollapsibleSection>
         </div>
       </div>
 
@@ -560,6 +566,7 @@ async function removeAthleteFromTournament() {
           :exporting-pdf="exportingPdf"
           :exporting-excel="exportingExcel"
           @generate="showGenerateModal = true"
+          :can-generate="isAdmin"
           @export-pdf="exportPdf(badgeRole || undefined)"
           @export-excel="exportExcel(badgeRole || undefined)"
         />
@@ -577,6 +584,7 @@ async function removeAthleteFromTournament() {
           <AthletesTable
             :athletes="athletes"
             :categories="categories"
+            :can-manage="isAdmin"
             @view="viewAthleteFromTournament"
             @edit="openEditAthleteModal"
             @delete="openDeleteAthleteModal"

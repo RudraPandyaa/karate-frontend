@@ -12,6 +12,17 @@ export interface LiveScoreEvent {
   wasUndone: boolean
 }
 
+export type ScoreFlash = {
+  corner: 'RED' | 'BLUE'
+  type: 'YUKO' | 'WAZA_ARI' | 'IPPON'
+} | null
+
+export interface PenaltySummary {
+  chui: number
+  hansokuChui: number
+  hansoku: number
+}
+
 export interface LiveMatch {
   id: string
   round: string
@@ -29,23 +40,42 @@ export interface LiveMatch {
     discipline?: string
   } | null
 
+  tatami?: {
+    id: string
+    number?: number
+    name?: string | null
+  } | null
+
   winnerId?: string | null
   resultType?: string | null
   completedAt?: string | null
 
   redAthlete: {
     id: string
-    name: string
+    name?: string
+    fullName?: string | null
+    firstName?: string | null
+    lastName?: string | null
     photoUrl?: string | null
+    country?: string | null
   } | null
 
   blueAthlete: {
     id: string
-    name: string
+    name?: string
+    fullName?: string | null
+    firstName?: string | null
+    lastName?: string | null
     photoUrl?: string | null
+    country?: string | null
   } | null
 
   scoreEvents: LiveScoreEvent[]
+
+  penalties?: {
+    red: PenaltySummary
+    blue: PenaltySummary
+  }
 }
 
 export function useLiveMatch(
@@ -64,6 +94,29 @@ export function useLiveMatch(
     ref<string | null>(null)
 
   let socket: Socket | null = null
+
+  const lastScoreFlash = ref<ScoreFlash>(null)
+  let flashTimeout: ReturnType<typeof setTimeout> | null = null
+
+  function triggerFlash(data: any) {
+    const last =
+      data?.exchange?.[data.exchange.length - 1] ||
+      data?.lastScore ||
+      null
+
+    if (!last?.corner || !last?.type) return
+    if (!['YUKO', 'WAZA_ARI', 'IPPON'].includes(last.type)) return
+
+    lastScoreFlash.value = {
+      corner: last.corner,
+      type: last.type,
+    }
+
+    if (flashTimeout) clearTimeout(flashTimeout)
+    flashTimeout = setTimeout(() => {
+      lastScoreFlash.value = null
+    }, 1800)
+  }
 
   async function fetchMatch() {
     try {
@@ -104,26 +157,53 @@ export function useLiveMatch(
       )
     })
 
-    socket.on(
-      'scoreUpdated',
-      (data: any) => {
-        if (!match.value) return
+    socket.on('scoreUpdated', (data: any) => {
+      if (!match.value) return
 
-        if (data.match) {
-          match.value = {
-            ...match.value,
-            ...data.match,
+      const incomingEvents =
+        data.scoreEvents ??
+        data.match?.scoreEvents ??
+        null
 
-            // IMPORTANT:
-            // Replace events instead of appending them.
-            // Backend sends the full event history.
-            scoreEvents: data.scoreEvents
-              ? data.scoreEvents
-              : match.value.scoreEvents,
-          }
-        }
-      },
-    )
+      // Fallback: append exchange entries if backend only sends new ones
+      let scoreEvents = match.value.scoreEvents ?? []
+
+      if (incomingEvents) {
+        scoreEvents = incomingEvents
+      } else if (data.exchange?.length) {
+        const mapped = data.exchange.map((e: any) => ({
+          id: e.id,
+          corner: e.corner,
+          type: e.type,
+          points: e.points,
+          timestamp: e.timestamp ?? new Date().toISOString(),
+          wasUndone: e.wasUndone ?? false,
+        }))
+        // only useful if exchange has corner/type (see Fix 1)
+        scoreEvents = [...scoreEvents, ...mapped]
+      }
+
+      match.value = {
+        ...match.value,
+        ...(data.match ?? {}),
+        scoreEvents,
+        penalties:
+          data.penalties ??
+          data.match?.penalties ??
+          match.value.penalties,
+      }
+      triggerFlash(data)
+    })
+
+    socket.on('penaltyUpdated', (data: any) => {
+      if (!match.value) return
+      match.value = {
+        ...match.value,
+        ...(data.match ?? {}),
+        scoreEvents: data.scoreEvents ?? data.match?.scoreEvents ?? match.value.scoreEvents,
+        penalties: data.penalties ?? data.match?.penalties ?? match.value.penalties,
+      }
+    })
 
     socket.on(
       'timerUpdate',
@@ -193,11 +273,13 @@ export function useLiveMatch(
 
   onUnmounted(() => {
     socket?.disconnect()
+    if (flashTimeout) clearTimeout(flashTimeout)
   })
 
   return {
     match,
     pending,
     error,
+    lastScoreFlash,
   }
 }

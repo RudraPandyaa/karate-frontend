@@ -3,10 +3,12 @@ import { ref, onMounted } from 'vue'
 import { Plus } from 'lucide-vue-next'
 
 import CoachesTable from '~/components/coaches/CoachesTable.vue'
-import CoachModal from '~/components/coaches/CoachesModal.vue'
+import CoachesModal from '~/components/coaches/CoachesModal.vue'
 import DeleteCoachModal from '~/components/coaches/DeleteCoachModal.vue'
 
 import { useCoaches, type Coach } from '~/composables/useCoaches'
+
+const { isAdmin } = useAuth()
 
 const {
   coaches,
@@ -77,6 +79,7 @@ async function saveCoach(payload: { coach: any }) {
       lastName: coach.lastName,
       phone: coach.phone || undefined,
       email: coach.email || undefined,
+      country: coach.country || 'IND',
       dojoId: coach.dojoId || undefined,
     }
 
@@ -86,6 +89,7 @@ async function saveCoach(payload: { coach: any }) {
       await createCoach(dto)
     }
 
+    await fetchCoaches()
     closeModal()
   } catch (err: any) {
     console.error(err)
@@ -118,6 +122,7 @@ async function removeCoach() {
       </div>
 
       <button
+        v-if="isAdmin"
         class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-white hover:bg-blue-700"
         @click="openCreateModal"
       >
@@ -142,7 +147,7 @@ async function removeCoach() {
       @delete="openDeleteModal"
     />
 
-    <CoachModal
+    <CoachesModal
       :open="showCoachModal"
       :loading="modalLoading"
       :coach="selectedCoach"

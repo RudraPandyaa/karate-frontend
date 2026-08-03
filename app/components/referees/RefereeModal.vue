@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, nextTick } from 'vue'
 import { X, Save, Loader2, Upload, Trash2 } from 'lucide-vue-next'
 import CountryFlag from 'vue-country-flag-next'
 import { COUNTRIES, COUNTRY_CODE_MAP } from '~/utils/countries'
@@ -34,6 +34,11 @@ const previewUrl = ref<string | null>(null)
 const selectedFile = ref<File | null>(null)
 const errors = ref<Record<string, string>>({})
 
+// Guards the country->phone-code watcher so it doesn't fire while we're
+// programmatically populating the form (e.g. loading an existing referee),
+// which would otherwise stomp on their real saved phone number.
+let skipPhoneSync = false
+
 const isEdit = computed(() => !!props.referee?.id)
 
 const ranks = [
@@ -49,6 +54,28 @@ const statuses = [
   { value: 'INACTIVE', label: 'Inactive' },
   { value: 'SUSPENDED', label: 'Suspended' },
 ]
+
+/**
+ * Replace (or insert) the leading "+xx" calling code on form.phone
+ * to match the given country, preserving whatever digits the user
+ * already typed.
+ */
+function applyCountryCode(countryCode: string) {
+  const selected = COUNTRIES.find(c => c.code === countryCode)
+  if (!selected) return
+
+  const currentPhone = form.value.phone || ''
+  const phoneWithoutCode = currentPhone.replace(/^\+\d+\s*/, '').trim()
+
+  form.value.phone = `${selected.phoneCode} ${phoneWithoutCode}`.trim()
+}
+
+// Fires on manual country changes made by the user while the modal is
+// open (not during programmatic form population — see skipPhoneSync).
+watch(() => form.value.country, (newCountry) => {
+  if (skipPhoneSync) return
+  applyCountryCode(newCountry)
+})
 
 function getEmptyForm(): RefereeForm {
   return {
@@ -68,6 +95,8 @@ function getEmptyForm(): RefereeForm {
 watch(() => props.open, (value) => {
   if (!value) return
 
+  skipPhoneSync = true
+
   if (props.referee) {
     form.value = {
       id: props.referee.id,
@@ -86,9 +115,17 @@ watch(() => props.open, (value) => {
   } else {
     form.value = getEmptyForm()
     previewUrl.value = null
+    // New referee forms default to India — make sure the +91 code shows
+    // up immediately instead of waiting for the user to touch the
+    // country dropdown.
+    applyCountryCode(form.value.country)
   }
   selectedFile.value = null
   errors.value = {}
+
+  nextTick(() => {
+    skipPhoneSync = false
+  })
 }, { immediate: true })
 
 function onFileSelect(e: Event) {
@@ -109,6 +146,8 @@ function removePhoto() {
   form.value.photoUrl = null
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 function validate() {
   errors.value = {}
   let valid = true
@@ -121,8 +160,18 @@ function validate() {
     errors.value.lastName = 'Last name is required'
     valid = false
   }
-  if (form.value.email && !/^\S+@\S+\.\S+$/.test(form.value.email)) {
-    errors.value.email = 'Enter a valid email'
+
+  const phoneDigits = (form.value.phone || '').replace(/\D/g, '')
+  if (!form.value.phone?.trim() || phoneDigits.length < 6) {
+    errors.value.phone = 'Phone number is required'
+    valid = false
+  }
+
+  if (!form.value.email?.trim()) {
+    errors.value.email = 'Email is required'
+    valid = false
+  } else if (!EMAIL_RE.test(form.value.email.trim())) {
+    errors.value.email = 'Enter a valid email address'
     valid = false
   }
 
@@ -213,12 +262,13 @@ function submit() {
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="mb-1.5 block text-sm font-medium">Phone</label>
-                <input v-model="form.phone" type="tel" class="input" />
+                <label class="mb-1.5 block text-sm font-medium">Phone *</label>
+                <input v-model="form.phone" type="tel" class="input" placeholder="+91 98765 43210" />
+                <p v-if="errors.phone" class="mt-1 text-sm text-red-400">{{ errors.phone }}</p>
               </div>
               <div>
-                <label class="mb-1.5 block text-sm font-medium">Email</label>
-                <input v-model="form.email" type="email" class="input" />
+                <label class="mb-1.5 block text-sm font-medium">Email *</label>
+                <input v-model="form.email" type="email" class="input" placeholder="referee@email.com" />
                 <p v-if="errors.email" class="mt-1 text-sm text-red-400">{{ errors.email }}</p>
               </div>
             </div>

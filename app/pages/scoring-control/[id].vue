@@ -21,6 +21,8 @@ const {
   notification,
   notificationType,
   lastScoreEventId,
+  recordPenalty,
+  lastScoreFlash,
 } = useScoringAdmin(matchId)
 
 // const lastScoreEventId =
@@ -28,6 +30,13 @@ const {
 
 function handleScore(corner: 'RED' | 'BLUE', type: 'YUKO' | 'WAZA_ARI' | 'IPPON') {
   recordScore(corner, type)
+}
+
+function handlePenalty(
+  corner: 'RED' | 'BLUE',
+  type: 'CHUI' | 'HANSOKU_CHUI' | 'HANSOKU',
+) {
+  recordPenalty(corner, type)
 }
 
 async function handleUndoLast() {
@@ -66,12 +75,17 @@ async function handleUndoLast() {
       :submitting="submitting"
       :submit-error="submitError"
       :can-undo="!!lastScoreEventId"
+      @penalty="handlePenalty"
       :notification-type="notificationType"
       @score="handleScore"
       @undo-last="handleUndoLast"
       @start="startTimer"
       @pause="pauseTimer"
       @adjust-time="adjustTime"
+    />
+    <ScoringScoreAnimation
+      v-if="match"
+      :flash="lastScoreFlash"
     />
 
   </div>

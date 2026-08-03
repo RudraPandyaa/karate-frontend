@@ -24,6 +24,20 @@ export type MatchStatus =
   | 'COMPLETED'
   | 'CANCELLED'
 
+/** Athlete shape returned by the API (no more single `name` field) */
+export interface MatchAthlete {
+  id: string
+  firstName?: string | null
+  lastName?: string | null
+  middleName?: string | null
+  fullName?: string | null
+  /** legacy – keep optional so old data doesn't break */
+  name?: string | null
+  country?: string | null
+  state?: string | null
+  photoUrl?: string | null
+}
+
 export interface MatchListItem {
   id: string
   round: MatchRound
@@ -31,15 +45,8 @@ export interface MatchListItem {
   redScore: number
   blueScore: number
 
-  redAthlete: {
-    id: string
-    name: string
-  } | null
-
-  blueAthlete: {
-    id: string
-    name: string
-  } | null
+  redAthlete: MatchAthlete | null
+  blueAthlete: MatchAthlete | null
 
   category: {
     id: string
@@ -55,20 +62,25 @@ export interface MatchListItem {
 export interface CreateMatchPayload {
   categoryId: string
   tatamiId?: string
-
   round: MatchRound
-
   bracketSlot?: number
-
   redAthleteId?: string
   blueAthleteId?: string
-
   refereeId?: string
   scorekeeperId?: string
-
   status?: MatchStatus
-
   timerSeconds?: number
+}
+
+/** Build display name the same way dashboard does */
+export function athleteDisplayName(a: MatchAthlete | null | undefined): string {
+  if (!a) return 'TBD'
+  return (
+    a.fullName ||
+    a.name ||
+    [a.firstName, a.lastName].filter(Boolean).join(' ') ||
+    'TBD'
+  )
 }
 
 export function useMatches() {

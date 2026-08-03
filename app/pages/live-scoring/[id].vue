@@ -5,7 +5,7 @@ definePageMeta({
 const route = useRoute()
 const matchId = route.params.id as string
 
-const { match, pending, error } = useLiveMatch(matchId)
+const { match, pending, error, lastScoreFlash } = useLiveMatch(matchId)
 </script>
 
 <template>
@@ -25,9 +25,9 @@ const { match, pending, error } = useLiveMatch(matchId)
       {{ error }}
     </div>
 
-    <MatchesScoreboard
-      v-else-if="match"
-      :match="match"
-    />
+    <template v-else-if="match">
+      <MatchesScoreboard :match="match" />
+      <ScoringScoreAnimation :flash="lastScoreFlash" />
+    </template>
   </div>
 </template>

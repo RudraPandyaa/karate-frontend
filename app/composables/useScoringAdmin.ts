@@ -1,6 +1,7 @@
 import { io, type Socket } from 'socket.io-client'
 import type { LiveMatch } from '~/composables/useLiveMatch'
 
+
 export type ScoreTypeValue =
   | 'YUKO'
   | 'WAZA_ARI'
@@ -21,6 +22,58 @@ export function useScoringAdmin(matchId: string) {
 
   let socket: Socket | null = null
   let notificationTimeout: ReturnType<typeof setTimeout> | null = null
+
+  function recordScore(
+    corner: 'RED' | 'BLUE',
+    type: ScoreTypeValue,
+  ) {
+    submitError.value = null
+    socket?.emit('recordExchange', {
+      matchId,
+      entries: [{ corner, type }],
+    })
+  }
+
+  // ✅ INSIDE the function — same scope as submitError + socket
+  function recordPenalty(
+    corner: 'RED' | 'BLUE',
+    type: 'CHUI' | 'HANSOKU_CHUI' | 'HANSOKU',
+  ) {
+    submitError.value = null
+    socket?.emit('recordPenalty', {
+      matchId,
+      corner,
+      type,
+    })
+  }
+
+  const lastScoreFlash = ref<{
+  corner: 'RED' | 'BLUE'
+  type: 'YUKO' | 'WAZA_ARI' | 'IPPON'
+} | null>(null)
+
+let flashTimeout: ReturnType<typeof setTimeout> | null = null
+
+function triggerFlash(data: any) {
+  const last =
+    data?.exchange?.[data.exchange.length - 1] ||
+    data?.lastScore ||
+    null
+
+  if (!last?.corner || !last?.type) return
+  if (!['YUKO', 'WAZA_ARI', 'IPPON'].includes(last.type)) return
+
+  lastScoreFlash.value = {
+    corner: last.corner,
+    type: last.type,
+  }
+
+  if (flashTimeout) clearTimeout(flashTimeout)
+  flashTimeout = setTimeout(() => {
+    lastScoreFlash.value = null
+  }, 1800)
+}
+
 
   function showNotification(
     message: string,
@@ -82,52 +135,54 @@ export function useScoringAdmin(matchId: string) {
     })
 
 
-    // inside connect(), scoreUpdated handler:
     socket.on('scoreUpdated', (data: any) => {
       if (!match.value) return
 
-      // merge match state
-      if (data.match) {
-        match.value = {
-          ...match.value,
-          ...data.match,
-        }
-      } else {
-        // some backends send the match fields at top level
-        match.value = {
-          ...match.value,
-          ...data,
-        }
+      match.value = {
+        ...match.value,
+        ...(data.match ?? {}),
+        scoreEvents:
+          data.scoreEvents ??
+          data.match?.scoreEvents ??
+          match.value.scoreEvents,
+        penalties:
+          data.penalties ??
+          data.match?.penalties ??
+          match.value.penalties,
       }
 
-      // Try multiple possible payload shapes for last event id
       const eventId =
-        data?.lastScoreEventId ||
-        data?.scoreEvent?.id ||
         data?.exchange?.[data.exchange.length - 1]?.id ||
         data?.scoreEvents?.[data.scoreEvents.length - 1]?.id ||
-        data?.events?.[data.events.length - 1]?.id ||
         null
 
       if (eventId) {
         lastScoreEventId.value = eventId
       }
 
-      showNotification('Score updated', 'success')
+      // Only flash on real new scores (has exchange), not undo-only payloads
+      if (data.exchange?.length) {
+        triggerFlash(data)
+      }
+
+      showNotification(
+        data.message || 'Score updated',
+        'success',
+      )
     })
 
-  socket.on('timerStarted', () => {
-    if (!match.value) return
+    socket.on('timerStarted', () => {
+      if (!match.value) return
 
-    match.value.status = 'IN_PROGRESS'
+      match.value.status = 'IN_PROGRESS'
 
-    showNotification(
-      match.value.timeRemaining < 180
-        ? '▶ Match Resumed'
-        : '▶ Match Started',
-      'success',
-    )
-  })
+      showNotification(
+        match.value.timeRemaining < 180
+          ? '▶ Match Resumed'
+          : '▶ Match Started',
+        'success',
+      )
+    })
 
 
     socket.on('timerPaused', () => {
@@ -185,6 +240,23 @@ export function useScoringAdmin(matchId: string) {
         )
       },
     )
+
+    socket.on('penaltyUpdated', (data: any) => {
+    if (!match.value) return
+
+    if (data.match) {
+      match.value = {
+        ...match.value,
+        ...data.match,
+        penalties: data.penalties ?? match.value.penalties,
+      }
+    }
+
+    showNotification(
+      data.hansoku ? 'Hansoku — match ended' : 'Penalty recorded',
+      data.hansoku ? 'error' : 'info',
+    )
+  })
   }
 
   function disconnect() {
@@ -192,22 +264,22 @@ export function useScoringAdmin(matchId: string) {
     socket = null
   }
 
-  function recordScore(
-    corner: 'RED' | 'BLUE',
-    type: ScoreTypeValue,
-  ) {
-    submitError.value = null
+  // function recordScore(
+  //   corner: 'RED' | 'BLUE',
+  //   type: ScoreTypeValue,
+  // ) {
+  //   submitError.value = null
 
-    socket?.emit('recordExchange', {
-      matchId,
-      entries: [
-        {
-          corner,
-          type,
-        },
-      ],
-    })
-  }
+  //   socket?.emit('recordExchange', {
+  //     matchId,
+  //     entries: [
+  //       {
+  //         corner,
+  //         type,
+  //       },
+  //     ],
+  //   })
+  // }
 
   function undoLastScore() {
     if (!lastScoreEventId.value) {
@@ -275,10 +347,8 @@ export function useScoringAdmin(matchId: string) {
 
   onUnmounted(() => {
     disconnect()
-
-    if (notificationTimeout) {
-      clearTimeout(notificationTimeout)
-    }
+    if (notificationTimeout) clearTimeout(notificationTimeout)
+    if (flashTimeout) clearTimeout(flashTimeout)
   })
 
 return {
@@ -288,7 +358,9 @@ return {
   submitError,
   notification,
   notificationType,
+  lastScoreFlash,
   lastScoreEventId,
+  recordPenalty,
   recordScore,
   undoScore,
   undoLastScore,

@@ -7,7 +7,9 @@ const props = defineProps<{
   open: boolean
   loading?: boolean
   tournaments: TournamentOption[]
-  categories: Category[] // all categories, each carries tournamentId
+  categories: Category[]
+  /** Category IDs this athlete is already enrolled in */
+  enrolledCategoryIds?: string[]
 }>()
 
 const emit = defineEmits<{
@@ -19,8 +21,23 @@ const selectedTournamentId = ref('')
 const selectedCategoryId = ref('')
 const seed = ref<number | null>(null)
 
+const enrolledSet = computed(
+  () => new Set(props.enrolledCategoryIds ?? []),
+)
+
+/** Categories for selected tournament, excluding already enrolled */
 const availableCategories = computed(() =>
-  props.categories.filter((c) => c.tournamentId === selectedTournamentId.value),
+  props.categories.filter(
+    (c) =>
+      c.tournamentId === selectedTournamentId.value &&
+      !enrolledSet.value.has(c.id),
+  ),
+)
+
+const noCategoriesLeft = computed(
+  () =>
+    !!selectedTournamentId.value &&
+    availableCategories.value.length === 0,
 )
 
 watch(
@@ -40,6 +57,7 @@ watch(selectedTournamentId, () => {
 
 function handleSubmit() {
   if (!selectedCategoryId.value) return
+  if (enrolledSet.value.has(selectedCategoryId.value)) return
 
   emit('submit', {
     categoryId: selectedCategoryId.value,
@@ -129,14 +147,17 @@ function handleSubmit() {
               <select
                 v-model="selectedCategoryId"
                 required
-                :disabled="!selectedTournamentId"
+                :disabled="!selectedTournamentId || noCategoriesLeft"
                 class="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm outline-none transition focus:border-blue-600 disabled:opacity-50 text-foreground"
               >
-                <option
-                  value=""
-                  disabled
-                >
-                  {{ selectedTournamentId ? 'Select a category' : 'Pick a tournament first' }}
+                <option value="" disabled>
+                  {{
+                    !selectedTournamentId
+                      ? 'Pick a tournament first'
+                      : noCategoriesLeft
+                        ? 'Already enrolled in all categories'
+                        : 'Select a category'
+                  }}
                 </option>
                 <option
                   v-for="c in availableCategories"
@@ -146,6 +167,13 @@ function handleSubmit() {
                   {{ c.name }}
                 </option>
               </select>
+
+              <p
+                v-if="noCategoriesLeft"
+                class="mt-2 text-xs text-amber-400"
+              >
+                This athlete is already enrolled in every category of this tournament.
+              </p>
             </div>
 
             <div>

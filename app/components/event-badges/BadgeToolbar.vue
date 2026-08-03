@@ -7,6 +7,7 @@ const props = defineProps<{
   generating?: boolean
   exportingPdf?: boolean
   exportingExcel?: boolean
+  canGenerate?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -64,6 +65,7 @@ const emit = defineEmits<{
         PDF
       </button>
       <button
+        v-if="canGenerate"
         :disabled="generating"
         class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-white hover:bg-blue-700 transition disabled:opacity-60"
         @click="emit('generate')"

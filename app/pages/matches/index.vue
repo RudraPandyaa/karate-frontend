@@ -3,14 +3,49 @@ definePageMeta({
   layout: 'public',
 })
 
+import { athleteDisplayName } from '~/composables/useMatches'
+
 const { matches, pending, error, fetchAll } = useMatches()
 
 onMounted(fetchAll)
+
 const statusColor = (status: string) => {
   if (status === 'IN_PROGRESS') return 'text-green-400'
   if (status === 'PAUSED') return 'text-yellow-400'
   if (status === 'COMPLETED') return 'text-blue-400'
   return 'text-muted'
+}
+
+/** ISO 3166-1 alpha-3 → alpha-2 for flagcdn (extend as needed) */
+const alpha3ToAlpha2: Record<string, string> = {
+  IND: 'in',
+  USA: 'us',
+  GBR: 'gb',
+  JPN: 'jp',
+  KOR: 'kr',
+  CHN: 'cn',
+  FRA: 'fr',
+  GER: 'de',
+  BRA: 'br',
+  AUS: 'au',
+  CAN: 'ca',
+  ITA: 'it',
+  ESP: 'es',
+  NED: 'nl',
+  TUR: 'tr',
+  IRI: 'ir',
+  EGY: 'eg',
+  RSA: 'za',
+  NZL: 'nz',
+  THA: 'th',
+}
+
+function flagUrl(country?: string | null): string | null {
+  if (!country) return null
+  const code = country.toUpperCase().trim()
+  const alpha2 = alpha3ToAlpha2[code] ?? (code.length === 2 ? code.toLowerCase() : null)
+  if (!alpha2) return null
+  return `https://flagcdn.com/20x15/${alpha2}.png`
 }
 </script>
 
@@ -33,8 +68,32 @@ const statusColor = (status: string) => {
           class="flex items-center justify-between rounded-xl border border-line bg-panel px-5 py-4 hover:border-primary/40 transition-colors"
         >
           <div>
-            <p class="text-foreground font-semibold">
-              {{ m.redAthlete?.name ?? 'TBD' }} vs {{ m.blueAthlete?.name ?? 'TBD' }}
+            <p class="text-foreground font-semibold flex items-center gap-2 flex-wrap">
+              <!-- Red -->
+              <span class="inline-flex items-center gap-1.5">
+                <img
+                  v-if="flagUrl(m.redAthlete?.country)"
+                  :src="flagUrl(m.redAthlete?.country)!"
+                  :alt="m.redAthlete?.country || ''"
+                  class="w-5 h-auto rounded-sm"
+                  loading="lazy"
+                />
+                {{ athleteDisplayName(m.redAthlete) }}
+              </span>
+
+              <span class="text-muted font-normal">vs</span>
+
+              <!-- Blue -->
+              <span class="inline-flex items-center gap-1.5">
+                <img
+                  v-if="flagUrl(m.blueAthlete?.country)"
+                  :src="flagUrl(m.blueAthlete?.country)!"
+                  :alt="m.blueAthlete?.country || ''"
+                  class="w-5 h-auto rounded-sm"
+                  loading="lazy"
+                />
+                {{ athleteDisplayName(m.blueAthlete) }}
+              </span>
             </p>
             <p class="text-sm text-muted">
               {{ m.category?.name }} • {{ m.round }}

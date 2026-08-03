@@ -109,9 +109,20 @@ export const getCountry = (code?: string) =>
 
 export function getFlagEmoji(code?: string) {
   if (!code) return '🏳️'
-  const iso2 = COUNTRY_CODE_MAP[code]   // expects alpha-3 in, e.g. 'IND'
-  if (!iso2) return '🏳️'
-  return iso2.toUpperCase().replace(/./g, char =>
-    String.fromCodePoint(127397 + char.charCodeAt(0))
-  )
+
+  const upper = code.trim().toUpperCase()
+
+  // Already ISO-2 (e.g. IN, JP, US)
+  let iso2 =
+    upper.length === 2
+      ? upper
+      : COUNTRY_CODE_MAP[upper] // ISO-3 → ISO-2 (e.g. IND → IN)
+
+  if (!iso2 || iso2.length !== 2) return '🏳️'
+
+  return iso2
+    .toUpperCase()
+    .replace(/./g, (char) =>
+      String.fromCodePoint(127397 + char.charCodeAt(0)),
+    )
 }

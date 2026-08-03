@@ -18,6 +18,19 @@ const form = reactive({
   status: 'SCHEDULED',
 })
 
+const roundOptions = [
+  { value: 'ROUND_1', label: 'Round 1' },
+  { value: 'ROUND_2', label: 'Round 2' },
+  { value: 'ROUND_3', label: 'Round 3' },
+  { value: 'ROUND_OF_32', label: 'Round of 32' },
+  { value: 'ROUND_OF_16', label: 'Round of 16' },
+  { value: 'QUARTER_FINAL', label: 'Quarter Final' },
+  { value: 'SEMI_FINAL', label: 'Semi Final' },
+  { value: 'FINAL', label: 'Final' },
+  { value: 'REPECHAGE', label: 'Repechage' },
+  { value: 'BRONZE', label: 'Bronze Medal Match' },
+]
+
 const selectedCategory = computed(() => categories.value.find((c) => c.id === form.categoryId))
 
 // Athlete records don't reliably have `name` or `fullName` populated —
@@ -32,12 +45,21 @@ function athleteName(a: any): string {
   return `Unnamed athlete (${a.id.slice(0, 6)})`
 }
 
+// Only athletes enrolled in the selected category should be selectable —
+// picking a category first narrows the pool instead of showing everyone.
+const athletesInCategory = computed(() => {
+  if (!form.categoryId) return []
+  return athletes.value.filter((a) =>
+    Array.isArray(a.categories) && a.categories.some((c: any) => c.id === form.categoryId)
+  )
+})
+
 // Prevent the same athlete being picked for both corners.
 const redAthleteOptions = computed(() =>
-  athletes.value.filter((a) => a.id !== form.blueAthleteId)
+  athletesInCategory.value.filter((a) => a.id !== form.blueAthleteId)
 )
 const blueAthleteOptions = computed(() =>
-  athletes.value.filter((a) => a.id !== form.redAthleteId)
+  athletesInCategory.value.filter((a) => a.id !== form.redAthleteId)
 )
 
 const selectedRedAthlete = computed(() =>
@@ -56,6 +78,24 @@ watch(() => form.categoryId, async (newId) => {
     await fetchTatami(cat.tournamentId)
   } else {
     tatamis.value = []
+  }
+
+  // Only clear a selected corner if that athlete isn't actually enrolled
+  // in the newly chosen category. Checking membership (rather than a
+  // "did the user just change this" flag) means startEdit()'s pre-filled
+  // athletes survive this watcher firing, since they're already valid
+  // for the match's own category.
+  const validIds = new Set(
+    athletes.value
+      .filter((a) => Array.isArray(a.categories) && a.categories.some((c: any) => c.id === newId))
+      .map((a) => a.id)
+  )
+
+  if (form.redAthleteId && !validIds.has(form.redAthleteId)) {
+    form.redAthleteId = ''
+  }
+  if (form.blueAthleteId && !validIds.has(form.blueAthleteId)) {
+    form.blueAthleteId = ''
   }
 })
 
@@ -167,7 +207,10 @@ onMounted(() => {
 
           <div>
             <label class="text-xs text-foreground/50 block mb-1">Round</label>
-            <input v-model="form.round" placeholder="e.g. Quarter Final" class="w-full bg-surface rounded-lg px-3 py-2 text-foreground" />
+            <select v-model="form.round" class="w-full bg-surface rounded-lg px-3 py-2 text-foreground">
+              <option value="">Select round</option>
+              <option v-for="r in roundOptions" :key="r.value" :value="r.value">{{ r.label }}</option>
+            </select>
           </div>
 
           <div>
@@ -241,7 +284,7 @@ onMounted(() => {
                 {{ m.redAthlete ? athleteName(m.redAthlete) : 'TBD' }} vs {{ m.blueAthlete ? athleteName(m.blueAthlete) : 'TBD' }}
               </p>
               <p class="text-xs text-foreground/50">
-                {{ m.category?.name }} • {{ m.round }} • {{ m.status }}
+                {{ m.category?.name }} • {{ roundOptions.find(r => r.value === m.round)?.label || m.round }} • {{ m.status }}
               </p>
             </div>
 

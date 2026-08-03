@@ -262,10 +262,12 @@ function buildConnectorLines(rounds: RoundGroup[]) {
   return lines
 }
 
-function athleteLabel(a?: { name: string; state: string } | null) {
-  if (!a) return 'BYE'
-  return `${a.name} (${a.state})`
-}
+function athleteLabel(a?: { fullName?: string; firstName?: string; lastName?: string; state?: string } | null) {
+   if (!a) return 'BYE'
+
+  const name = a.fullName || [a.firstName, a.lastName].filter(Boolean).join(' ') || 'Unknown'
+  return a.state ? `${name} (${a.state})` : name
+ }
 </script>
 
 <template>

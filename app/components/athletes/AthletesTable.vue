@@ -10,6 +10,7 @@ const props = defineProps<{
   search?: string
   // Full category list (not just what each athlete is enrolled in) —
   // used to populate the category filter dropdown.
+  canManage?: boolean
   categories?: { id: string; name: string }[]
 }>()
 
@@ -277,17 +278,19 @@ function goToPage(p: number) {
                 View
               </button>
               <button
+                v-if="canManage"
                 class="text-muted hover:text-foreground text-sm"
                 @click="emit('edit', athlete)"
               >
                 Edit
               </button>
               <button
-                class="text-red-400 hover:text-red-300 text-sm"
-                @click="emit('delete', athlete)"
-              >
-                Delete
-              </button>
+               v-if="canManage"
+                 class="text-red-400 hover:text-red-300 text-sm"
+                 @click="emit('delete', athlete)"
+               >
+                 Delete
+               </button>
             </td>
           </tr>
         </tbody>

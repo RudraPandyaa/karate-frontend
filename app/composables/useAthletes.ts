@@ -178,12 +178,26 @@ export function useAthletes() {
 
   async function enrollAthlete(athleteId: string, payload: EnrollPayload) {
     saving.value = true
+    error.value = null
     try {
       await api(`/athletes/${athleteId}/enroll`, {
         method: 'POST',
         body: payload,
       })
       await fetchEnrollments(athleteId)
+    } catch (err: any) {
+      const status = err?.statusCode || err?.status
+      const message =
+        err?.data?.message ||
+        err?.message ||
+        'Failed to enroll athlete'
+
+      if (status === 409) {
+        error.value = 'Already enrolled in this category'
+      } else {
+        error.value = message
+      }
+      throw err
     } finally {
       saving.value = false
     }

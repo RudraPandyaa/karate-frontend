@@ -64,6 +64,27 @@ const statusClass = computed(() => {
   }
 })
 
+function getAthleteName(athlete?: any) {
+  if (!athlete) return 'TBD'
+  return (
+    athlete.fullName ||
+    athlete.name ||
+    [athlete.firstName, athlete.lastName].filter(Boolean).join(' ') ||
+    'TBD'
+  )
+}
+
+function penaltyLabel(corner: 'RED' | 'BLUE') {
+  const p = corner === 'RED' ? props.match.penalties?.red : props.match.penalties?.blue
+  if (!p) return '—'
+  const parts: string[] = []
+  if (p.chui) parts.push(`C1×${p.chui}`)
+  if (p.hansokuChui) parts.push('HC')
+  if (p.hansoku) parts.push('H')
+  return parts.length ? parts.join(' · ') : 'None'
+}
+
+
 const redBreakdown = computed(() => {
   const events = props.match.scoreEvents ?? []
 
@@ -119,24 +140,13 @@ const blueBreakdown = computed(() => {
 })
 
 const winnerName = computed(() => {
-  if (!props.match.winnerId) {
-    return null
+  if (!props.match.winnerId) return null
+  if (props.match.winnerId === props.match.redAthlete?.id) {
+    return getAthleteName(props.match.redAthlete)
   }
-
-  if (
-    props.match.winnerId ===
-    props.match.redAthlete?.id
-  ) {
-    return props.match.redAthlete.name
+  if (props.match.winnerId === props.match.blueAthlete?.id) {
+    return getAthleteName(props.match.blueAthlete)
   }
-
-  if (
-    props.match.winnerId ===
-    props.match.blueAthlete?.id
-  ) {
-    return props.match.blueAthlete.name
-  }
-
   return null
 })
 </script>
@@ -188,12 +198,9 @@ const winnerName = computed(() => {
 
         <!-- MATCH ID -->
         <div class="text-right">
-          <p class="text-xs uppercase tracking-widest text-white/40">
-            MATCH
-          </p>
-
+          <p class="text-xs uppercase tracking-widest text-white/40">TATAMI</p>
           <p class="font-mono text-sm font-bold">
-            {{ match.id.slice(-6).toUpperCase() }}
+            {{ match.tatami?.number ?? match.tatami?.name ?? '—' }}
           </p>
         </div>
 
@@ -254,8 +261,11 @@ const winnerName = computed(() => {
                 <h2
                   class="truncate text-xl font-black sm:text-2xl"
                 >
-                  {{ match.redAthlete?.name ?? 'TBD' }}
+                  {{ getAthleteName(match.redAthlete) }}
                 </h2>
+                <p class="text-sm text-red-200/70">
+                {{ match.redAthlete?.country || '' }}
+              </p>
               </div>
 
             </div>
@@ -413,8 +423,11 @@ const winnerName = computed(() => {
                 <h2
                   class="truncate text-xl font-black sm:text-2xl"
                 >
-                  {{ match.blueAthlete?.name ?? 'TBD' }}
+                  {{ getAthleteName(match.blueAthlete) }}
                 </h2>
+                <p class="text-sm text-blue-200/70">
+                  {{ match.blueAthlete?.country || '' }}
+                </p>
               </div>
 
               <div
@@ -511,26 +524,17 @@ const winnerName = computed(() => {
       </div>
 
 
-      <!-- BOTTOM INFORMATION -->
-      <div
-        class="grid grid-cols-1 gap-5 md:grid-cols-3"
-      >
+            <!-- BOTTOM INFORMATION -->
+      <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
 
-        <!-- RED INDICATOR -->
-        <div
-          class="rounded-2xl border border-red-500/30 bg-red-950/30 p-5"
-        >
-          <p
-            class="text-xs font-bold uppercase tracking-widest text-red-300/60"
-          >
+        <!-- RED -->
+        <div class="rounded-2xl border border-red-500/30 bg-red-950/30 p-5">
+          <p class="text-xs font-bold uppercase tracking-widest text-red-300/60">
             RED CORNER
           </p>
 
           <div class="mt-3 flex items-center justify-between">
-            <span class="text-sm text-white/60">
-              Senshu
-            </span>
-
+            <span class="text-sm text-white/60">Senshu</span>
             <span
               class="rounded px-3 py-1 text-xs font-black"
               :class="
@@ -542,43 +546,33 @@ const winnerName = computed(() => {
               {{ match.senshu === 'RED' ? 'ACTIVE' : 'INACTIVE' }}
             </span>
           </div>
+
+          <div class="mt-3 flex items-center justify-between">
+            <span class="text-sm text-white/60">Penalties</span>
+            <span class="text-xs font-bold text-red-300">
+              {{ penaltyLabel('RED') }}
+            </span>
+          </div>
         </div>
 
-
-        <!-- MATCH CENTER -->
-        <div
-          class="rounded-2xl border border-white/10 bg-[#101e31] p-5 text-center"
-        >
-          <p
-            class="text-xs font-bold uppercase tracking-widest text-white/40"
-          >
+        <!-- CENTER STATUS -->
+        <div class="rounded-2xl border border-white/10 bg-[#101e31] p-5 text-center">
+          <p class="text-xs font-bold uppercase tracking-widest text-white/40">
             MATCH STATUS
           </p>
-
-          <p
-            class="mt-2 text-xl font-black"
-            :class="statusClass"
-          >
+          <p class="mt-2 text-xl font-black" :class="statusClass">
             {{ statusLabel }}
           </p>
         </div>
 
-
-        <!-- BLUE INDICATOR -->
-        <div
-          class="rounded-2xl border border-blue-500/30 bg-blue-950/30 p-5"
-        >
-          <p
-            class="text-xs font-bold uppercase tracking-widest text-blue-300/60"
-          >
+        <!-- BLUE -->
+        <div class="rounded-2xl border border-blue-500/30 bg-blue-950/30 p-5">
+          <p class="text-xs font-bold uppercase tracking-widest text-blue-300/60">
             BLUE CORNER
           </p>
 
           <div class="mt-3 flex items-center justify-between">
-            <span class="text-sm text-white/60">
-              Senshu
-            </span>
-
+            <span class="text-sm text-white/60">Senshu</span>
             <span
               class="rounded px-3 py-1 text-xs font-black"
               :class="
@@ -590,10 +584,15 @@ const winnerName = computed(() => {
               {{ match.senshu === 'BLUE' ? 'ACTIVE' : 'INACTIVE' }}
             </span>
           </div>
+
+          <div class="mt-3 flex items-center justify-between">
+            <span class="text-sm text-white/60">Penalties</span>
+            <span class="text-xs font-bold text-blue-300">
+              {{ penaltyLabel('BLUE') }}
+            </span>
+          </div>
         </div>
-
       </div>
-
 
       <!-- COMPLETED MATCH RESULT -->
       <div
