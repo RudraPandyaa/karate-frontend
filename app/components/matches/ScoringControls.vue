@@ -98,6 +98,26 @@ function getAthleteName(athlete?: any) {
   )
 }
 
+import countries from 'i18n-iso-countries'
+
+function flagUrl(country?: string | null): string | null {
+  if (!country) return null
+
+  const raw = country.trim()
+  let alpha2: string | undefined
+
+  if (raw.length === 2) {
+    alpha2 = raw.toUpperCase()
+  } else if (raw.length === 3) {
+    alpha2 = countries.alpha3ToAlpha2(raw.toUpperCase())
+  } else {
+    alpha2 = countries.getAlpha2Code(raw, 'en') ?? undefined
+  }
+
+  if (!alpha2) return null
+  return `https://flagcdn.com/24x18/${alpha2.toLowerCase()}.png`
+}
+
 const isActive = computed(
   () => props.match.status === 'IN_PROGRESS',
 )
@@ -197,8 +217,17 @@ function winnerLabel() {
         <h2 class="mb-1 text-center text-xl font-bold text-red-100">
           {{ getAthleteName(match.redAthlete) }}
         </h2>
-        <p class="mb-4 text-center text-sm text-red-300/80">
-          {{ match.redAthlete?.country || '' }}
+        <p
+          v-if="match.redAthlete?.country"
+          class="mb-4 flex items-center justify-center gap-2 text-sm text-red-300/80"
+        >
+          <img
+            v-if="flagUrl(match.redAthlete.country)"
+            :src="flagUrl(match.redAthlete.country)!"
+            :alt="match.redAthlete.country"
+            class="h-4 w-auto rounded-sm"
+            loading="lazy"
+          />
         </p>
 
         <!-- Score -->
@@ -374,8 +403,17 @@ function winnerLabel() {
         <h2 class="mb-1 text-center text-xl font-bold text-blue-100">
           {{ getAthleteName(match.blueAthlete) }}
         </h2>
-        <p class="mb-4 text-center text-sm text-blue-300/80">
-          {{ match.blueAthlete?.country || '' }}
+        <p
+          v-if="match.blueAthlete?.country"
+          class="mb-4 flex items-center justify-center gap-2 text-sm text-blue-300/80"
+        >
+          <img
+            v-if="flagUrl(match.blueAthlete.country)"
+            :src="flagUrl(match.blueAthlete.country)!"
+            :alt="match.blueAthlete.country"
+            class="h-4 w-auto rounded-sm"
+            loading="lazy"
+          />
         </p>
 
         <div class="mb-5 text-center text-7xl font-black text-blue-400">

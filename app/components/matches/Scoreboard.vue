@@ -74,6 +74,29 @@ function getAthleteName(athlete?: any) {
   )
 }
 
+import countries from 'i18n-iso-countries'
+
+function flagUrl(country?: string | null): string | null {
+  if (!country) return null
+
+  const raw = country.trim()
+  let alpha2: string | undefined
+
+  if (raw.length === 2) {
+    // "IN", "US"
+    alpha2 = raw.toUpperCase()
+  } else if (raw.length === 3) {
+    // "IND", "USA"
+    alpha2 = countries.alpha3ToAlpha2(raw.toUpperCase())
+  } else {
+    // "India", "United States"
+    alpha2 = countries.getAlpha2Code(raw, 'en') ?? undefined
+  }
+
+  if (!alpha2) return null
+  return `https://flagcdn.com/24x18/${alpha2.toLowerCase()}.png`
+}
+
 function penaltyLabel(corner: 'RED' | 'BLUE') {
   const p = corner === 'RED' ? props.match.penalties?.red : props.match.penalties?.blue
   if (!p) return '—'
@@ -258,14 +281,22 @@ const winnerName = computed(() => {
                   Athlete
                 </p>
 
-                <h2
-                  class="truncate text-xl font-black sm:text-2xl"
-                >
+                <h2 class="truncate text-xl font-black sm:text-2xl">
                   {{ getAthleteName(match.redAthlete) }}
                 </h2>
-                <p class="text-sm text-red-200/70">
-                {{ match.redAthlete?.country || '' }}
-              </p>
+
+                <p
+                  v-if="match.redAthlete?.country"
+                  class="mt-1 flex items-center gap-2 text-sm text-red-200/70"
+                >
+                  <img
+                    v-if="flagUrl(match.redAthlete.country)"
+                    :src="flagUrl(match.redAthlete.country)!"
+                    :alt="match.redAthlete.country"
+                    class="h-4 w-auto rounded-sm"
+                    loading="lazy"
+                  />
+                </p>
               </div>
 
             </div>
@@ -415,20 +446,28 @@ const winnerName = computed(() => {
               class="flex items-center justify-end gap-4 text-right"
             >
 
-              <div class="min-w-0">
-                <p class="text-xs uppercase tracking-widest text-blue-200/60">
-                  Athlete
-                </p>
+            <div class="min-w-0">
+              <p class="text-xs uppercase tracking-widest text-blue-200/60">
+                Athlete
+              </p>
 
-                <h2
-                  class="truncate text-xl font-black sm:text-2xl"
-                >
-                  {{ getAthleteName(match.blueAthlete) }}
-                </h2>
-                <p class="text-sm text-blue-200/70">
-                  {{ match.blueAthlete?.country || '' }}
-                </p>
-              </div>
+              <h2 class="truncate text-xl font-black sm:text-2xl">
+                {{ getAthleteName(match.blueAthlete) }}
+              </h2>
+
+              <p
+                v-if="match.blueAthlete?.country"
+                class="mt-1 flex items-center justify-end gap-2 text-sm text-blue-200/70"
+              >
+                <img
+                  v-if="flagUrl(match.blueAthlete.country)"
+                  :src="flagUrl(match.blueAthlete.country)!"
+                  :alt="match.blueAthlete.country"
+                  class="h-4 w-auto rounded-sm"
+                  loading="lazy"
+                />
+              </p>
+            </div>
 
               <div
                 class="h-20 w-20 shrink-0 overflow-hidden rounded-full border-4 border-blue-400 bg-black/30"

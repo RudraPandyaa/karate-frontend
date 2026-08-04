@@ -5,7 +5,7 @@ import {
   Filter,
   Download,
 } from 'lucide-vue-next'
-
+const { isAdmin } = useAuth()
 import CategoriesTable from '~/components/categories/CategoriesTable.vue'
 import CategoryModal from '~/components/categories/CategoryModal.vue'
 import DeleteCategoryModal from '~/components/categories/DeleteCategoryModal.vue'
@@ -118,6 +118,7 @@ async function handleDelete() {
       </div>
 
       <button
+        v-if="isAdmin"
         class="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-500"
         @click="openCreate"
       >
@@ -206,6 +207,7 @@ async function handleDelete() {
     >
       <CategoriesTable
         :rows="filteredRows"
+        const { isAdmin } = useAuth()
         @edit="openEdit"
         @delete="openDelete"
       />

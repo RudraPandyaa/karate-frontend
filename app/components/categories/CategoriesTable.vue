@@ -8,6 +8,8 @@ import type { Category } from '~/composables/useCategories'
 
 defineProps<{
   rows: Category[]
+  /** When true (admin), show Edit / Delete */
+  canManage?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -34,14 +36,12 @@ function formatWeight(category: Category) {
 
   return `${category.weightMin} – ${category.weightMax} kg`
 }
-
 </script>
 
 <template>
   <div class="overflow-hidden rounded-2xl border border-line bg-surface">
     <div class="overflow-x-auto">
       <table class="w-full text-left text-sm">
-
         <thead>
           <tr class="border-b border-line text-xs uppercase tracking-wide text-muted">
             <th class="px-6 py-4 font-medium text-foreground">Name</th>
@@ -52,7 +52,12 @@ function formatWeight(category: Category) {
             <th class="px-6 py-4 font-medium text-foreground">Weight</th>
             <th class="px-6 py-4 font-medium text-foreground">Athletes</th>
             <th class="px-6 py-4 font-medium text-foreground">Matches</th>
-            <th class="px-6 py-4 font-medium text-right text-foreground">Actions</th>
+            <th
+              v-if="canManage"
+              class="px-6 py-4 font-medium text-right text-foreground"
+            >
+              Actions
+            </th>
           </tr>
         </thead>
 
@@ -62,8 +67,13 @@ function formatWeight(category: Category) {
             :key="category.id"
             class="border-b border-line last:border-b-0 transition hover:bg-surface-hover"
           >
-            <td class="px-6 py-4 font-medium text-foreground">
-              {{ category.name }}
+            <td class="px-6 py-4 font-medium">
+              <NuxtLink
+                :to="`/brackets/${category.id}`"
+                class="text-foreground hover:text-blue-400 hover:underline"
+              >
+                {{ category.name }}
+              </NuxtLink>
             </td>
 
             <td class="px-6 py-4 text-muted">
@@ -100,7 +110,7 @@ function formatWeight(category: Category) {
               </span>
             </td>
 
-            <td class="px-6 py-4 text-foreground">
+            <td v-if="canManage" class="px-6 py-4 text-foreground">
               <div class="flex items-center justify-end gap-2">
                 <button
                   class="rounded-lg p-2 text-muted transition hover:bg-surface-hover hover:text-foreground"
@@ -121,7 +131,6 @@ function formatWeight(category: Category) {
             </td>
           </tr>
         </tbody>
-
       </table>
     </div>
   </div>

@@ -6,6 +6,8 @@ import { roleLabel, roleBadgeClass, formatPrintedAt } from '~/utils/badges'
 const props = defineProps<{
   badges: any[]
   loading?: boolean
+  /** Admin / organizer only — controls checkboxes + Mark Printed */
+  canManage?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -15,7 +17,6 @@ const emit = defineEmits<{
 
 const selected = ref<Set<string>>(new Set())
 
-// Clear selection whenever the underlying list changes (role filter, refetch, etc.)
 watch(() => props.badges, () => {
   selected.value = new Set()
 })
@@ -48,9 +49,9 @@ function markSelectedPrinted() {
 
 <template>
   <div class="bg-surface border border-line rounded-2xl overflow-hidden">
-    <!-- Bulk action bar -->
+    <!-- Bulk action bar — staff only -->
     <div
-      v-if="selected.size > 0"
+      v-if="canManage && selected.size > 0"
       class="flex items-center justify-between border-b border-line bg-canvas/60 px-6 py-3"
     >
       <span class="text-sm text-muted">{{ selected.size }} selected</span>
@@ -72,7 +73,7 @@ function markSelectedPrinted() {
     <table v-else class="w-full">
       <thead class="bg-canvas/60">
         <tr>
-          <th class="w-10 px-6 py-4">
+          <th v-if="canManage" class="w-10 px-6 py-4">
             <button @click="toggleAll">
               <CheckCircle2 v-if="allSelected" class="h-4 w-4 text-blue-500" />
               <Circle v-else class="h-4 w-4 text-muted" />
@@ -93,7 +94,7 @@ function markSelectedPrinted() {
           :key="badge.id"
           class="border-t border-line hover:bg-surface-hover"
         >
-          <td class="px-6 py-4">
+          <td v-if="canManage" class="px-6 py-4">
             <button @click="toggleOne(badge.id)">
               <CheckCircle2 v-if="selected.has(badge.id)" class="h-4 w-4 text-blue-500" />
               <Circle v-else class="h-4 w-4 text-muted" />
