@@ -6,6 +6,7 @@ import AthleteModal from '~/components/athletes/AthleteModal.vue'
 import DeleteAthleteModal from '~/components/athletes/DeleteAthleteModal.vue'
 
 import { useAthletes, type Athlete, type CreateAthleteDto } from '~/composables/useAthletes'
+import { useCoaches } from '~/composables/useCoaches'   // ← add this
 
 const {
   athletes,
@@ -25,6 +26,12 @@ const {
   fetchCategories,
 } = useCategories()
 
+// ← add coaches
+const {
+  coaches,
+  fetchCoaches,
+} = useCoaches()
+
 const search = useState('topbarSearch', () => '')
 
 const showAthleteModal = ref(false)
@@ -39,6 +46,7 @@ onMounted(async () => {
   await Promise.all([
     fetchAthletes(),
     fetchCategories(),
+    fetchCoaches(),          // ← add this
   ])
 })
 
@@ -89,7 +97,6 @@ async function syncCategoryEnrollments(athleteId: string, selectedIds: string[])
     try {
       await enrollAthlete(athleteId, { categoryId })
     } catch (enrollErr: any) {
-      // Ignore "already enrolled" races; log anything else
       console.warn('Enrollment:', enrollErr?.data?.message || enrollErr.message)
     }
   }
@@ -134,28 +141,22 @@ async function saveAthlete(payload: {
       style: athlete.style || undefined,
       currentRank: athlete.currentRank || undefined,
       federationId: athlete.federationId || undefined,
-      dojoId: athlete.dojoId || undefined,
+      // dojoId intentionally omitted (no Dojo module yet)
       coachId: athlete.coachId || undefined,
     }
 
     let savedAthlete: any
 
     if (selectedAthlete.value?.id) {
-      // UPDATE
       savedAthlete = await updateAthlete(selectedAthlete.value.id, dto)
     } else {
-      // CREATE
       savedAthlete = await createAthlete(dto)
     }
 
-    // Upload photo (if selected)
     if (photoFile && savedAthlete?.id) {
       await uploadPhoto(savedAthlete.id, photoFile)
     }
 
-    // Sync category enrollments (categories are now required, so this
-    // always runs — enrolling newly checked categories and unenrolling
-    // any that were unchecked when editing).
     const athleteId = savedAthlete?.id || selectedAthlete.value?.id
     if (athleteId) {
       const selectedCategoryIds: string[] = Array.isArray(athlete.categoryIds)
@@ -187,7 +188,6 @@ async function removeAthlete() {
   try {
     await deleteAthlete(selectedAthlete.value.id)
     closeDeleteModal()
-    
   } catch (err) {
     console.error(err)
   } finally {
@@ -233,9 +233,10 @@ async function removeAthlete() {
 
     <AthleteModal
       :open="showAthleteModal"
-     :loading="modalLoading"
+      :loading="modalLoading"
       :athlete="selectedAthlete"
       :categories="categories"
+      :coaches="coaches"          
       @close="closeModal"
       @save="saveAthlete"
     />

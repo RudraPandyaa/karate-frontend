@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { getFlagEmoji } from '~/utils/countries'
+
 defineProps<{
   match?: {
     id: string
     round?: string
     status?: string
-
     redAthlete?: {
       id: string
       firstName?: string | null
@@ -13,7 +14,6 @@ defineProps<{
       name?: string | null
       country?: string | null
     } | null
-
     blueAthlete?: {
       id: string
       firstName?: string | null
@@ -22,13 +22,11 @@ defineProps<{
       name?: string | null
       country?: string | null
     } | null
-
     category?: {
       id: string
       name: string
     } | null
   } | null
-
   loading?: boolean
 }>()
 
@@ -92,22 +90,28 @@ function athleteName(a?: {
       </div>
 
       <div class="grid grid-cols-3 items-center gap-3">
-        <div class="text-center">
-          <div class="text-sm text-muted mb-2">AKA</div>
-          <div class="font-semibold text-red-400">
-            {{ athleteName(match.redAthlete) }}
-          </div>
-        </div>
+            <div class="text-center">
+              <div class="text-sm text-muted mb-2">AKA</div>
+              <div class="font-semibold text-red-400">
+                <span v-if="match.redAthlete?.country" class="mr-1">
+                  {{ getFlagEmoji(match.redAthlete.country) }}
+                </span>
+                {{ athleteName(match.redAthlete) }}
+              </div>
+            </div>
 
-        <div class="text-center text-xl font-bold text-muted">VS</div>
+            <div class="text-center text-xl font-bold text-muted">VS</div>
 
-        <div class="text-center">
-          <div class="text-sm text-muted mb-2">AO</div>
-          <div class="font-semibold text-blue-400">
-            {{ athleteName(match.blueAthlete) }}
-          </div>
-        </div>
+            <div class="text-center">
+              <div class="text-sm text-muted mb-2">AO</div>
+              <div class="font-semibold text-blue-400">
+                <span v-if="match.blueAthlete?.country" class="mr-1">
+                  {{ getFlagEmoji(match.blueAthlete.country) }}
+                </span>
+                {{ athleteName(match.blueAthlete) }}
+              </div>
+            </div>
       </div>
-    </div>
+      </div>
   </div>
 </template>

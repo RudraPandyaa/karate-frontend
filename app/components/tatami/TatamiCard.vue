@@ -21,6 +21,22 @@ const queue = ref<{
   next: [],
 })
 
+function athleteName(a?: any) {
+  if (!a) return 'TBD'
+  return (
+    a.fullName ||
+    a.name ||
+    [a.firstName, a.lastName].filter(Boolean).join(' ') ||
+    'TBD'
+  )
+}
+
+function athleteLine(a?: any) {
+  if (!a) return 'TBD'
+  const flag = a.country ? getFlagEmoji(a.country) + ' ' : ''
+  return flag + athleteName(a)
+}
+
 const loading = ref(true)
 
 async function loadQueue() {
@@ -124,21 +140,15 @@ watch(
           :key="match.id"
           class="rounded-lg border border-line bg-canvas p-3"
         >
-          <div class="font-medium text-foreground">
-            {{ match.redAthlete?.name || 'TBD' }}
-          </div>
+            <div class="font-medium text-foreground">
+              {{ athleteLine(match.redAthlete) }}
+            </div>
 
-          <div class="my-1 text-center text-xs text-muted">
-            VS
-          </div>
+            <div class="my-1 text-center text-xs text-muted">VS</div>
 
-          <div class="font-medium text-foreground">
-            {{ match.blueAthlete?.name || 'TBD' }}
-          </div>
-
-          <div v-if="match.category" class="mt-2 text-xs text-muted">
-            {{ match.category.name }}
-          </div>
+            <div class="font-medium text-foreground">
+              {{ athleteLine(match.blueAthlete) }}
+            </div>
         </div>
       </div>
     </div>

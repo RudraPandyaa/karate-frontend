@@ -28,34 +28,39 @@ const emit = defineEmits<{
 
 const form = ref<CoachForm>(getEmptyForm())
 const errors = ref<Record<string, string>>({})
+const phoneNumberOnly = ref('')
 
-// Guards the country->phone-code watcher so it doesn't fire while we're
-// programmatically populating the form (e.g. loading an existing coach),
-// which would otherwise stomp on their real saved phone number.
+// Prevents the country→phone-code watcher from overwriting a real phone
+// while we programmatically fill the form (edit mode).
 let skipPhoneSync = false
 
 const isEdit = computed(() => !!props.coach?.id)
 
-/**
- * Replace (or insert) the leading "+xx" calling code on form.phone
- * to match the given country, preserving whatever digits the user
- * already typed.
- */
-function applyCountryCode(countryCode: string) {
-  const selected = COUNTRIES.find(c => c.code === countryCode)
-  if (!selected) return
-
-  const currentPhone = form.value.phone || ''
-  const phoneWithoutCode = currentPhone.replace(/^\+\d+\s*/, '').trim()
-
-  form.value.phone = `${selected.phoneCode} ${phoneWithoutCode}`.trim()
+function currentPhoneCode() {
+  const selected = COUNTRIES.find(c => c.code === form.value.country)
+  return selected?.phoneCode || ''
 }
 
-// Fires on manual country changes made by the user while the modal is
-// open (not during programmatic form population — see skipPhoneSync).
-watch(() => form.value.country, (newCountry) => {
+function syncFullPhone() {
+  const code = currentPhoneCode()
+  form.value.phone = phoneNumberOnly.value
+    ? `${code} ${phoneNumberOnly.value}`.trim()
+    : ''
+}
+
+function onPhoneNumberInput(e: Event) {
+  // Only digits, max 10
+  const digitsOnly = ((e.target as HTMLInputElement).value || '')
+    .replace(/\D/g, '')
+    .slice(0, 10)
+  phoneNumberOnly.value = digitsOnly
+  syncFullPhone()
+}
+
+// When country changes → update phone code automatically
+watch(() => form.value.country, () => {
   if (skipPhoneSync) return
-  applyCountryCode(newCountry)
+  syncFullPhone()
 })
 
 function getEmptyForm(): CoachForm {
@@ -67,6 +72,16 @@ function getEmptyForm(): CoachForm {
     country: 'IND',
     dojoId: '',
   }
+}
+
+function parsePhoneFromStored(phone: string | null | undefined) {
+  if (!phone) {
+    phoneNumberOnly.value = ''
+    return
+  }
+  // Strip leading +XX / +XXX and any non-digits
+  const digits = phone.replace(/^\+\d{1,4}\s*/, '').replace(/\D/g, '')
+  phoneNumberOnly.value = digits.slice(0, 10)
 }
 
 watch(() => props.open, (value) => {
@@ -84,15 +99,14 @@ watch(() => props.open, (value) => {
       country: props.coach.country || 'IND',
       dojoId: props.coach.dojoId || props.coach.dojo?.id || '',
     }
+    parsePhoneFromStored(props.coach.phone)
   } else {
     form.value = getEmptyForm()
-    // New coach forms default to India — make sure the +91 code shows
-    // up immediately instead of waiting for the user to touch the
-    // country dropdown.
-    applyCountryCode(form.value.country)
+    phoneNumberOnly.value = ''
+    // Default IND → +91 appears after nextTick when watcher is re-enabled
   }
-  errors.value = {}
 
+  errors.value = {}
   nextTick(() => {
     skipPhoneSync = false
   })
@@ -113,9 +127,9 @@ function validate() {
     valid = false
   }
 
-  const phoneDigits = (form.value.phone || '').replace(/\D/g, '')
-  if (!form.value.phone?.trim() || phoneDigits.length < 6) {
-    errors.value.phone = 'Phone number is required'
+  // Exactly 10 digits
+  if (!phoneNumberOnly.value || phoneNumberOnly.value.length !== 10) {
+    errors.value.phone = 'Phone number must be exactly 10 digits'
     valid = false
   }
 
@@ -132,6 +146,7 @@ function validate() {
 
 function submit() {
   if (!validate()) return
+  syncFullPhone() // ensure latest phone is written
   emit('save', { coach: { ...form.value } })
 }
 </script>
@@ -182,11 +197,28 @@ function submit() {
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Phone with country code -->
               <div>
                 <label class="mb-1.5 block text-sm font-medium">Phone *</label>
-                <input v-model="form.phone" type="tel" class="input" placeholder="+91 98765 43210" />
+                <div class="flex gap-2">
+                  <div class="flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 min-w-[90px]">
+                    <CountryFlag :country="COUNTRY_CODE_MAP[form.country]" size="small" />
+                    <span class="text-sm font-medium">{{ currentPhoneCode() }}</span>
+                  </div>
+                  <input
+                    :value="phoneNumberOnly"
+                    type="tel"
+                    inputmode="numeric"
+                    maxlength="10"
+                    class="input flex-1"
+                    placeholder="9876543210"
+                    @input="onPhoneNumberInput"
+                  />
+                </div>
                 <p v-if="errors.phone" class="mt-1 text-sm text-red-400">{{ errors.phone }}</p>
+                <!-- <p class="mt-1 text-xs text-muted">Exactly 10 digits. Code updates when Country changes.</p> -->
               </div>
+
               <div>
                 <label class="mb-1.5 block text-sm font-medium">Email *</label>
                 <input v-model="form.email" type="email" class="input" placeholder="coach@email.com" />
@@ -198,7 +230,6 @@ function submit() {
               <label class="mb-1.5 block text-sm font-medium">Country</label>
               <div class="flex items-center gap-3">
                 <CountryFlag :country="COUNTRY_CODE_MAP[form.country]" size="medium" />
-
                 <select v-model="form.country" class="input flex-1">
                   <option v-for="c in COUNTRIES" :key="c.code" :value="c.code">
                     {{ c.name }}
@@ -207,15 +238,19 @@ function submit() {
               </div>
             </div>
 
-            <div>
-              <label class="mb-1.5 block text-sm font-medium">Dojo</label>
+            <!-- Dojo is optional. Remove this block completely if you never build a Dojo module. -->
+            <!-- <div>
+              <label class="mb-1.5 block text-sm font-medium">Dojo (optional)</label>
               <select v-model="form.dojoId" class="input">
-                <option value="">Select Dojo</option>
-                <option v-for="d in dojos" :key="d.id" :value="d.id">
+                <option value="">No dojo / Select later</option>
+                <option v-for="d in (dojos || [])" :key="d.id" :value="d.id">
                   {{ d.name }}
                 </option>
               </select>
-            </div>
+              <p v-if="!(dojos && dojos.length)" class="mt-1 text-xs text-muted">
+                No dojos available (you can leave this empty).
+              </p>
+            </div> -->
           </div>
 
           <!-- Footer -->

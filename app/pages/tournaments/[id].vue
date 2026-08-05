@@ -223,6 +223,7 @@ async function syncAthleteCategoryEnrollments(athleteId: string, selectedIds: st
 
 async function saveAthleteFromTournament(payload: { athlete: any; photoFile?: File }) {
   athleteModalLoading.value = true
+  
   try {
     const { athlete, photoFile } = payload
 

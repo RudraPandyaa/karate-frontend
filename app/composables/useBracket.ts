@@ -84,12 +84,13 @@ export const useBracket = () => {
       })
       await fetchCategoryBracket(categoryId)
     } catch (err: any) {
-      error.value = err?.data?.message || err.message || 'Unable to regenerate bracket'
+      error.value =
+        err?.data?.message || err.message || 'Unable to regenerate bracket'
       throw err
     } finally {
       generating.value = false
     }
-}
+  }
 
   return {
     category,

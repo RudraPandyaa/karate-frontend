@@ -2,7 +2,7 @@
 import type { Category } from '~/composables/useCategories'
 import type { BracketMatch } from '~/composables/useBracket'
 import { computed } from 'vue'
-
+import { getFlagEmoji } from '~/utils/countries'
 const props = defineProps<{
   category: Category
   matches: BracketMatch[]
@@ -262,12 +262,24 @@ function buildConnectorLines(rounds: RoundGroup[]) {
   return lines
 }
 
-function athleteLabel(a?: { fullName?: string; firstName?: string; lastName?: string; state?: string } | null) {
-   if (!a) return 'BYE'
-
-  const name = a.fullName || [a.firstName, a.lastName].filter(Boolean).join(' ') || 'Unknown'
-  return a.state ? `${name} (${a.state})` : name
- }
+function athleteLabel(
+  a?: {
+    fullName?: string
+    firstName?: string
+    lastName?: string
+    state?: string
+    country?: string
+  } | null,
+) {
+  if (!a) return 'BYE'
+  const name =
+    a.fullName ||
+    [a.firstName, a.lastName].filter(Boolean).join(' ') ||
+    'Unknown'
+  const flag = getFlagEmoji(a.country)
+  const state = a.state ? ` (${a.state})` : ''
+  return `${flag} ${name}${state}`
+}
 </script>
 
 <template>

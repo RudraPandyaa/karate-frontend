@@ -99,24 +99,28 @@ export function useLiveMatch(
   let flashTimeout: ReturnType<typeof setTimeout> | null = null
 
   function triggerFlash(data: any) {
-    const last =
-      data?.exchange?.[data.exchange.length - 1] ||
-      data?.lastScore ||
-      null
+  const last =
+    data?.exchange?.[data.exchange.length - 1] ||
+    data?.lastScore ||
+    // fallback: newest non-undone score event
+    (data?.scoreEvents as any[])
+      ?.filter((e) => !e.wasUndone)
+      ?.slice(-1)?.[0] ||
+    null
 
-    if (!last?.corner || !last?.type) return
-    if (!['YUKO', 'WAZA_ARI', 'IPPON'].includes(last.type)) return
+  if (!last?.corner || !last?.type) return
+  if (!['YUKO', 'WAZA_ARI', 'IPPON'].includes(last.type)) return
 
-    lastScoreFlash.value = {
-      corner: last.corner,
-      type: last.type,
-    }
-
-    if (flashTimeout) clearTimeout(flashTimeout)
-    flashTimeout = setTimeout(() => {
-      lastScoreFlash.value = null
-    }, 1800)
+  lastScoreFlash.value = {
+    corner: last.corner,
+    type: last.type,
   }
+
+  if (flashTimeout) clearTimeout(flashTimeout)
+  flashTimeout = setTimeout(() => {
+    lastScoreFlash.value = null
+  }, 1800)
+}
 
   async function fetchMatch() {
     try {

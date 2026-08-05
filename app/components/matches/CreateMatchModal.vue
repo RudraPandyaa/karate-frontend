@@ -231,24 +231,6 @@ function countryFlag(code?: string) {
  * ----------------------------- */
 
 async function submit() {
-  formError.value = ''
-
-  // Required category
-  if (!form.value.categoryId) {
-    formError.value = 'Please select a category.'
-    return
-  }
-
-  // Prevent same athlete in both corners
-  if (
-    form.value.redAthleteId &&
-    form.value.blueAthleteId &&
-    form.value.redAthleteId === form.value.blueAthleteId
-  ) {
-    formError.value =
-      'AKA (Red) and AO (Blue) athletes must be different.'
-    return
-  }
 
   saving.value = true
 

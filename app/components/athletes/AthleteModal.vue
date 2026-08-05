@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, watch, computed, nextTick,onMounted } from 'vue'
+import { ref, watch, computed, nextTick } from 'vue'
 import { X, Save, Loader2, Upload, Trash2 } from 'lucide-vue-next'
 import CountryFlag from 'vue-country-flag-next'
 import { COUNTRIES, COUNTRY_CODE_MAP } from '~/utils/countries'
+
 interface AthleteForm {
   id?: string
   firstName: string
@@ -25,12 +26,9 @@ interface AthleteForm {
   style?: string
   currentRank?: string
   federationId?: string
-  dojoId?: string
+  // dojoId removed – you have no Dojo module yet
   coachId?: string
   photoUrl?: string | null
-  // An athlete can be enrolled in multiple categories — this holds the
-  // full set of selected category IDs, submitted as enrollments by
-  // whatever page handles the 'save' event.
   categoryIds: string[]
 }
 
@@ -39,7 +37,6 @@ const props = defineProps<{
   loading?: boolean
   athlete?: any | null
   categories: any[]
-  dojos?: any[]
   coaches?: any[]
 }>()
 
@@ -52,10 +49,11 @@ const form = ref<AthleteForm>(getEmptyForm())
 const previewUrl = ref<string | null>(null)
 const selectedFile = ref<File | null>(null)
 const errors = ref<Record<string, string>>({})
+const categoriesOpen = ref(false)
+const phoneNumberOnly = ref('')
 
-// Guards the country->phone-code watcher so it doesn't fire while we're
-// programmatically populating the form (e.g. loading an existing athlete),
-// which would otherwise stomp on their real saved phone number.
+// Prevents the country→phone-code watcher from overwriting a real phone
+// while we programmatically fill the form (edit mode).
 let skipPhoneSync = false
 
 const isEdit = computed(() => !!props.athlete?.id)
@@ -71,6 +69,14 @@ const age = computed(() => {
 })
 
 const isMinor = computed(() => age.value !== null && age.value < 18)
+
+function onAgeInput(e: Event) {
+  const val = Number((e.target as HTMLInputElement).value)
+  if (!val || val < 0) return
+  const today = new Date()
+  const dob = new Date(today.getFullYear() - val, today.getMonth(), today.getDate())
+  form.value.dateOfBirth = dob.toISOString().substring(0, 10)
+}
 
 const karateStyles = [
   { value: 'SHITO_RYU', label: 'Shito-Ryu' },
@@ -90,26 +96,31 @@ const karateRanks = [
 
 const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 
-/**
- * Replace (or insert) the leading "+xx" calling code on form.phone
- * to match the given country, preserving whatever digits the user
- * already typed.
- */
-function applyCountryCode(countryCode: string) {
-  const selected = COUNTRIES.find(c => c.code === countryCode)
-  if (!selected) return
-
-  const currentPhone = form.value.phone || ''
-  const phoneWithoutCode = currentPhone.replace(/^\+\d+\s*/, '').trim()
-
-  form.value.phone = `${selected.phoneCode} ${phoneWithoutCode}`.trim()
+function currentPhoneCode() {
+  const selected = COUNTRIES.find(c => c.code === form.value.country)
+  return selected?.phoneCode || ''
 }
 
-// Fires on manual country changes made by the user while the modal is
-// open (not during programmatic form population — see skipPhoneSync).
-watch(() => form.value.country, (newCountry) => {
+function syncFullPhone() {
+  const code = currentPhoneCode()
+  form.value.phone = phoneNumberOnly.value
+    ? `${code} ${phoneNumberOnly.value}`.trim()
+    : ''
+}
+
+function onPhoneNumberInput(e: Event) {
+  // Only digits, max 10
+  const digitsOnly = ((e.target as HTMLInputElement).value || '')
+    .replace(/\D/g, '')
+    .slice(0, 10)
+  phoneNumberOnly.value = digitsOnly
+  syncFullPhone()
+}
+
+// When country changes → update phone code automatically
+watch(() => form.value.country, () => {
   if (skipPhoneSync) return
-  applyCountryCode(newCountry)
+  syncFullPhone()
 })
 
 function getEmptyForm(): AthleteForm {
@@ -134,17 +145,27 @@ function getEmptyForm(): AthleteForm {
     style: '',
     currentRank: '',
     federationId: '',
-    dojoId: '',
     coachId: '',
     photoUrl: null,
     categoryIds: [],
   }
 }
 
+function parsePhoneFromStored(phone: string | null | undefined) {
+  if (!phone) {
+    phoneNumberOnly.value = ''
+    return
+  }
+  // Strip leading +XX or +XXX and any non-digits
+  const digits = phone.replace(/^\+\d{1,4}\s*/, '').replace(/\D/g, '')
+  phoneNumberOnly.value = digits.slice(0, 10)
+}
+
 watch(() => props.open, (value) => {
   if (!value) return
 
   skipPhoneSync = true
+  categoriesOpen.value = false
 
   if (props.athlete) {
     form.value = {
@@ -171,19 +192,21 @@ watch(() => props.open, (value) => {
       style: props.athlete.style || '',
       currentRank: props.athlete.currentRank || '',
       federationId: props.athlete.federationId || '',
-      dojoId: props.athlete.dojoId || props.athlete.dojo?.id || '',
       coachId: props.athlete.coachId || props.athlete.coach?.id || '',
       photoUrl: props.athlete.photoUrl || null,
       categoryIds: Array.isArray(props.athlete.categories)
         ? props.athlete.categories.map((c: any) => c.id)
-        : [],
+        : Array.isArray(props.athlete.categoryIds)
+          ? props.athlete.categoryIds
+          : [],
     }
     previewUrl.value = props.athlete.photoUrl || null
+    parsePhoneFromStored(props.athlete.phone)
   } else {
     resetForm()
   }
-  errors.value = {}
 
+  errors.value = {}
   nextTick(() => {
     skipPhoneSync = false
   })
@@ -193,10 +216,8 @@ function resetForm() {
   form.value = getEmptyForm()
   previewUrl.value = null
   selectedFile.value = null
-  // New athlete forms default to India — make sure the +91 code shows
-  // up immediately instead of waiting for the user to touch the
-  // country dropdown.
-  applyCountryCode(form.value.country)
+  phoneNumberOnly.value = ''
+  // Default country IND → +91 will appear via the watcher after nextTick
 }
 
 function onFileSelect(e: Event) {
@@ -244,10 +265,9 @@ function validate() {
     valid = false
   }
 
-  // Phone: must have at least a few digits beyond the country code
-  const phoneDigits = (form.value.phone || '').replace(/\D/g, '')
-  if (!form.value.phone?.trim() || phoneDigits.length < 6) {
-    errors.value.phone = 'Phone number is required'
+  // Phone – exactly 10 digits
+  if (!phoneNumberOnly.value || phoneNumberOnly.value.length !== 10) {
+    errors.value.phone = 'Phone number must be exactly 10 digits'
     valid = false
   }
 
@@ -263,22 +283,18 @@ function validate() {
     errors.value.address = 'Address is required'
     valid = false
   }
-
   if (!form.value.city?.trim()) {
     errors.value.city = 'City is required'
     valid = false
   }
-
   if (!form.value.style) {
     errors.value.style = 'Karate style is required'
     valid = false
   }
-
   if (!form.value.categoryIds.length) {
     errors.value.categoryIds = 'Select at least one category'
     valid = false
   }
-
   if (isMinor.value && !form.value.guardianName?.trim()) {
     errors.value.guardianName = 'Guardian name is required for minors'
     valid = false
@@ -287,12 +303,47 @@ function validate() {
   return valid
 }
 
+// Categories filtered by selected gender
+const filteredCategories = computed(() => {
+  if (!form.value.gender) return props.categories || []
+  return (props.categories || []).filter(
+    (c: any) => c.gender === form.value.gender || c.gender === 'MIXED'
+  )
+})
+
+// Drop categories that no longer match when gender changes
+watch(() => form.value.gender, () => {
+  form.value.categoryIds = form.value.categoryIds.filter(id =>
+    filteredCategories.value.some((c: any) => c.id === id)
+  )
+})
+
+function toggleCategory(id: string) {
+  const idx = form.value.categoryIds.indexOf(id)
+  if (idx === -1) {
+    form.value.categoryIds.push(id)
+  } else {
+    form.value.categoryIds.splice(idx, 1)
+  }
+}
+
+function isCategorySelected(id: string) {
+  return form.value.categoryIds.includes(id)
+}
+
 function submit() {
   if (!validate()) return
+  // Make sure phone is fully synced before emit
+  syncFullPhone()
   emit('save', {
     athlete: { ...form.value },
     photoFile: selectedFile.value || undefined,
   })
+}
+
+// Close categories dropdown when clicking outside (simple version)
+function closeCategories() {
+  categoriesOpen.value = false
 }
 </script>
 
@@ -309,6 +360,7 @@ function submit() {
       <div
         v-if="open"
         class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+        @click.self="closeCategories"
       >
         <div class="w-full max-w-3xl rounded-3xl border border-line bg-panel shadow-2xl my-8">
           <!-- Header -->
@@ -328,7 +380,6 @@ function submit() {
 
           <!-- Body -->
           <div class="p-6 space-y-8 max-h-[70vh] overflow-y-auto">
-
             <!-- Photo -->
             <div>
               <label class="mb-2 block text-sm font-medium">Profile Photo</label>
@@ -390,6 +441,18 @@ function submit() {
                 <div>
                   <label class="mb-1.5 block text-sm font-medium">Date of Birth *</label>
                   <input v-model="form.dateOfBirth" type="date" class="input" />
+                  <!-- <div class="mt-2 flex items-center gap-2">
+                    <span class="text-xs text-muted">or age:</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="120"
+                      :value="age ?? ''"
+                      @input="onAgeInput"
+                      class="input w-20 py-1.5 text-sm"
+                      placeholder="21"
+                    />
+                  </div> -->
                   <p v-if="errors.dateOfBirth" class="mt-1 text-sm text-red-400">{{ errors.dateOfBirth }}</p>
                 </div>
                 <div>
@@ -411,11 +474,28 @@ function submit() {
             <div>
               <h3 class="text-sm font-semibold text-muted uppercase tracking-wider mb-4">Contact</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Phone with country code -->
                 <div>
                   <label class="mb-1.5 block text-sm font-medium">Phone *</label>
-                  <input v-model="form.phone" type="tel" class="input" placeholder="+91 98765 43210" />
+                  <div class="flex gap-2">
+                    <div class="flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 min-w-[90px]">
+                      <!-- <CountryFlag :country="COUNTRY_CODE_MAP[form.country]" size="small" /> -->
+                      <span class="text-sm font-medium">{{ currentPhoneCode() }}</span>
+                    </div>
+                    <input
+                      :value="phoneNumberOnly"
+                      type="tel"
+                      inputmode="numeric"
+                      maxlength="10"
+                      class="input flex-1"
+                      placeholder="9876543210"
+                      @input="onPhoneNumberInput"
+                    />
+                  </div>
                   <p v-if="errors.phone" class="mt-1 text-sm text-red-400">{{ errors.phone }}</p>
+                  <!-- <p class="mt-1 text-xs text-muted">Exactly 10 digits. Country code updates when you change Country below.</p> -->
                 </div>
+
                 <div>
                   <label class="mb-1.5 block text-sm font-medium">Email *</label>
                   <input v-model="form.email" type="email" class="input" placeholder="athlete@email.com" />
@@ -448,7 +528,6 @@ function submit() {
                   <label class="mb-1.5 block text-sm font-medium">Country</label>
                   <div class="flex items-center gap-3">
                     <CountryFlag :country="COUNTRY_CODE_MAP[form.country]" size="medium" />
-
                     <select v-model="form.country" class="input flex-1">
                       <option v-for="c in COUNTRIES" :key="c.code" :value="c.code">
                         {{ c.name }}
@@ -464,7 +543,6 @@ function submit() {
               <h3 class="text-sm font-semibold text-muted uppercase tracking-wider mb-4">
                 {{ isMinor ? 'Guardian (Minor)' : 'Emergency Contact' }}
               </h3>
-
               <div v-if="isMinor" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label class="mb-1.5 block text-sm font-medium">Guardian Name *</label>
@@ -472,7 +550,6 @@ function submit() {
                   <p v-if="errors.guardianName" class="mt-1 text-sm text-red-400">{{ errors.guardianName }}</p>
                 </div>
               </div>
-
               <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label class="mb-1.5 block text-sm font-medium">Emergency Contact Name</label>
@@ -515,31 +592,86 @@ function submit() {
                   <label class="mb-1.5 block text-sm font-medium">Federation ID</label>
                   <input v-model="form.federationId" type="text" class="input" />
                 </div>
+
                 <div>
-                  <label class="mb-1.5 block text-sm font-medium">Categories *</label>
-                  <div class="max-h-40 overflow-y-auto rounded-xl border border-line bg-surface p-2 space-y-1">
-                    <label
-                      v-for="category in categories"
-                      :key="category.id"
-                      class="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-hover cursor-pointer text-sm"
+                  <label class="mb-1.5 block text-sm font-medium">Coach</label>
+                  <select v-model="form.coachId" class="input">
+                    <option value="">Select coach</option>
+                    <option
+                      v-for="c in (coaches || [])"
+                      :key="c.id"
+                      :value="c.id"
                     >
-                      <input
-                        type="checkbox"
-                        :value="category.id"
-                        v-model="form.categoryIds"
-                        class="rounded border-line"
-                      />
-                      <span>{{ category.name }} – {{ category.ageGroup }} – {{ category.gender }} – {{ category.discipline }}</span>
-                    </label>
-                    <p v-if="!categories?.length" class="px-2 py-1.5 text-sm text-muted">
-                      No categories available
-                    </p>
-                  </div>
-                  <p v-if="errors.categoryIds" class="mt-1 text-sm text-red-400">{{ errors.categoryIds }}</p>
+                      {{ c.fullName || [c.firstName, c.lastName].filter(Boolean).join(' ') || c.name || 'Unnamed' }}
+                    </option>
+                  </select>
+                  <p v-if="!(coaches && coaches.length)" class="mt-1 text-xs text-muted">
+                    No coaches loaded. Check parent component / API.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Categories – multi-select dropdown -->
+              <div class="mt-4 relative">
+                <label class="mb-1.5 block text-sm font-medium">Categories *</label>
+                <button
+                  type="button"
+                  class="input flex items-center justify-between text-left w-full"
+                  @click="categoriesOpen = !categoriesOpen"
+                >
+                  <span class="truncate">
+                    {{ form.categoryIds.length
+                      ? `${form.categoryIds.length} categor${form.categoryIds.length === 1 ? 'y' : 'ies'} selected`
+                      : 'Select categories' }}
+                  </span>
+                  <span class="text-muted ml-2">{{ categoriesOpen ? '▴' : '▾' }}</span>
+                </button>
+
+                <div
+                  v-if="categoriesOpen"
+                  class="absolute z-20 mt-1 w-full max-h-60 overflow-y-auto rounded-xl border border-line bg-surface p-2 space-y-1 shadow-xl"
+                >
+                  <button
+                    v-for="category in filteredCategories"
+                    :key="category.id"
+                    type="button"
+                    class="flex items-center gap-2 w-full rounded-lg px-2 py-1.5 hover:bg-surface-hover text-left text-sm"
+                    @click="toggleCategory(category.id)"
+                  >
+                    <span
+                      class="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-line"
+                      :class="isCategorySelected(category.id) ? 'bg-blue-600 border-blue-600 text-white' : ''"
+                    >
+                      <span v-if="isCategorySelected(category.id)" class="text-xs leading-none">✓</span>
+                    </span>
+                    <span>
+                      {{ category.name }}
+                      <span class="text-muted">
+                        – {{ category.ageGroup }} – {{ category.gender }} – {{ category.discipline }}
+                      </span>
+                    </span>
+                  </button>
+
+                  <p v-if="!filteredCategories.length" class="px-2 py-1.5 text-sm text-muted">
+                    {{ form.gender ? 'No categories match this gender' : 'No categories available' }}
+                  </p>
+                </div>
+
+                <p v-if="errors.categoryIds" class="mt-1 text-sm text-red-400">{{ errors.categoryIds }}</p>
+
+                <!-- Selected chips (optional visual feedback) -->
+                <div v-if="form.categoryIds.length" class="mt-2 flex flex-wrap gap-1.5">
+                  <span
+                    v-for="id in form.categoryIds"
+                    :key="id"
+                    class="inline-flex items-center gap-1 rounded-lg bg-surface px-2.5 py-1 text-xs border border-line"
+                  >
+                    {{ filteredCategories.find(c => c.id === id)?.name || id }}
+                    <button type="button" class="text-muted hover:text-red-400" @click="toggleCategory(id)">×</button>
+                  </span>
                 </div>
               </div>
             </div>
-
           </div>
 
           <!-- Footer -->
