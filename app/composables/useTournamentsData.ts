@@ -5,12 +5,21 @@ import type {
 } from '~/types'
 
 function deriveDisplayStatus(t: RawTournamentListItem): TournamentDisplayStatus {
-  if (t.status === 'DRAFT') {
-    return new Date(t.startDate) > new Date() ? 'UPCOMING' : 'DRAFT'
-  }
-  if (t.status === 'ONGOING') return 'LIVE'
-  if (t.status === 'COMPLETED') return 'COMPLETED'
-  return 'CANCELLED'
+  // Keep cancelled as-is
+  if (t.status === 'CANCELLED') return 'CANCELLED'
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const start = new Date(t.startDate)
+  start.setHours(0, 0, 0, 0)
+
+  const end = new Date(t.endDate)
+  end.setHours(23, 59, 59, 999)
+
+  if (today < start) return 'UPCOMING'
+  if (today > end) return 'COMPLETED'
+  return 'ONGOING' // start ≤ today ≤ end
 }
 
 export function useTournamentsData() {
@@ -45,7 +54,7 @@ export function useTournamentsData() {
 
       stats.value = {
         totalEvents: rows.value.length,
-        activeNow: rows.value.filter((r) => r.displayStatus === 'LIVE').length,
+        activeNow: rows.value.filter((r) => r.displayStatus === 'ONGOING').length,
         registeredAthletes: rows.value.reduce((sum, r) => sum + r.athletesCount, 0),
       }
     } catch (e: any) {

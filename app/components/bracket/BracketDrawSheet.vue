@@ -271,7 +271,7 @@ function athleteLabel(
     country?: string
   } | null,
 ) {
-  if (!a) return 'BYE'
+  if (!a) return 'TBD'
   const name =
     a.fullName ||
     [a.firstName, a.lastName].filter(Boolean).join(' ') ||

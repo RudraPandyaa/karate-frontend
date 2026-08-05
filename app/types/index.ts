@@ -176,7 +176,7 @@ export interface RawTournamentListItem {
   athletesCount: number
 }
 
-export type TournamentDisplayStatus = 'UPCOMING' | 'LIVE' | 'DRAFT' | 'COMPLETED' | 'CANCELLED'
+export type TournamentDisplayStatus = 'UPCOMING' | 'ONGOING' | 'DRAFT' | 'COMPLETED' | 'CANCELLED'
 
 export interface TournamentRow {
   id: string

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Tatami } from '~/composables/useTatami'
 import CurrentMatch from '~/components/tatami/CurrentMatch.vue'
-const { isAdmin } = useAuth()
+
 const props = defineProps<{
   tatami: Tatami
 }>()
@@ -12,6 +12,7 @@ const emit = defineEmits<{
 }>()
 
 const { getQueue } = useTatami()
+const { isAdmin, user } = useAuth()
 
 const queue = ref<{
   current: any | null
@@ -19,6 +20,32 @@ const queue = ref<{
 }>({
   current: null,
   next: [],
+})
+
+const loading = ref(true)
+
+const SCORING_ROLES = ['ADMIN', 'SUPER_ADMIN', 'REFEREE', 'SCOREKEEPER', 'OPERATOR'] as const
+
+const canScore = computed(() => {
+  const role = user.value?.role
+  return !!role && SCORING_ROLES.includes(role as any)
+})
+
+/** Path for the live/current match based on role */
+const liveMatchPath = computed(() => {
+  const matchId = queue.value.current?.id
+  if (!matchId) return null
+
+  if (canScore.value) {
+    return `/scoring-control/${matchId}`
+  }
+  return `/live-scoring/${matchId}`
+})
+
+const isLive = computed(() => {
+  const m = queue.value.current
+  if (!m) return false
+  return m.status === 'IN_PROGRESS' || m.status === 'PAUSED' || !!m.id
 })
 
 function athleteName(a?: any) {
@@ -37,23 +64,21 @@ function athleteLine(a?: any) {
   return flag + athleteName(a)
 }
 
-const loading = ref(true)
-
 async function loadQueue() {
   loading.value = true
-
   try {
     queue.value = await getQueue(props.tatami.id)
   } catch (err) {
     console.error('Failed to load queue:', err)
-
-    queue.value = {
-      current: null,
-      next: [],
-    }
+    queue.value = { current: null, next: [] }
   } finally {
     loading.value = false
   }
+}
+
+function openLiveMatch() {
+  if (!liveMatchPath.value) return
+  navigateTo(liveMatchPath.value)
 }
 
 onMounted(loadQueue)
@@ -68,16 +93,15 @@ watch(
 
 <template>
   <div
-    class="rounded-2xl border border-line bg-panel p-6 shadow-lg transition hover:border-line"
+    class="rounded-2xl border border-line bg-panel p-6 shadow-lg transition"
+    :class="isLive ? 'hover:border-blue-500' : 'hover:border-line'"
   >
     <!-- Header -->
-
     <div class="flex items-center justify-between">
       <div>
         <h2 class="text-2xl font-bold text-foreground">
           Tatami {{ tatami.number }}
         </h2>
-
         <p class="text-sm text-muted">
           {{ tatami.name || 'No Name' }}
         </p>
@@ -85,108 +109,103 @@ watch(
 
       <div
         class="h-4 w-4 rounded-full"
-        :class="
-          queue.current
-            ? 'bg-green-500'
-            : 'bg-zinc-600'
-        "
+        :class="isLive ? 'bg-green-500 animate-pulse' : 'bg-zinc-600'"
       />
     </div>
 
     <!-- Current Match -->
-
     <div class="mt-8">
-      <h3
-        class="mb-3 text-xs uppercase tracking-widest text-muted"
-      >
+      <h3 class="mb-3 text-xs uppercase tracking-widest text-muted">
         Current Match
       </h3>
 
+      <div
+        v-if="isLive && liveMatchPath"
+        class="cursor-pointer"
+        @click="openLiveMatch"
+      >
+        <CurrentMatch
+          :match="queue.current"
+          :loading="loading"
+        />
+      </div>
+
       <CurrentMatch
+        v-else
         :match="queue.current"
         :loading="loading"
       />
     </div>
 
-    <!-- Queue -->
-
+    <!-- Upcoming Matches -->
     <div class="mt-8">
-      <h3
-        class="mb-3 text-xs uppercase tracking-widest text-muted"
-      >
+      <h3 class="mb-3 text-xs uppercase tracking-widest text-muted">
         Upcoming Matches
       </h3>
 
-      <div
-        v-if="loading"
-        class="text-sm text-muted"
-      >
+      <div v-if="loading" class="text-sm text-muted">
         Loading...
       </div>
 
-      <div
-        v-else-if="queue.next.length === 0"
-        class="text-sm text-muted"
-      >
+      <div v-else-if="queue.next.length === 0" class="text-sm text-muted">
         No upcoming matches.
       </div>
 
-      <div
-        v-else
-        class="space-y-3"
-      >
+      <div v-else class="space-y-3">
         <div
           v-for="match in queue.next"
           :key="match.id"
           class="rounded-lg border border-line bg-canvas p-3"
         >
-            <div class="font-medium text-foreground">
-              {{ athleteLine(match.redAthlete) }}
-            </div>
-
-            <div class="my-1 text-center text-xs text-muted">VS</div>
-
-            <div class="font-medium text-foreground">
-              {{ athleteLine(match.blueAthlete) }}
-            </div>
+          <div class="font-medium text-foreground">
+            {{ athleteLine(match.redAthlete) }}
+          </div>
+          <div class="my-1 text-center text-xs text-muted">VS</div>
+          <div class="font-medium text-foreground">
+            {{ athleteLine(match.blueAthlete) }}
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Footer -->
-
-    <div class="mt-8 grid grid-cols-3 gap-3">
+    <!-- Footer actions -->
+    <div class="mt-8 flex flex-wrap gap-3">
+      <!-- Live / Score button – role based -->
       <NuxtLink
-        v-if="queue.current"
-        :to="`/scoring-control/${queue.current.id}`"
-        class="rounded-xl bg-blue-600 py-3 text-center font-medium hover:bg-blue-500 text-white"
+        v-if="liveMatchPath"
+        :to="liveMatchPath"
+        class="flex-1 rounded-xl py-3 text-center font-medium text-white transition"
+        :class="canScore
+          ? 'bg-blue-600 hover:bg-blue-500'
+          : 'bg-emerald-600 hover:bg-emerald-500'"
       >
-        Score
+        {{ canScore ? 'Score' : 'Watch Live' }}
       </NuxtLink>
 
       <button
         v-else
         disabled
-        class="cursor-not-allowed rounded-xl bg-surface py-3 text-foreground opacity-50"
+        class="flex-1 cursor-not-allowed rounded-xl bg-surface py-3 text-foreground opacity-50"
       >
-        Score
+        No live match
       </button>
 
+      <!-- Admin only -->
       <button
         v-if="isAdmin"
+        class="rounded-xl bg-surface px-5 py-3 font-medium text-foreground hover:bg-surface-hover"
         @click="emit('edit', tatami)"
-        class="rounded-xl bg-surface py-3 font-medium text-foreground hover:bg-surface-hover"
       >
         Edit
       </button>
 
       <button
         v-if="isAdmin"
+        class="rounded-xl bg-red-700 px-5 py-3 font-medium text-white hover:bg-red-600"
         @click="emit('delete', tatami.id)"
-        class="rounded-xl bg-red-700 py-3 font-medium hover:bg-red-600 text-white"
       >
         Delete
       </button>
     </div>
   </div>
-</template>  {{ match.category.name }}
+</template>
