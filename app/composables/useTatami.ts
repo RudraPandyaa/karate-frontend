@@ -5,6 +5,13 @@ export interface TatamiMatch {
   round?: string
   status: string
 
+  // Added for tatami scheduling — see composables/useTatamiSchedule.ts.
+  // scheduledTime: ISO string set explicitly by staff when creating/editing
+  // a match. timerSeconds: match duration, used to project when the next
+  // match on this tatami is expected to start.
+  scheduledTime?: string | null
+  timerSeconds?: number | null
+
   redAthlete?: {
     id: string
     name: string

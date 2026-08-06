@@ -617,18 +617,28 @@ async function removeAthleteFromTournament() {
     </div>
   </div>
 
-  <!-- Modals -->
-  <CreateMatchModal
-    v-if="showCreateMatch"
-    :categories="categories"
-    :athletes="athletes"
-    :tatamis="tournament?.tatamis || []"
-    @close="showCreateMatch = false"
-    @created="() => {
-      showCreateMatch = false
-      refresh()
-    }"
-  />
+  <ClientOnly>
+    <Teleport to="body">
+      <div
+        v-if="showCreateMatch"
+        class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4"
+        @click.self="showCreateMatch = false"
+      >
+        <div
+          class="w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl overflow-hidden"
+          @click.stop
+        >
+          <CreateMatchModal
+            :categories="categories"
+            :athletes="athletes"
+            :tatamis="tournament?.tatamis || []"
+            @close="showCreateMatch = false"
+            @created="() => { showCreateMatch = false; refresh() }"
+          />
+        </div>
+      </div>
+    </Teleport>
+  </ClientOnly>
 
   <AssignOfficialsModal
     v-if="showAssignOfficials"

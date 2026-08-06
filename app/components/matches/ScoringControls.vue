@@ -18,6 +18,7 @@ const emit = defineEmits<{
   start: []
   pause: []
   adjustTime: [delta: number]
+  restart: []
 }>()
 
 const scoreTypes = [
@@ -96,6 +97,22 @@ function getAthleteName(athlete?: any) {
     [athlete.firstName, athlete.lastName].filter(Boolean).join(' ') ||
     'TBD'
   )
+}
+
+function athleteInitials(athlete?: any): string {
+  if (!athlete) return '?'
+  const first = (athlete.firstName || '').trim()
+  const last = (athlete.lastName || '').trim()
+  if (first || last) {
+    return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase() || '?'
+  }
+  const name = (athlete.fullName || athlete.name || '').trim()
+  if (!name) return '?'
+  const parts = name.split(/\s+/).filter(Boolean)
+  if (parts.length >= 2) {
+    return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase()
+  }
+  return name.slice(0, 2).toUpperCase()
 }
 
 import countries from 'i18n-iso-countries'
@@ -206,11 +223,18 @@ function winnerLabel() {
         </div>
 
         <!-- Photo -->
-        <div class="mx-auto mb-3 h-24 w-24 overflow-hidden rounded-2xl border-2 border-red-500">
+        <div class="mx-auto mb-3 h-24 w-24 overflow-hidden rounded-2xl border-2 border-red-500 bg-red-900 flex items-center justify-center">
           <img
-            :src="match.redAthlete?.photoUrl || '/default-athlete-red.png'"
+            v-if="match.redAthlete?.photoUrl"
+            :src="match.redAthlete.photoUrl"
             class="h-full w-full object-cover"
           />
+          <span
+            v-else
+            class="text-2xl font-black text-red-100 tracking-wide"
+          >
+            {{ athleteInitials(match.redAthlete) }}
+          </span>
         </div>
 
         <!-- Name + country -->
@@ -358,6 +382,15 @@ function winnerLabel() {
             </button>
           </div>
 
+          <button
+            type="button"
+            class="w-full rounded-xl border border-orange-500/50 bg-orange-600/20 py-3 font-semibold text-orange-300 hover:bg-orange-600/40 disabled:opacity-50"
+            :disabled="submitting || match.status === 'SCHEDULED'"
+            @click="emit('restart')"
+          >
+            ↺ Restart Match
+          </button>
+
           <div class="flex items-center gap-2">
             <input
               v-model.number="customSeconds"
@@ -393,11 +426,18 @@ function winnerLabel() {
           AO
         </div>
 
-        <div class="mx-auto mb-3 h-24 w-24 overflow-hidden rounded-2xl border-2 border-blue-500">
+        <div class="mx-auto mb-3 h-24 w-24 overflow-hidden rounded-2xl border-2 border-blue-500 bg-blue-900 flex items-center justify-center">
           <img
-            :src="match.blueAthlete?.photoUrl || '/default-athlete-blue.png'"
+            v-if="match.blueAthlete?.photoUrl"
+            :src="match.blueAthlete.photoUrl"
             class="h-full w-full object-cover"
           />
+          <span
+            v-else
+            class="text-2xl font-black text-blue-100 tracking-wide"
+          >
+            {{ athleteInitials(match.blueAthlete) }}
+          </span>
         </div>
 
         <h2 class="mb-1 text-center text-xl font-bold text-blue-100">

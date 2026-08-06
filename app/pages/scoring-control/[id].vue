@@ -4,9 +4,7 @@ definePageMeta({
 })
 
 const route = useRoute()
-
-const matchId =
-  route.params.id as string
+const matchId = route.params.id as string
 
 const {
   match,
@@ -23,10 +21,8 @@ const {
   lastScoreEventId,
   recordPenalty,
   lastScoreFlash,
+  restartMatch,
 } = useScoringAdmin(matchId)
-
-// const lastScoreEventId =
-//   ref<string | null>(null)
 
 function handleScore(corner: 'RED' | 'BLUE', type: 'YUKO' | 'WAZA_ARI' | 'IPPON') {
   recordScore(corner, type)
@@ -44,9 +40,60 @@ async function handleUndoLast() {
     alert('No score to undo')
     return
   }
-
   await undoScore(lastScoreEventId.value)
 }
+
+function getAthleteName(athlete?: any) {
+  if (!athlete) return 'TBD'
+  return (
+    athlete.fullName ||
+    athlete.name ||
+    [athlete.firstName, athlete.lastName].filter(Boolean).join(' ') ||
+    'TBD'
+  )
+}
+
+const showWinnerAnimation = ref(false)
+let winnerTimeout: ReturnType<typeof setTimeout> | null = null
+
+const winnerData = computed(() => {
+  if (!match.value || match.value.status !== 'COMPLETED' || !match.value.winnerId) {
+    return null
+  }
+
+  if (match.value.winnerId === match.value.redAthlete?.id) {
+    return { corner: 'RED' as const, athleteName: getAthleteName(match.value.redAthlete) }
+  }
+
+  if (match.value.winnerId === match.value.blueAthlete?.id) {
+    return { corner: 'BLUE' as const, athleteName: getAthleteName(match.value.blueAthlete) }
+  }
+
+  return null
+})
+
+watch(
+  () => match.value?.status,
+  (status) => {
+    if (status === 'COMPLETED' && winnerData.value) {
+      showWinnerAnimation.value = true
+      if (winnerTimeout) clearTimeout(winnerTimeout)
+      winnerTimeout = setTimeout(() => {
+        showWinnerAnimation.value = false
+      }, 8000)
+    }
+  },
+  { immediate: true },
+)
+
+function dismissWinnerAnimation() {
+  showWinnerAnimation.value = false
+  if (winnerTimeout) clearTimeout(winnerTimeout)
+}
+
+onUnmounted(() => {
+  if (winnerTimeout) clearTimeout(winnerTimeout)
+})
 </script>
 
 <template>
@@ -82,10 +129,15 @@ async function handleUndoLast() {
       @start="startTimer"
       @pause="pauseTimer"
       @adjust-time="adjustTime"
+      @restart="restartMatch"
     />
     <ScoringScoreAnimation
       v-if="match"
       :flash="lastScoreFlash"
+    />
+    <ScoringWinnerAnimation
+      :winner="showWinnerAnimation ? winnerData : null"
+      @dismiss="dismissWinnerAnimation"
     />
 
   </div>

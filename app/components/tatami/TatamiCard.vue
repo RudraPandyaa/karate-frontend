@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Tatami } from '~/composables/useTatami'
+import { computeTatamiSchedule, type ScheduledMatch } from '~/composables/useTatamiSchedule'
 import CurrentMatch from '~/components/tatami/CurrentMatch.vue'
+import MatchTimeBadge from '~/components/tatami/MatchTimeBadge.vue'
 
 const props = defineProps<{
   tatami: Tatami
@@ -46,6 +48,25 @@ const isLive = computed(() => {
   const m = queue.value.current
   if (!m) return false
   return m.status === 'IN_PROGRESS' || m.status === 'PAUSED' || !!m.id
+})
+
+// Current match + upcoming queue, run through the tatami scheduler together
+// so "next" matches cascade off whenever the current match is expected to
+// end (or off their own explicit scheduledTime, if one was set when the
+// match was created).
+const scheduledQueue = computed(() => {
+  const all = [queue.value.current, ...queue.value.next].filter(Boolean) as any[]
+  const scheduled = computeTatamiSchedule(all)
+  const byId = new Map(scheduled.map((s) => [s.match.id, s]))
+
+  return {
+    current: queue.value.current
+      ? byId.get(queue.value.current.id) ?? null
+      : null,
+    next: queue.value.next
+      .map((m) => byId.get(m.id))
+      .filter(Boolean) as ScheduledMatch[],
+  }
 })
 
 function athleteName(a?: any) {
@@ -127,6 +148,8 @@ watch(
         <CurrentMatch
           :match="queue.current"
           :loading="loading"
+          :estimated-start="scheduledQueue.current?.estimatedStart"
+          :is-fixed-time="scheduledQueue.current?.isFixedTime"
         />
       </div>
 
@@ -134,6 +157,8 @@ watch(
         v-else
         :match="queue.current"
         :loading="loading"
+        :estimated-start="scheduledQueue.current?.estimatedStart"
+        :is-fixed-time="scheduledQueue.current?.isFixedTime"
       />
     </div>
 
@@ -147,22 +172,28 @@ watch(
         Loading...
       </div>
 
-      <div v-else-if="queue.next.length === 0" class="text-sm text-muted">
+      <div v-else-if="scheduledQueue.next.length === 0" class="text-sm text-muted">
         No upcoming matches.
       </div>
 
       <div v-else class="space-y-3">
         <div
-          v-for="match in queue.next"
-          :key="match.id"
+          v-for="item in scheduledQueue.next"
+          :key="item.match.id"
           class="rounded-lg border border-line bg-canvas p-3"
         >
+          <div class="mb-2 flex items-center justify-between">
+            <MatchTimeBadge
+              :estimated-start="item.estimatedStart"
+              :is-fixed-time="item.isFixedTime"
+            />
+          </div>
           <div class="font-medium text-foreground">
-            {{ athleteLine(match.redAthlete) }}
+            {{ athleteLine(item.match.redAthlete) }}
           </div>
           <div class="my-1 text-center text-xs text-muted">VS</div>
           <div class="font-medium text-foreground">
-            {{ athleteLine(match.blueAthlete) }}
+            {{ athleteLine(item.match.blueAthlete) }}
           </div>
         </div>
       </div>

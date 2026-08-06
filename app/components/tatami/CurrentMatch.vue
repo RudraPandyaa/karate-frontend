@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { getFlagEmoji } from '~/utils/countries'
+import MatchTimeBadge from '~/components/tatami/MatchTimeBadge.vue'
 
 defineProps<{
   match?: {
@@ -28,6 +29,10 @@ defineProps<{
     } | null
   } | null
   loading?: boolean
+  /** Estimated (or explicit) start time for this match on its tatami. */
+  estimatedStart?: Date | null
+  /** true if estimatedStart came from the match's own scheduledTime, not a cascade estimate. */
+  isFixedTime?: boolean
 }>()
 
 function athleteName(a?: {
@@ -75,11 +80,18 @@ function athleteName(a?: {
           {{ match.round || 'Round' }}
         </span>
 
-        <span
-          class="rounded-full bg-green-600/20 px-3 py-1 text-xs font-semibold text-green-400"
-        >
-          {{ match.status }}
-        </span>
+        <div class="flex items-center gap-2">
+          <MatchTimeBadge
+            v-if="estimatedStart"
+            :estimated-start="estimatedStart"
+            :is-fixed-time="!!isFixedTime"
+          />
+          <span
+            class="rounded-full bg-green-600/20 px-3 py-1 text-xs font-semibold text-green-400"
+          >
+            {{ match.status }}
+          </span>
+        </div>
       </div>
 
       <div

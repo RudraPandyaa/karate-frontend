@@ -344,6 +344,80 @@ function triggerFlash(data: any) {
     })
   }
 
+  function applyRestartLocally() {
+    if (!match.value) return
+
+    const fullTime =
+      match.value.timerSeconds ??
+      match.value.timeRemaining ??
+      180
+
+    match.value = {
+      ...match.value,
+      status: 'SCHEDULED',
+      redScore: 0,
+      blueScore: 0,
+      timeRemaining: fullTime,
+      senshu: 'NONE' as any,
+      senshuLocked: false,
+      winnerId: null,
+      resultType: null,
+      startedAt: null,
+      completedAt: null,
+      scoreEvents: [],
+      penalties: {
+        red: { chui: 0, hansokuChui: 0, hansoku: 0 },
+        blue: { chui: 0, hansokuChui: 0, hansoku: 0 },
+      },
+    }
+
+    lastScoreEventId.value = null
+    lastScoreFlash.value = null
+    showNotification('Match restarted', 'info')
+  }
+
+  async function restartMatch() {
+    if (!match.value) return
+    if (!confirm('Restart this match? Scores, penalties and timer will be reset.')) {
+      return
+    }
+
+    // Instant UI
+    const snapshot = JSON.parse(JSON.stringify(match.value))
+    applyRestartLocally()
+
+    submitting.value = true
+    submitError.value = null
+
+    try {
+      const data = await api<any>(`/matches/${matchId}/restart`, {
+        method: 'POST',
+      })
+
+      if (data) {
+        match.value = {
+          ...match.value!,
+          ...data,
+          scoreEvents: [],
+          penalties: {
+            red: { chui: 0, hansokuChui: 0, hansoku: 0 },
+            blue: { chui: 0, hansokuChui: 0, hansoku: 0 },
+          },
+        }
+      }
+      match.value.status = 'SCHEDULED'
+      match.value.timeRemaining = data.timeRemaining
+    } catch (err: any) {
+      match.value = snapshot // rollback
+      submitError.value =
+        err?.data?.message || err?.message || 'Failed to restart match'
+      showNotification(submitError.value, 'error')
+      // Do not clear auth / redirect here
+    } finally {
+      submitting.value = false
+    }
+  }
+
   onMounted(async () => {
     await loadInitialState()
     connect()
@@ -355,21 +429,22 @@ function triggerFlash(data: any) {
     if (flashTimeout) clearTimeout(flashTimeout)
   })
 
-return {
-  match,
-  pending,
-  submitting,
-  submitError,
-  notification,
-  notificationType,
-  lastScoreFlash,
-  lastScoreEventId,
-  recordPenalty,
-  recordScore,
-  undoScore,
-  undoLastScore,
-  startTimer,
-  pauseTimer,
-  adjustTime,
-}
+  return {
+    match,
+    pending,
+    submitting,
+    submitError,
+    notification,
+    notificationType,
+    lastScoreFlash,
+    lastScoreEventId,
+    recordPenalty,
+    recordScore,
+    undoScore,
+    undoLastScore,
+    startTimer,
+    pauseTimer,
+    adjustTime,
+    restartMatch,
+  }
 }
