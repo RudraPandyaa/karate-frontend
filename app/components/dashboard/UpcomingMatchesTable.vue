@@ -24,8 +24,12 @@ const editMatch = (match: UpcomingMatchRow) => {
   emit('edit', match)
 }
 
-const viewMatch = (match: UpcomingMatchRow) => {
-  navigateTo(`/live-scoring/${match.id}`)
+function viewMatch(match: UpcomingMatchRow) {
+  navigateTo(
+    props.editable
+      ? `/scoring-control/${match.id}`
+      : `/live-scoring/${match.id}`,
+  )
 }
 </script>
 
@@ -50,7 +54,16 @@ const viewMatch = (match: UpcomingMatchRow) => {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="m in matches" :key="m.id" class="border-b border-line last:border-0 hover:bg-surface-hover transition-colors">
+        <tr
+          v-for="m in matches.filter(match =>
+            match.redAthlete &&
+            match.blueAthlete &&
+            match.redAthlete.name !== 'TBD' &&
+            match.blueAthlete.name !== 'TBD'
+          )"
+          :key="m.id"
+          class="border-b border-border/60 hover:bg-muted/40 transition-colors"
+        >
           <td class="px-5 py-4 text-sm font-semibold text-foreground whitespace-nowrap">{{ m.matchNo }}</td>
           <td class="px-5 py-4 text-sm text-foreground">{{ m.categoryName }}</td>
           <td class="px-5 py-4 text-sm text-muted">{{ m.round }}</td>
@@ -109,7 +122,14 @@ const viewMatch = (match: UpcomingMatchRow) => {
           </td>
         </tr>
 
-        <tr v-if="matches.length === 0">
+        <tr
+          v-if="matches.filter(match =>
+            match.redAthlete &&
+            match.blueAthlete &&
+            match.redAthlete.name !== 'TBD' &&
+            match.blueAthlete.name !== 'TBD'
+          ).length === 0"
+        >
           <td colspan="7" class="px-5 py-10 text-center text-sm text-muted">
             No upcoming matches scheduled.
           </td>

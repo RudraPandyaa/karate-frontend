@@ -133,6 +133,15 @@ export function useMatches() {
     })
   }
 
+  async function regenerateBracket(categoryId: string) {
+    return api('/bracket/regenerate', {
+      method: 'POST',
+      body: {
+        categoryId,
+      },
+    })
+  }
+
   return {
     matches,
     pending,
@@ -142,5 +151,6 @@ export function useMatches() {
     createMatch,
     updateMatch,
     deleteMatch,
+    regenerateBracket,
   }
 }

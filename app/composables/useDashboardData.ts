@@ -102,6 +102,18 @@ export function useDashboardData() {
   const pending = ref(false)
   const error = ref<string | null>(null)
 
+  const ROUND_ORDER = [
+  'ROUND_1',
+  'ROUND_2',
+  'ROUND_3',
+  'ROUND_OF_32',
+  'ROUND_OF_16',
+  'QUARTER_FINAL',
+  'SEMI_FINAL',
+  'FINAL',
+  'BRONZE',
+]
+
   async function fetchAll() {
     pending.value = true
     error.value = null
@@ -121,15 +133,31 @@ export function useDashboardData() {
         .filter(m => m.status === 'IN_PROGRESS')
         .map(toLiveSummary)
 
-      const scheduled = matches
-        .filter(m => m.status === 'SCHEDULED')
-        .slice(0, 4)
-        .map(toUpcomingRow)
+      const playable = matches.filter(
+        m =>
+          m.status === 'SCHEDULED' &&
+          m.redAthlete &&
+          m.blueAthlete
+      )
+
+let scheduled: RawMatch[] = []
+
+for (const round of ROUND_ORDER) {
+  const roundMatches = playable.filter(m => m.round === round)
+
+  if (roundMatches.length) {
+    scheduled = roundMatches
+    break
+  }
+}
+
+upcomingMatches.value = scheduled
+  .slice(0, 4)
+  .map(toUpcomingRow)
 
       const ongoing = tournaments.filter((t: any) => t.status === 'ONGOING')
 
       liveMatches.value = live
-      upcomingMatches.value = scheduled
 
       stats.value = {
         totalTournaments: tournaments.length,

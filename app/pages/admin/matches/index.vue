@@ -10,6 +10,7 @@ const {
   createMatch,
   updateMatch,
   deleteMatch,
+  regenerateBracket,
 } = useMatches()
 
 const { rows: categories, fetchCategories } = useCategories()
@@ -281,6 +282,31 @@ async function handleDelete(id: string) {
   await fetchAll()
 }
 
+async function handleRegenerate() {
+  if (!form.categoryId) {
+    alert('Please select a category first.')
+    return
+  }
+
+  const confirmed = window.confirm(
+    'This will delete all matches for the selected category and regenerate them from the bracket.\n\nDo you want to continue?'
+  )
+
+  if (!confirmed) return
+
+  try {
+    await regenerateBracket(form.categoryId)
+
+    await fetchAll()
+
+    alert('Bracket regenerated successfully.')
+
+    resetForm()
+  } catch (err: any) {
+    alert(err?.data?.message || err?.message || 'Failed to regenerate bracket.')
+  }
+}
+
 onMounted(() => {
   fetchAll()
   fetchCategories()
@@ -456,6 +482,12 @@ onMounted(() => {
             @click="submit"
           >
             {{ editingId ? 'Save Changes' : 'Create Match' }}
+          </button>
+          <button
+            class="px-5 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white"
+            @click="handleRegenerate"
+          >
+            Clear & Regenerate
           </button>
           <button
             v-if="editingId"

@@ -384,7 +384,7 @@ function winnerLabel() {
 
           <button
             type="button"
-            class="w-full rounded-xl border border-orange-500/50 bg-orange-600/20 py-3 font-semibold text-orange-300 hover:bg-orange-600/40 disabled:opacity-50"
+            class="w-full rounded-xl border border-line bg-surface py-3 font-semibold text-foreground transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
             :disabled="submitting || match.status === 'SCHEDULED'"
             @click="emit('restart')"
           >

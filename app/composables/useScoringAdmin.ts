@@ -19,7 +19,7 @@ export function useScoringAdmin(matchId: string) {
   const lastScoreEventId = ref<string | null>(null) 
   const notification = ref('')
   const notificationType = ref<'success' | 'error' | 'info'>('info')    
-
+  const restarting = ref(false)
   let socket: Socket | null = null
   let notificationTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -200,6 +200,24 @@ function triggerFlash(data: any) {
       )
     })
 
+    socket.on('matchRestarted', (data: any) => {
+      restarting.value = false
+
+      if (!match.value) return
+
+      match.value = {
+        ...match.value,
+        ...data,
+        scoreEvents: [],
+        penalties: {
+          red: { chui: 0, hansokuChui: 0, hansoku: 0 },
+          blue: { chui: 0, hansokuChui: 0, hansoku: 0 },
+        },
+      }
+
+      showNotification('Match restarted', 'success')
+    })
+
     socket.on('timerEnded', (data: any) => {
       if (!match.value) return
 
@@ -219,8 +237,10 @@ function triggerFlash(data: any) {
     socket.on('timerUpdate', (data: any) => {
       if (!match.value) return
 
-      match.value.timeRemaining =
-        clampTime(data.timeRemaining)
+      // Ignore old timer events while restarting
+      if (restarting.value) return
+
+      match.value.timeRemaining = clampTime(data.timeRemaining)
     })
 
     socket.on('timerAdjusted', (data: any) => {
@@ -384,31 +404,19 @@ function triggerFlash(data: any) {
 
     // Instant UI
     const snapshot = JSON.parse(JSON.stringify(match.value))
+    restarting.value = true
     applyRestartLocally()
 
     submitting.value = true
     submitError.value = null
 
-    try {
-      const data = await api<any>(`/matches/${matchId}/restart`, {
-        method: 'POST',
-      })
-
-      if (data) {
-        match.value = {
-          ...match.value!,
-          ...data,
-          scoreEvents: [],
-          penalties: {
-            red: { chui: 0, hansokuChui: 0, hansoku: 0 },
-            blue: { chui: 0, hansokuChui: 0, hansoku: 0 },
-          },
-        }
-      }
-      match.value.status = 'SCHEDULED'
-      match.value.timeRemaining = data.timeRemaining
-    } catch (err: any) {
+      try {
+        socket?.emit('restartMatch', {
+          matchId,
+        })
+      }catch (err: any) {
       match.value = snapshot // rollback
+      restarting.value = false
       submitError.value =
         err?.data?.message || err?.message || 'Failed to restart match'
       showNotification(submitError.value, 'error')
@@ -417,7 +425,6 @@ function triggerFlash(data: any) {
       submitting.value = false
     }
   }
-
   onMounted(async () => {
     await loadInitialState()
     connect()

@@ -2,7 +2,9 @@
 import type { Category } from '~/composables/useCategories'
 import type { BracketMatch } from '~/composables/useBracket'
 import { computed } from 'vue'
-import { getFlagEmoji } from '~/utils/countries'
+import CountryFlag from 'vue-country-flag-next'
+import { COUNTRY_CODE_MAP } from '~/utils/countries'
+
 const props = defineProps<{
   category: Category
   matches: BracketMatch[]
@@ -170,11 +172,6 @@ function matchNodeStyle(roundIndex: number, matchIndex: number) {
   }
 }
 
-// FIX: this must return the ABSOLUTE center Y within the column, not just
-// this match's own marginTop. The old version only worked for matchIndex
-// 0 and 1 by coincidence — for matchIndex >= 2 it collapsed every match
-// after the first onto the same Y, which is why round 1 -> round 2 trees
-// broke as soon as a round had more than 2 matches.
 function getMatchCardCenterY(roundIndex: number, matchIndex: number) {
   const unit = MATCH_HEIGHT + MATCH_GAP
   const spacing = unit * Math.pow(2, roundIndex)
@@ -182,8 +179,6 @@ function getMatchCardCenterY(roundIndex: number, matchIndex: number) {
   return topOffset + matchIndex * spacing + MATCH_HEIGHT / 2
 }
 
-// Computes the pixel width/height the SVG needs so viewBox can be 1:1
-// with real layout instead of a distorted fixed 1000x1000 box.
 function bracketDimensions(rounds: RoundGroup[]) {
   const { mainRounds, bronzeRound } = splitRounds(rounds)
   const width = mainRounds.length * COLUMN_WIDTH + Math.max(0, mainRounds.length - 1) * COLUMN_GAP
@@ -205,7 +200,7 @@ function buildConnectorLines(rounds: RoundGroup[]) {
 
     const currentX = roundIndex * (COLUMN_WIDTH + COLUMN_GAP) + COLUMN_WIDTH
     const nextX = (roundIndex + 1) * (COLUMN_WIDTH + COLUMN_GAP)
-    const junctionX = currentX + (nextX - currentX) / 2 // always the true midpoint of the gap
+    const junctionX = currentX + (nextX - currentX) / 2
 
     for (let matchIndex = 0; matchIndex < roundGroup.matches.length; matchIndex += 2) {
       const firstMatch = roundGroup.matches[matchIndex]
@@ -262,23 +257,26 @@ function buildConnectorLines(rounds: RoundGroup[]) {
   return lines
 }
 
-function athleteLabel(
+// ─── Athlete helpers ────────────────────────────────────────────────────────
+
+function athleteName(
   a?: {
     fullName?: string
     firstName?: string
     lastName?: string
-    state?: string
-    country?: string
   } | null,
 ) {
   if (!a) return 'TBD'
-  const name =
+  return (
     a.fullName ||
     [a.firstName, a.lastName].filter(Boolean).join(' ') ||
     'Unknown'
-  const flag = getFlagEmoji(a.country)
-  const state = a.state ? ` (${a.state})` : ''
-  return `${flag} ${name}${state}`
+  )
+}
+
+function athleteCountryCode(a?: { country?: string } | null): string | null {
+  if (!a?.country) return null
+  return COUNTRY_CODE_MAP[a.country.toUpperCase()] ?? null
 }
 </script>
 
@@ -295,19 +293,53 @@ function athleteLabel(
 
     <!-- Podium -->
     <div v-if="podium" class="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <!-- Winner -->
       <div class="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-4">
         <p class="text-xs font-semibold uppercase tracking-wide text-yellow-400 mb-1">🥇 Winner</p>
-        <p class="font-semibold text-foreground">{{ athleteLabel(podium.winner) }}</p>
+        <div class="flex items-center gap-2 font-semibold text-foreground">
+          <CountryFlag
+            v-if="athleteCountryCode(podium.winner)"
+            :country="athleteCountryCode(podium.winner)!"
+            size="small"
+          />
+          <span>{{ athleteName(podium.winner) }}</span>
+          <span v-if="podium.winner?.state" class="text-muted text-sm font-normal">
+            ({{ podium.winner.state }})
+          </span>
+        </div>
       </div>
+
+      <!-- Runner-up -->
       <div class="rounded-xl border border-line bg-surface p-4">
         <p class="text-xs font-semibold uppercase tracking-wide text-muted mb-1">🥈 Runner-up</p>
-        <p class="font-semibold text-foreground">{{ athleteLabel(podium.runnerUp) }}</p>
+        <div class="flex items-center gap-2 font-semibold text-foreground">
+          <CountryFlag
+            v-if="athleteCountryCode(podium.runnerUp)"
+            :country="athleteCountryCode(podium.runnerUp)!"
+            size="small"
+          />
+          <span>{{ athleteName(podium.runnerUp) }}</span>
+          <span v-if="podium.runnerUp?.state" class="text-muted text-sm font-normal">
+            ({{ podium.runnerUp.state }})
+          </span>
+        </div>
       </div>
+
+      <!-- 2nd Runner-up -->
       <div class="rounded-xl border border-orange-500/30 bg-orange-500/10 p-4">
         <p class="text-xs font-semibold uppercase tracking-wide text-orange-400 mb-1">🥉 2nd Runner-up</p>
-        <p class="font-semibold text-foreground">
-          {{ podium.secondRunnerUp ? athleteLabel(podium.secondRunnerUp) : '—' }}
-        </p>
+        <div v-if="podium.secondRunnerUp" class="flex items-center gap-2 font-semibold text-foreground">
+          <CountryFlag
+            v-if="athleteCountryCode(podium.secondRunnerUp)"
+            :country="athleteCountryCode(podium.secondRunnerUp)!"
+            size="small"
+          />
+          <span>{{ athleteName(podium.secondRunnerUp) }}</span>
+          <span v-if="podium.secondRunnerUp?.state" class="text-muted text-sm font-normal">
+            ({{ podium.secondRunnerUp.state }})
+          </span>
+        </div>
+        <span v-else class="font-semibold text-foreground">—</span>
       </div>
     </div>
 
@@ -317,134 +349,193 @@ function athleteLabel(
     </div>
 
     <!-- Bracket -->
-      <div v-else class="space-y-10">
-        <div v-for="pg in poolGroups" :key="pg.pool ?? 'final'">
-          <h3 class="mb-3 text-sm font-semibold uppercase tracking-widest text-muted">
-            {{ pg.label }}
-          </h3>
+    <div v-else class="space-y-10">
+      <div v-for="pg in poolGroups" :key="pg.pool ?? 'final'">
+        <h3 class="mb-3 text-sm font-semibold uppercase tracking-widest text-muted">
+          {{ pg.label }}
+        </h3>
 
-          <div class="overflow-x-auto pb-6">
-            <!-- Labels row: lives OUTSIDE the sized/SVG container so it never
-                shifts the match cards relative to the SVG's y=0 -->
-            <div class="flex" :style="{ columnGap: `${COLUMN_GAP}px` }">
+        <div class="overflow-x-auto pb-6">
+          <!-- Labels row -->
+          <div class="flex" :style="{ columnGap: `${COLUMN_GAP}px` }">
+            <div
+              v-for="rg in splitRounds(pg.rounds).mainRounds"
+              :key="`label-${rg.round}`"
+              class="min-w-[280px] flex-shrink-0"
+            >
+              <p class="mb-3 text-xs font-medium uppercase tracking-wide text-muted">
+                {{ rg.label }}
+              </p>
+            </div>
+          </div>
+
+          <div
+            class="relative"
+            :style="{
+              width: `${bracketDimensions(pg.rounds).width}px`,
+              height: `${bracketDimensions(pg.rounds).height}px`,
+            }"
+          >
+            <svg
+              class="pointer-events-none absolute left-0 top-0 z-0"
+              :width="bracketDimensions(pg.rounds).width"
+              :height="bracketDimensions(pg.rounds).height"
+              :viewBox="`0 0 ${bracketDimensions(pg.rounds).width} ${bracketDimensions(pg.rounds).height}`"
+            >
+              <path
+                v-for="line in buildConnectorLines(pg.rounds)"
+                :key="line.key"
+                :d="line.d"
+                class="connector-path"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+
+            <!-- Main Rounds -->
+            <div class="relative z-10 flex" :style="{ columnGap: `${COLUMN_GAP}px` }">
               <div
-                v-for="rg in splitRounds(pg.rounds).mainRounds"
-                :key="`label-${rg.round}`"
+                v-for="(rg, ri) in splitRounds(pg.rounds).mainRounds"
+                :key="rg.round"
                 class="min-w-[280px] flex-shrink-0"
               >
-                <p class="mb-3 text-xs font-medium uppercase tracking-wide text-muted">
-                  {{ rg.label }}
-                </p>
-              </div>
-            </div>
-
-            <div
-              class="relative"
-              :style="{
-                width: `${bracketDimensions(pg.rounds).width}px`,
-                height: `${bracketDimensions(pg.rounds).height}px`,
-              }"
-            >
-              <svg
-                class="pointer-events-none absolute left-0 top-0 z-0"
-                :width="bracketDimensions(pg.rounds).width"
-                :height="bracketDimensions(pg.rounds).height"
-                :viewBox="`0 0 ${bracketDimensions(pg.rounds).width} ${bracketDimensions(pg.rounds).height}`"
-              >
-                <path
-                  v-for="line in buildConnectorLines(pg.rounds)"
-                  :key="line.key"
-                  :d="line.d"
-                  class="connector-path"
-                  stroke-width="2"
-                  fill="none"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-
-              <!-- Main Rounds: no label here anymore, just the match cards -->
-              <div class="relative z-10 flex" :style="{ columnGap: `${COLUMN_GAP}px` }">
-                <div
-                  v-for="(rg, ri) in splitRounds(pg.rounds).mainRounds"
-                  :key="rg.round"
-                  class="min-w-[280px] flex-shrink-0"
-                >
-                  <div class="relative">
-                    <div
-                      v-for="(m, mi) in rg.matches"
-                      :key="m.id"
-                      class="match-node relative rounded-xl border border-line bg-canvas p-3"
-                      :style="matchNodeStyle(ri, mi)"
-                    >
-                      <div class="flex items-center justify-between text-sm">
+                <div class="relative">
+                  <div
+                    v-for="(m, mi) in rg.matches"
+                    :key="m.id"
+                    class="match-node relative rounded-xl border border-line bg-canvas p-3"
+                    :style="matchNodeStyle(ri, mi)"
+                  >
+                    <!-- Red athlete -->
+                    <div class="flex items-center justify-between text-sm">
+                      <div class="flex items-center gap-1.5 min-w-0">
+                        <CountryFlag
+                          v-if="athleteCountryCode(m.redAthlete)"
+                          :country="athleteCountryCode(m.redAthlete)!"
+                          size="small"
+                          class="shrink-0"
+                        />
                         <span
                           class="truncate text-foreground"
                           :class="{ 'font-semibold text-green-400': m.winnerId === m.redAthlete?.id }"
                         >
-                          {{ athleteLabel(m.redAthlete) }}
-                        </span>
-                        <span v-if="m.status === 'COMPLETED'" class="ml-2 text-muted">
-                          {{ m.redScore }}
+                          {{ athleteName(m.redAthlete) }}
+                          <span v-if="m.redAthlete?.state" class="text-muted text-xs">
+                            ({{ m.redAthlete.state }})
+                          </span>
                         </span>
                       </div>
+                      <span v-if="m.status === 'COMPLETED'" class="ml-2 text-muted shrink-0">
+                        {{ m.redScore }}
+                      </span>
+                    </div>
 
-                      <div class="my-1 border-t border-line" />
+                    <div class="my-1 border-t border-line" />
 
-                      <div class="flex items-center justify-between text-sm">
+                    <!-- Blue athlete -->
+                    <div class="flex items-center justify-between text-sm">
+                      <div class="flex items-center gap-1.5 min-w-0">
+                        <CountryFlag
+                          v-if="athleteCountryCode(m.blueAthlete)"
+                          :country="athleteCountryCode(m.blueAthlete)!"
+                          size="small"
+                          class="shrink-0"
+                        />
                         <span
                           class="truncate text-foreground"
                           :class="{ 'font-semibold text-green-400': m.winnerId === m.blueAthlete?.id }"
                         >
-                          {{ athleteLabel(m.blueAthlete) }}
-                        </span>
-                        <span v-if="m.status === 'COMPLETED'" class="ml-2 text-muted">
-                          {{ m.blueScore }}
+                          {{ athleteName(m.blueAthlete) }}
+                          <span v-if="m.blueAthlete?.state" class="text-muted text-xs">
+                            ({{ m.blueAthlete.state }})
+                          </span>
                         </span>
                       </div>
+                      <span v-if="m.status === 'COMPLETED'" class="ml-2 text-muted shrink-0">
+                        {{ m.blueScore }}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <!-- Bronze Medal -->
+            <!-- Bronze Medal -->
+            <div
+              v-if="splitRounds(pg.rounds).bronzeRound"
+              class="absolute z-10"
+              :style="{
+                top: `${bracketDimensions(pg.rounds).mainHeight + BRONZE_GAP}px`,
+                left: `${(splitRounds(pg.rounds).mainRounds.length - 1) * (COLUMN_WIDTH + COLUMN_GAP)}px`,
+                width: `${COLUMN_WIDTH}px`,
+              }"
+            >
+              <p class="mb-2 text-center text-xs font-medium uppercase tracking-wide text-muted">
+                {{ splitRounds(pg.rounds).bronzeRound!.label }} (3rd place)
+              </p>
+
               <div
-                v-if="splitRounds(pg.rounds).bronzeRound"
-                class="absolute z-10"
-                :style="{
-                  top: `${bracketDimensions(pg.rounds).mainHeight + BRONZE_GAP}px`,
-                  left: `${(splitRounds(pg.rounds).mainRounds.length - 1) * (COLUMN_WIDTH + COLUMN_GAP)}px`,
-                  width: `${COLUMN_WIDTH}px`,
-                }"
+                v-for="m in splitRounds(pg.rounds).bronzeRound!.matches"
+                :key="m.id"
+                class="rounded-xl border border-line bg-canvas p-3"
               >
-                <p class="mb-2 text-center text-xs font-medium uppercase tracking-wide text-muted">
-                  {{ splitRounds(pg.rounds).bronzeRound!.label }} (3rd place)
-                </p>
+                <!-- Red athlete -->
+                <div class="flex items-center justify-between text-sm">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <CountryFlag
+                      v-if="athleteCountryCode(m.redAthlete)"
+                      :country="athleteCountryCode(m.redAthlete)!"
+                      size="small"
+                      class="shrink-0"
+                    />
+                    <span
+                      class="truncate text-foreground"
+                      :class="{ 'font-semibold text-green-400': m.winnerId === m.redAthlete?.id }"
+                    >
+                      {{ athleteName(m.redAthlete) }}
+                      <span v-if="m.redAthlete?.state" class="text-muted text-xs">
+                        ({{ m.redAthlete.state }})
+                      </span>
+                    </span>
+                  </div>
+                  <span v-if="m.status === 'COMPLETED'" class="ml-2 text-muted shrink-0">
+                    {{ m.redScore }}
+                  </span>
+                </div>
 
-                <div
-                  v-for="m in splitRounds(pg.rounds).bronzeRound!.matches"
-                  :key="m.id"
-                  class="rounded-xl border border-line bg-canvas p-3"
-                >
-                  <div class="flex items-center justify-between text-sm">
-                    <span class="truncate text-foreground" :class="{ 'font-semibold text-green-400': m.winnerId === m.redAthlete?.id }">
-                      {{ athleteLabel(m.redAthlete) }}
+                <div class="my-1 border-t border-line" />
+
+                <!-- Blue athlete -->
+                <div class="flex items-center justify-between text-sm">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <CountryFlag
+                      v-if="athleteCountryCode(m.blueAthlete)"
+                      :country="athleteCountryCode(m.blueAthlete)!"
+                      size="small"
+                      class="shrink-0"
+                    />
+                    <span
+                      class="truncate text-foreground"
+                      :class="{ 'font-semibold text-green-400': m.winnerId === m.blueAthlete?.id }"
+                    >
+                      {{ athleteName(m.blueAthlete) }}
+                      <span v-if="m.blueAthlete?.state" class="text-muted text-xs">
+                        ({{ m.blueAthlete.state }})
+                      </span>
                     </span>
-                    <span v-if="m.status === 'COMPLETED'" class="ml-2 text-muted">{{ m.redScore }}</span>
                   </div>
-                  <div class="my-1 border-t border-line" />
-                  <div class="flex items-center justify-between text-sm">
-                    <span class="truncate text-foreground" :class="{ 'font-semibold text-green-400': m.winnerId === m.blueAthlete?.id }">
-                      {{ athleteLabel(m.blueAthlete) }}
-                    </span>
-                    <span v-if="m.status === 'COMPLETED'" class="ml-2 text-muted">{{ m.blueScore }}</span>
-                  </div>
+                  <span v-if="m.status === 'COMPLETED'" class="ml-2 text-muted shrink-0">
+                    {{ m.blueScore }}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
   </div>
 </template>
 
