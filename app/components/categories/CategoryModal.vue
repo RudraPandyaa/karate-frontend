@@ -13,6 +13,7 @@ const props = defineProps<{
   loading: boolean
   category: Category | null
   tournaments: TournamentOption[]
+  tatamis: { id: string; number: number; name?: string | null }[] 
 }>()
 
 const emit = defineEmits<{
@@ -41,6 +42,7 @@ function emptyForm(): CategoryPayload {
     discipline: 'KATA',
     weightMin: null,
     weightMax: null,
+    tatamiId: null,
   }
 }
 
@@ -68,6 +70,7 @@ watch(
           discipline: category.discipline,
           weightMin: category.weightMin,
           weightMax: category.weightMax,
+          tatamiId: category.tatamiId ?? null,
         }
       : emptyForm()
 
@@ -78,7 +81,7 @@ watch(
 
 // Clear weights whenever discipline changes to Kata
 watch(
-  () => form.value.discipline,
+  () => form.value.discipline, 
   (discipline) => {
     if (
       discipline === 'KATA' ||
@@ -88,6 +91,13 @@ watch(
       form.value.weightMax = null
     }
   },
+)
+
+watch(
+  () => form.value.tournamentId,
+  () => {
+    form.value.tatamiId = null
+  }
 )
 
 function validate() {
@@ -123,6 +133,14 @@ function validate() {
   errors.value = e
   return Object.keys(e).length === 0
 }
+
+const filteredTatamis = computed(() => {
+  if (!form.value.tournamentId) return []
+
+  return props.tatamis.filter(
+    (t) => t.tournamentId === form.value.tournamentId
+  )
+})
 
 function handleSubmit() {
   if (!validate()) return
@@ -248,6 +266,25 @@ function handleClose() {
                       {{ errors.tournamentId }}
                     </p>
                   </div>
+
+                  <!-- Tatami -->
+                  <select
+                    v-model="form.tatamiId"
+                    class="w-full rounded-xl border border-line bg-canvas px-4 py-3 text-foreground outline-none transition focus:border-blue-500"
+                    :disabled="!form.tournamentId"
+                  >
+                    <option :value="null">
+                      {{ form.tournamentId ? 'No Tatami assigned' : 'Select tournament first' }}
+                    </option>
+
+                    <option
+                      v-for="t in filteredTatamis"
+                      :key="t.id"
+                      :value="t.id"
+                    >
+                      Tatami {{ t.number }}{{ t.name ? ` – ${t.name}` : '' }}
+                    </option>
+                  </select>
 
                   <!-- Name -->
                   <div>

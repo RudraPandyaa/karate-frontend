@@ -109,6 +109,14 @@ export interface EnrollPayload {
   seed?: number
 }
 
+export function getAthleteIdNumber(athlete: Pick<Athlete, 'id' | 'federationId'>): string {
+  if (athlete.federationId?.trim()) {
+    return athlete.federationId.trim()
+  }
+  // Fallback: short version of internal ID (still unique enough for display)
+  return athlete.id.slice(0, 8).toUpperCase()
+}
+
 export function useAthletes() {
   const { api } = useApi()
 

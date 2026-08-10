@@ -13,7 +13,7 @@ const { isAdmin } = useAuth()
 import CategoriesTable from '~/components/categories/CategoriesTable.vue'
 import CategoryModal from '~/components/categories/CategoryModal.vue'
 import DeleteCategoryModal from '~/components/categories/DeleteCategoryModal.vue'
-
+import { useTatami } from '~/composables/useTatami'
 import {
   useCategories,
   type Category,
@@ -33,7 +33,7 @@ const {
 } = useCategories()
 
 const search = useState('topbarSearch', () => '')
-
+const { rows: tatamis, fetchAll: fetchTatamis } = useTatami()
 // ========== FILTER ==========
 const isFilterOpen = ref(false)
 const selectedDiscipline = ref('all') // 'all' | 'kata' | 'kumite' | ...
@@ -129,7 +129,10 @@ const showDeleteModal = ref(false)
 const selectedCategory = ref<Category | null>(null)
 
 onMounted(async () => {
-  await refresh()
+  await Promise.all([
+    refresh(),
+    fetchTatamis(),
+  ])
 })
 
 function openCreate() {
@@ -299,6 +302,7 @@ async function handleDelete() {
       :loading="saving"
       :category="selectedCategory"
       :tournaments="tournaments"
+      :tatamis="tatamis"
       @close="showModal = false"
       @submit="handleSubmit"
     />

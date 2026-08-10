@@ -126,6 +126,26 @@ watch(
         <p class="text-sm text-muted">
           {{ tatami.name || 'No Name' }}
         </p>
+        <!-- Assigned Categories -->
+        <div class="mt-4">
+          <h3 class="mb-2 text-xs uppercase tracking-widest text-muted">
+            Assigned Categories
+          </h3>
+
+          <div v-if="!tatami.categories?.length" class="text-sm text-muted">
+            No categories assigned
+          </div>
+
+          <div v-else class="flex flex-wrap gap-2">
+            <span
+              v-for="cat in tatami.categories"
+              :key="cat.id"
+              class="rounded-full border border-line bg-canvas px-3 py-1 text-xs text-foreground"
+            >
+              {{ cat.name }}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div

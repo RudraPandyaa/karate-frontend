@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue'
-import { Plus, X, Trophy, Pencil, Trash2 } from 'lucide-vue-next'
-import { useAthletes } from '~/composables/useAthletes'
+import { Plus, X, Trophy, Pencil, Trash2, Copy, Check } from 'lucide-vue-next'
+import { useAthletes, getAthleteIdNumber } from '~/composables/useAthletes'
 import { useCategories } from '~/composables/useCategories'
 import CountryFlag from 'vue-country-flag-next'
 import { COUNTRY_CODE_MAP } from '~/utils/countries'
@@ -40,6 +40,26 @@ const historyForm = ref({
   tournamentId: '',
   categoryId: '',
 })
+
+const copied = ref(false)
+
+async function copyAthleteId() {
+  if (!athlete.value) return
+
+  const id = getAthleteIdNumber(athlete.value)
+
+  try {
+    await navigator.clipboard.writeText(id)
+    copied.value = true
+
+    // Reset back to Copy icon after 2 seconds
+    setTimeout(() => {
+      copied.value = false
+    }, 2000)
+  } catch (err) {
+    console.error('Failed to copy ID', err)
+  }
+}
 
 // Auto-fill position based on medal; leave it untouched/empty when medal is cleared
 watch(() => historyForm.value.medal, (medal) => {
@@ -179,6 +199,29 @@ const medalColor: Record<string, string> = {
           <h1 class="text-3xl font-bold text-foreground">
             {{ getDisplayName(athlete) }}
           </h1>
+
+         <!-- ID Number with Copy -->
+        <div class="mt-1 flex items-center gap-2">
+          <p class="font-mono text-sm font-medium text-blue-400">
+            ID: {{ getAthleteIdNumber(athlete) }}
+          </p>
+
+          <button
+            class="rounded-lg p-1.5 text-muted transition hover:bg-surface-hover hover:text-foreground"
+            :title="copied ? 'Copied!' : 'Copy ID'"
+            @click="copyAthleteId"
+          >
+            <Check
+              v-if="copied"
+              class="h-4 w-4 text-green-500"
+            />
+            <Copy
+              v-else
+              class="h-4 w-4"
+            />
+          </button>
+        </div>
+
           <div class="mt-1 flex items-center gap-2 text-sm text-muted">
             <CountryFlag
               v-if="COUNTRY_CODE_MAP[athlete.country]"

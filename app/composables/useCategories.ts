@@ -16,6 +16,13 @@ export interface Category {
   weightMin: number | null
   weightMax: number | null
 
+  tatamiId?: string | null
+  tatami?: {
+    id: string
+    number: number
+    name?: string | null
+  } | null
+
   tournament?: {
     id: string
     name: string
@@ -49,6 +56,8 @@ export interface CategoryPayload {
 
   weightMin?: number | null
   weightMax?: number | null
+
+  tatamiId?: string | null
 }
 
 export const useCategories = () => {

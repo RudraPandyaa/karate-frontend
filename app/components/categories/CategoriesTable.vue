@@ -5,6 +5,7 @@ import GenderBadge from '~/components/categories/GenderBadge.vue'
 import DisciplineBadge from '~/components/categories/DisciplineBadge.vue'
 
 import type { Category } from '~/composables/useCategories'
+import { getTatamiLabel } from '~/composables/useTatami'
 
 defineProps<{
   rows: Category[]
@@ -52,6 +53,7 @@ function formatWeight(category: Category) {
             <th class="px-6 py-4 font-medium text-foreground">Weight</th>
             <th class="px-6 py-4 font-medium text-foreground">Athletes</th>
             <th class="px-6 py-4 font-medium text-foreground">Matches</th>
+            <th class="px-6 py-4 font-medium text-foreground">Tatami</th>
             <th
               v-if="canManage"
               class="px-6 py-4 font-medium text-right text-foreground"
@@ -95,6 +97,11 @@ function formatWeight(category: Category) {
             <td class="px-6 py-4 text-muted">
               {{ formatWeight(category) }}
             </td>
+
+            <td class="px-6 py-4 text-foreground">
+              {{ getTatamiLabel(category.tatami) }}
+            </td>
+
 
             <td class="px-6 py-4 text-muted">
               <span class="inline-flex items-center gap-1.5">

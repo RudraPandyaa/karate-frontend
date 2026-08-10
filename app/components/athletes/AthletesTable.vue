@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { Athlete } from '~/composables/useAthletes'
+import { getAthleteIdNumber } from '~/composables/useAthletes'
 import CountryFlag from 'vue-country-flag-next'
 import { COUNTRY_CODE_MAP } from '~/utils/countries'
 
@@ -66,8 +67,11 @@ const filtered = computed(() => {
   if (q) {
     list = list.filter((a) => {
       const name = getDisplayName(a).toLowerCase()
+      const idNumber = getAthleteIdNumber(a).toLowerCase()
+
       return (
         name.includes(q) ||
+        idNumber.includes(q) ||
         a.state?.toLowerCase().includes(q) ||
         a.country?.toLowerCase().includes(q) ||
         a.phone?.toLowerCase().includes(q)
@@ -192,6 +196,9 @@ function goToPage(p: number) {
         <thead class="bg-canvas/60">
           <tr>
             <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted">
+              ID Number
+            </th>
+            <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted">
               Athlete
             </th>
             <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-muted">
@@ -212,6 +219,12 @@ function goToPage(p: number) {
             :key="athlete.id"
             class="border-t border-line hover:bg-surface-hover transition"
           >
+          <!-- ID Number -->
+          <td class="px-6 py-4">
+            <span class="font-mono text-sm font-medium text-foreground">
+              {{ getAthleteIdNumber(athlete) }}
+            </span>
+          </td>
             <!-- Athlete (photo + name + state) -->
             <td class="px-6 py-4">
               <div class="flex items-center gap-3">

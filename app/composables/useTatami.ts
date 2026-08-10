@@ -1,5 +1,18 @@
 import { useApi } from '~/composables/useApi'
 
+
+export function getTatamiLabel(
+  tatami?: { number: number; name?: string | null } | null
+): string {
+  if (!tatami) return '—'
+
+  if (tatami.name?.trim()) {
+    return `Tatami ${tatami.number} – ${tatami.name.trim()}`
+  }
+
+  return `Tatami ${tatami.number}`
+}
+
 export interface TatamiMatch {
   id: string
   round?: string
@@ -38,6 +51,11 @@ export interface Tatami {
     id: string
     name: string
   }
+
+  categories?: {
+    id: string
+    name: string
+  }[]
 
   matches?: TatamiMatch[]
 
