@@ -1,61 +1,125 @@
-import type { User } from '~/types'
+import type {
+  LoginResponse,
+  Role,
+  User,
+} from '~/types'
+
+const STAFF_ROLES: Role[] = [
+  'SCOREKEEPER',
+  'REFEREE',
+  'ORGANIZER',
+  'ADMIN',
+  'SUPER_ADMIN',
+]
+
+const ADMIN_ROLES: Role[] = [
+  'ADMIN',
+  'SUPER_ADMIN',
+]
 
 export const useAuth = () => {
   const user = useState<User | null>('user', () => null)
-  const accessToken = useCookie<string | null>('accessToken', { default: () => null })
-  const STAFF_ROLES = ['SCOREKEEPER', 'REFEREE', 'ORGANIZER', 'ADMIN', 'SUPER_ADMIN']
-  const isStaff = computed(() => !!user.value && STAFF_ROLES.includes(user.value.role))
-  const isLoggedIn = computed(() => !!user.value)
-  const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN']
-  const isAdmin = computed(() => !!user.value && ADMIN_ROLES.includes(user.value.role))
 
-  async function login(email: string, password: string) {
+  const accessToken = useCookie<string | null>(
+    'accessToken',
+    {
+      default: () => null,
+      sameSite: 'lax',
+    },
+  )
+
+  const isLoggedIn = computed(() => {
+    return !!accessToken.value && !!user.value
+  })
+
+  const isStaff = computed(() => {
+    return !!user.value &&
+      STAFF_ROLES.includes(user.value.role)
+  })
+
+  const isAdmin = computed(() => {
+    return !!user.value &&
+      ADMIN_ROLES.includes(user.value.role)
+  })
+
+  async function login(
+    email: string,
+    password: string,
+  ) {
     try {
-      const res = await $fetch<{ accessToken: string; user: User }>('/auth/login', {
-        method: 'POST',
-        body: { email, password },
-        baseURL: useRuntimeConfig().public.apiBase,
-      })
+      const config = useRuntimeConfig()
 
-      accessToken.value = res.accessToken
-      user.value = res.user
+      const response = await $fetch<LoginResponse>(
+        '/auth/login',
+        {
+          method: 'POST',
+          baseURL: config.public.apiBase,
+          body: {
+            email,
+            password,
+          },
+        },
+      )
+
+      accessToken.value = response.accessToken
+      user.value = response.user
 
       return true
-    } catch (e) {
-      console.error(e)
+    } catch (error) {
+      console.error('[auth] Login failed:', error)
+
+      accessToken.value = null
+      user.value = null
+
       return false
+    }
+  }
+
+  async function initAuth() {
+    if (!accessToken.value) {
+      user.value = null
+      return
+    }
+
+    try {
+      const config = useRuntimeConfig()
+
+      const response = await $fetch<User>(
+        '/auth/me',
+        {
+          baseURL: config.public.apiBase,
+          headers: {
+            Authorization: `Bearer ${accessToken.value}`,
+          },
+        },
+      )
+
+      user.value = response
+    } catch (error) {
+      console.warn('[auth] Token validation failed')
+
+      accessToken.value = null
+      user.value = null
     }
   }
 
   async function logout() {
     accessToken.value = null
     user.value = null
+
     await navigateTo('/login')
   }
 
-  // Auto load user from token if exists (on app start)
-  const initAuth = async () => {
-    if (accessToken.value) {
-      try {
-        const res = await $fetch<User>('/auth/me', {
-          headers: { Authorization: `Bearer ${accessToken.value}` },
-          baseURL: useRuntimeConfig().public.apiBase,
-        })
-        user.value = res
-      } catch (e) {
-        accessToken.value = null
-      }
-    }
-  }
-
   return {
-  user,
-  accessToken,
-  isLoggedIn,
-  isStaff,
-  isAdmin,
-  login,
-  logout,
-  initAuth,
-}
+    user,
+    accessToken,
+
+    isLoggedIn,
+    isStaff,
+    isAdmin,
+
+    login,
+    logout,
+    initAuth,
+  }
 }

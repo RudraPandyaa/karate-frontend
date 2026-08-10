@@ -23,7 +23,7 @@ const handleClickOutside = (event: MouseEvent) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
-})
+})  
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)

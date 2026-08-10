@@ -65,7 +65,9 @@ const iconColor = computed(() => {
       <div class="flex justify-between items-start">
         <h4
           class="font-medium text-sm"
-          :class="notification.read ? 'text-muted' : 'text-white'"
+          :class="notification.read
+          ? 'text-muted'
+          : 'text-foreground'"
         >
           {{ notification.title }}
         </h4>

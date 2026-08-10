@@ -1,9 +1,23 @@
-export default defineNuxtRouteMiddleware(() => {
-  const { user, isLoggedIn } = useAuth()
+export default defineNuxtRouteMiddleware(async () => {
+  const {
+    accessToken,
+    user,
+    initAuth,
+  } = useAuth()
 
-  const ALLOWED_ROLES = ['SCOREKEEPER', 'REFEREE', 'ORGANIZER', 'ADMIN', 'SUPER_ADMIN']
-
-  if (!isLoggedIn.value || !ALLOWED_ROLES.includes(user.value!.role)) {
+  if (!accessToken.value) {
     return navigateTo('/login')
+  }
+
+  if (!user.value) {
+    await initAuth()
+  }
+
+  if (!user.value) {
+    return navigateTo('/login')
+  }
+
+  if (user.value.role !== 'SCOREKEEPER') {
+    return navigateTo('/matches')
   }
 })
