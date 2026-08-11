@@ -79,7 +79,7 @@ export function useAthleteDashboard() {
 
     try {
       dashboard.value = await api<AthleteDashboard>(
-        '/athletes/me/dashboard',
+          '/athletes/me/dashboard',
         {
           query: tournamentId
             ? { tournamentId }

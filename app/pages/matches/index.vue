@@ -92,9 +92,7 @@ function athleteName(a?: any) {
 
     <div class="max-w-6xl mx-auto px-6 py-8">
 
-      <div v-if="pending" class="text-slate-500 dark:text-white/60 text-center py-24">
-        Loading matches...
-      </div>
+      <PageLoader v-if="pending" text="Loading your matches..." />
 
       <div v-else-if="error" class="text-red-500 dark:text-red-400 text-center py-24">
         {{ error }}

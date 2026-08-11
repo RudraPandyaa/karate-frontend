@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import CountryFlag from 'vue-country-flag-next'
 import { COUNTRY_CODE_MAP } from '~/utils/countries'
 import type { Referee } from '~/composables/useReferees'
-
+import PageLoader from '~/components/ui/PageLoader.vue'
 const props = defineProps<{
   referees: Referee[]
   loading?: boolean
@@ -50,7 +50,7 @@ const filtered = computed(() => {
 
 <template>
   <div class="bg-surface border border-line rounded-2xl overflow-hidden">
-    <div v-if="loading" class="py-16 text-center text-muted">Loading referees...</div>
+    <PageLoader v-if="loading" text="Loading your referees..." />
 
     <div v-else-if="filtered.length === 0" class="py-16 text-center text-muted">
       No referees found.

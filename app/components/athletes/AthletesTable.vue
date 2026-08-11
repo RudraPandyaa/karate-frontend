@@ -4,6 +4,7 @@ import type { Athlete } from '~/composables/useAthletes'
 import { getAthleteIdNumber } from '~/composables/useAthletes'
 import CountryFlag from 'vue-country-flag-next'
 import { COUNTRY_CODE_MAP } from '~/utils/countries'
+import PageLoader from '~/components/ui/PageLoader.vue'
 
 const props = defineProps<{
   athletes: Athlete[]
@@ -182,9 +183,7 @@ function goToPage(p: number) {
 
     <div class="bg-surface border border-line rounded-2xl overflow-hidden">
       <!-- Loading -->
-      <div v-if="loading" class="py-16 text-center text-muted">
-        Loading athletes...
-      </div>
+      <PageLoader v-if="loading" text="Loading your athletes..." />
 
       <!-- Empty -->
       <div v-else-if="filtered.length === 0" class="py-16 text-center text-muted">

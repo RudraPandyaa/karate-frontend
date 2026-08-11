@@ -10,6 +10,7 @@ const STAFF_ROLES: Role[] = [
   'ORGANIZER',
   'ADMIN',
   'SUPER_ADMIN',
+  'ATHLETE'
 ]
 
 const ADMIN_ROLES: Role[] = [

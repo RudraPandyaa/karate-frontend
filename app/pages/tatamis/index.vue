@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageLoader from '~/components/ui/PageLoader.vue'
 const { tournaments, fetchTournaments } = useCategories()
 
 const loading = ref(true)
@@ -25,12 +26,7 @@ onMounted(async () => {
       </p>
     </div>
 
-    <div
-      v-if="loading"
-      class="rounded-xl border border-line bg-panel p-10 text-center text-muted"
-    >
-      Loading tournaments...
-    </div>
+    <PageLoader v-if="loading" text="Loading your tournaments..." />
 
     <div
       v-else-if="tournaments.length === 0"

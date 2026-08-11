@@ -7,7 +7,7 @@ import {
   ChevronDown,
 } from 'lucide-vue-next'
 import { ref, computed, onMounted } from 'vue'
-
+import PageLoader from '~/components/ui/PageLoader.vue'
 const { isAdmin } = useAuth()
 
 import CategoriesTable from '~/components/categories/CategoriesTable.vue'
@@ -266,12 +266,7 @@ async function handleDelete() {
     </div>
 
     <!-- Loading -->
-    <div
-      v-if="pending"
-      class="rounded-2xl border border-line bg-surface py-16 text-center text-muted"
-    >
-      Loading categories...
-    </div>
+    <PageLoader v-if="pending" text="Loading your matches..." />
 
     <!-- Empty -->
     <div

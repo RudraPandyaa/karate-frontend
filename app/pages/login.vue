@@ -4,7 +4,7 @@ definePageMeta({
   layout: 'auth',
 })
 
-const { login } = useAuth()
+const { login, user } = useAuth()
 
 const email = ref('')
 const password = ref('')
@@ -18,20 +18,33 @@ const handleLogin = async () => {
   try {
     console.log('2. Calling login API')
 
-    const success = await login(email.value, password.value)
+    const success = await login(
+      email.value,
+      password.value,
+    )
 
     console.log('3. Login result:', success)
+    console.log('4. Logged-in user:', user.value)
 
-    if (success) {
-      console.log('4. Navigating to dashboard')
-
-      await navigateTo('/dashboard')
-
-      console.log('5. Navigation completed')
-    } else {
+    if (!success) {
       console.log('Login returned false')
       alert('Login failed')
+      return
     }
+
+    const role = user.value?.role
+
+    console.log('5. User role:', role)
+
+    if (role === 'ATHLETE') {
+      console.log('6. Redirecting athlete')
+      await navigateTo('/athletes/dashboard')
+    } else {
+      console.log('6. Redirecting staff/admin')
+      await navigateTo('/dashboard')
+    }
+
+    console.log('7. Navigation completed')
   } catch (error) {
     console.error('Login handler error:', error)
   } finally {

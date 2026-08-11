@@ -7,14 +7,13 @@
 // Auth / Roles
 // -------------------------
 
-const STAFF_ROLES: Role[] = [
-  'SCOREKEEPER',
-  'REFEREE',
-  'ORGANIZER',
-  'ADMIN',
-  'SUPER_ADMIN',
-  'OPERATOR',
-]
+export type Role =
+  | 'ATHLETE'
+  | 'ADMIN'
+  | 'ORGANIZER'
+  | 'REFEREE'
+  | 'SCOREKEEPER'
+  | 'SUPER_ADMIN'
 
 export interface AuthAthlete {
   id: string

@@ -2,7 +2,7 @@
 import { Plus, Filter, Download, Search } from 'lucide-vue-next'
 import TournamentsTable from '~/components/TournamentsTable.vue'
 import CreateTournamentModal from '~/components/CreateTournamentModal.vue'
-
+import PageLoader from '~/components/ui/PageLoader.vue'
 const {
   rows,
   pending,
@@ -93,12 +93,7 @@ function exportToCsv() {
   <div class="space-y-6">
 
     <!-- Loading -->
-    <div
-      v-if="pending"
-      class="rounded-2xl border border-line bg-surface p-10 text-center text-muted"
-    >
-      Loading tournaments...
-    </div>
+    <PageLoader v-if="pending" text="Loading your tournaments..." />
 
     <!-- Error -->
     <div

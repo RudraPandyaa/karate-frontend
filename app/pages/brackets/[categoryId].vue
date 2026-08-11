@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageLoader from '~/components/ui/PageLoader.vue'
 const route = useRoute()
 const categoryId = route.params.categoryId as string
 
@@ -21,7 +22,7 @@ async function handleRegenerate() {
 
 <template>
   <div class="p-6">
-    <div v-if="pending" class="py-20 text-center text-muted">Loading bracket...</div>
+    <PageLoader v-if="pending" text="Loading your brackets..." />
 
     <div v-else-if="error" class="py-20 text-center text-red-400">{{ error }}</div>
 

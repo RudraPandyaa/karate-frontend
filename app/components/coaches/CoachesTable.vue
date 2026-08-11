@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Coach } from '~/composables/useCoaches'
-
+import PageLoader from '~/components/ui/PageLoader.vue'
 const props = defineProps<{
   coaches: Coach[]
   loading?: boolean
@@ -40,9 +40,7 @@ const filtered = computed(() => {
 
 <template>
   <div class="bg-surface border border-line rounded-2xl overflow-hidden">
-    <div v-if="loading" class="py-16 text-center text-muted">
-      Loading coaches...
-    </div>
+    <PageLoader v-if="loading" text="Loading your coaches..." />
 
     <div v-else-if="filtered.length === 0" class="py-16 text-center text-muted">
       No coaches found.

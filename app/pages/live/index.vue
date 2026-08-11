@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageLoader from '~/components/ui/PageLoader.vue'
 definePageMeta({
   layout: 'public',
 })
@@ -24,9 +25,7 @@ function getAthleteName(athlete?: {
     <div class="max-w-5xl mx-auto">
       <h1 class="text-3xl font-bold text-foreground mb-8">Live Matches</h1>
 
-      <div v-if="pending" class="text-muted text-center py-20">
-        Loading live matches...
-      </div>
+      <PageLoader v-if="pending" text="Loading your live matches..." />
 
       <div v-else-if="error" class="text-red-400 text-center py-20">
         {{ error }}

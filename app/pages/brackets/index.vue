@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageLoader from '~/components/ui/PageLoader.vue'
 const { rows: categories, pending, fetchCategories } = useCategories()
 
 onMounted(() => {
@@ -10,7 +11,7 @@ onMounted(() => {
   <div class="p-6">
     <h1 class="mb-6 text-2xl font-bold text-foreground">Brackets</h1>
 
-    <div v-if="pending" class="text-foreground/60">Loading categories...</div>
+    <PageLoader v-if="pending" text="Loading your brackets..." />
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <NuxtLink

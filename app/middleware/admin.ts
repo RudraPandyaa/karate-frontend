@@ -21,7 +21,6 @@ export default defineNuxtRouteMiddleware(async () => {
     'ADMIN',
     'SUPER_ADMIN',
     'ORGANIZER',
-    'SCOREKEEPER',
   ]
 
   if (!allowedRoles.includes(user.value.role)) {

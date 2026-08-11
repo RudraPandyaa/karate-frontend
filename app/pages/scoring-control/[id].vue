@@ -1,11 +1,17 @@
 <script setup lang="ts">
 definePageMeta({
-  middleware: 'scorekeeper',
+  middleware: [],
 })
 
 const route = useRoute()
 const matchId = route.params.id as string
 
+console.log('[scoring-control] route:', route.fullPath)
+console.log('[scoring-control] matchId:', matchId)
+const { user } = useAuth()
+
+console.log('[scoring-control] user:', user.value)
+console.log('[scoring-control] role:', user.value?.role)
 const {
   match,
   pending,
