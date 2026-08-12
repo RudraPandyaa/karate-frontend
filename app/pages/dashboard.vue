@@ -1,8 +1,11 @@
 <script setup lang="ts">
-console.log('DASHBOARD PAGE LOADED')
-definePageMeta({})
 import { Trophy, Timer, Users, Zap } from 'lucide-vue-next'
 import TatamiDashboard from '~/components/tatami/TatamiDashboard.vue'
+console.log('DASHBOARD PAGE LOADED')
+definePageMeta({
+  layout: 'default',
+  middleware: 'admin',
+})
 
 const { stats, liveMatches, upcomingMatches, usingMockData, pending, fetchAll } = useDashboardData()
 

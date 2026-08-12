@@ -1,7 +1,4 @@
-import type { Role } from '~/types'
-import { getHomeRouteForRole } from '~/composables/useAuth'
-
-const ALLOWED: Role[] = ['SUPER_ADMIN', 'ADMIN', 'ORGANIZER', 'REFEREE']
+import { ORGANIZER_ROLES, getHomeRouteForRole } from '~/composables/useAuth'
 
 export default defineNuxtRouteMiddleware(async (to) => {
   const { accessToken, user, initAuth } = useAuth()
@@ -18,11 +15,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo('/login')
   }
 
-  if (!ALLOWED.includes(user.value.role)) {
+  if (!ORGANIZER_ROLES.includes(user.value.role)) {
     const target = getHomeRouteForRole(user.value.role)
+
+    // Prevent infinite redirect to the same route
     if (target === to.path) {
       return navigateTo('/live')
     }
+
     return navigateTo(target)
   }
 })

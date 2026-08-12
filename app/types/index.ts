@@ -8,6 +8,7 @@
 // -------------------------
 
 export type Role =
+  | 'GUEST'
   | 'ATHLETE'
   | 'ADMIN'
   | 'ORGANIZER'

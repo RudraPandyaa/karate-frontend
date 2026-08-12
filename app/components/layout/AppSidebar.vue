@@ -25,134 +25,51 @@ interface NavItem {
 const { user } = useAuth()
 const route = useRoute()
 
-const adminNav: NavItem[] = [
-  {
-    label: 'Dashboard',
-    to: '/dashboard',
-    icon: LayoutDashboard,
-  },
-  {
-    label: 'Tournaments',
-    to: '/tournaments',
-    icon: Trophy,
-  },
-  {
-    label: 'Categories',
-    to: '/categories',
-    icon: Tags,
-  },
-  {
-    label: 'Athletes',
-    to: '/athletes',
-    icon: Users,
-  },
-  {
-    label: 'Referees',
-    to: '/referees',
-    icon: Shield,
-  },
-  {
-    label: 'Coaches',
-    to: '/coaches',
-    icon: GraduationCap,
-  },
-  {
-    label: 'Tatamis',
-    to: '/tatamis',
-    icon: Waypoints,
-  },
-  {
-    label: 'Matches',
-    to: '/admin/matches',
-    icon: Swords,
-  },
-  {
-    label: 'Live Scoring',
-    to: '/live',
-    icon: Tv,
-  },
-  {
-    label: 'Brackets',
-    to: '/brackets',
-    icon: GitBranch,
-  },
+// Full staff navigation (SUPER_ADMIN, ADMIN, ORGANIZER)
+const fullStaffNav: NavItem[] = [
+  { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
+  { label: 'Tournaments', to: '/tournaments', icon: Trophy },
+  { label: 'Categories', to: '/categories', icon: Tags },
+  { label: 'Athletes', to: '/athletes', icon: Users },
+  { label: 'Referees', to: '/referees', icon: Shield },
+  { label: 'Coaches', to: '/coaches', icon: GraduationCap },
+  { label: 'Tatamis', to: '/tatamis', icon: Waypoints },
+  { label: 'Matches', to: '/admin/matches', icon: Swords },
+  { label: 'Live Scoring', to: '/live', icon: Tv },
+  { label: 'Brackets', to: '/brackets', icon: GitBranch },
+  { label: 'Users', to: '/users', icon: Users },
 ]
 
-const organizerNav: NavItem[] = [
-  ...adminNav,
-]
-
+// Scorekeeper navigation
 const scorekeeperNav: NavItem[] = [
-  {
-    label: 'Dashboard',
-    to: '/scorekeeper/dashboard',
-    icon: LayoutDashboard,
-  },
-  {
-    label: 'Matches',
-    to: '/matches',
-    icon: Swords,
-  },
-  {
-    label: 'Live Scoring',
-    to: '/live',
-    icon: Tv,
-  },
-  {
-    label: 'Tatamis',
-    to: '/tatamis',
-    icon: Waypoints,
-  },
-  {
-    label: 'Brackets',
-    to: '/brackets',
-    icon: GitBranch,
-  },
-  {
-    label: 'Results',
-    to: '/results',
-    icon: BarChart3,
-  },
+  { label: 'Dashboard', to: '/scorekeeper/dashboard', icon: LayoutDashboard },
+  { label: 'Matches', to: '/scorekeeper/matches', icon: Swords },
+  { label: 'Live Scoring', to: '/live', icon: Tv },
+  { label: 'Tatamis', to: '/tatamis', icon: Waypoints },
+  { label: 'Brackets', to: '/brackets', icon: GitBranch },
+  { label: 'Results', to: '/scorekeeper/results', icon: BarChart3 },
 ]
 
+// Referee navigation
 const refereeNav: NavItem[] = [
-  {
-    label: 'Dashboard',
-    to: '/referee/dashboard',
-    icon: LayoutDashboard,
-  },
-  {
-    label: 'My Matches',
-    to: '/referee/matches',
-    icon: Swords,
-  },
-  {
-    label: 'Live Scoring',
-    to: '/live',
-    icon: Tv,
-  },
-  {
-    label: 'Match History',
-    to: '/referee/history',
-    icon: BarChart3,
-  },
-  {
-    label: 'Profile',
-    to: '/referee/profile',
-    icon: User,
-  },
+  { label: 'Dashboard', to: '/referee/dashboard', icon: LayoutDashboard },
+  { label: 'My Matches', to: '/referee/matches', icon: Swords },
+  { label: 'Live Scoring', to: '/live', icon: Tv },
+  { label: 'Match History', to: '/referee/history', icon: BarChart3 },
+  { label: 'Profile', to: '/referee/profile', icon: User },
 ]
 
 const navigationByRole: Partial<Record<Role, NavItem[]>> = {
-  ADMIN: adminNav,
-  SUPER_ADMIN: adminNav,
-  ORGANIZER: organizerNav,
+  SUPER_ADMIN: fullStaffNav,
+  ADMIN: fullStaffNav,
+  ORGANIZER: fullStaffNav,
   SCOREKEEPER: scorekeeperNav,
   REFEREE: refereeNav,
 }
 
 const navigation = computed(() => {
-  return navigationByRole[user.value?.role as Role] ?? []
+  const role = user.value?.role as Role | undefined
+  return navigationByRole[role as Role] ?? []
 })
 
 function isActive(to: string) {
@@ -163,7 +80,6 @@ function navLinkClass(to: string) {
   return [
     'flex items-center gap-3 rounded-lg px-3 py-2.5',
     'text-sm font-medium transition-colors border',
-
     isActive(to)
       ? 'bg-blue-600/15 text-blue-400 border-blue-600/30'
       : 'text-muted hover:bg-surface hover:text-foreground border-transparent',
@@ -172,23 +88,12 @@ function navLinkClass(to: string) {
 
 const roleLabel = computed(() => {
   switch (user.value?.role) {
-    case 'SUPER_ADMIN':
-      return 'Super Admin'
-
-    case 'ADMIN':
-      return 'Administrator'
-
-    case 'ORGANIZER':
-      return 'Organizer'
-
-    case 'SCOREKEEPER':
-      return 'Scorekeeper'
-
-    case 'REFEREE':
-      return 'Referee'
-
-    default:
-      return 'Staff Portal'
+    case 'SUPER_ADMIN': return 'Super Admin'
+    case 'ADMIN': return 'Administrator'
+    case 'ORGANIZER': return 'Organizer'
+    case 'SCOREKEEPER': return 'Scorekeeper'
+    case 'REFEREE': return 'Referee'
+    default: return 'Staff Portal'
   }
 })
 </script>

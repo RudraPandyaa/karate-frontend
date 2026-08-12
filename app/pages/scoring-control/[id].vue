@@ -1,6 +1,7 @@
 <script setup lang="ts">
 definePageMeta({
-  middleware: [],
+  layout: 'default',
+  middleware: 'staff',
 })
 
 const route = useRoute()

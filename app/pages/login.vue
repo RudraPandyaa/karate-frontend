@@ -33,16 +33,14 @@ const handleLogin = async () => {
     }
 
     const role = user.value?.role
-
     console.log('5. User role:', role)
 
-    if (role === 'ATHLETE') {
-      console.log('6. Redirecting athlete')
-      await navigateTo('/athletes/dashboard')
-    } else {
-      console.log('6. Redirecting staff/admin')
-      await navigateTo('/dashboard')
-    }
+    const { getHomeRouteForRole } = await import('~/composables/useAuth')
+    const target = getHomeRouteForRole(role)
+
+    console.log('6. Redirecting to:', target)
+    await navigateTo(target)
+    console.log('LOGIN SUCCESS')
 
     console.log('7. Navigation completed')
   } catch (error) {

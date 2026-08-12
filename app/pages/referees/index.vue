@@ -7,7 +7,10 @@ import RefereeModal from '~/components/referees/RefereeModal.vue'
 import DeleteRefereeModal from '~/components/referees/DeleteRefereeModal.vue'
 
 import { useReferees, type Referee } from '~/composables/useReferees'
-
+definePageMeta({
+  layout: 'default',
+  middleware: 'admin',
+})
 const { isAdmin } = useAuth()
 
 const {

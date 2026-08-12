@@ -8,6 +8,10 @@ import {
 } from 'lucide-vue-next'
 import { ref, computed, onMounted } from 'vue'
 import PageLoader from '~/components/ui/PageLoader.vue'
+definePageMeta({
+  layout: 'default',
+  middleware: 'admin',
+})
 const { isAdmin } = useAuth()
 
 import CategoriesTable from '~/components/categories/CategoriesTable.vue'

@@ -1,7 +1,9 @@
 
 <script setup lang="ts">
-definePageMeta({ middleware: 'staff' })
-
+definePageMeta({
+  layout: 'default',
+  middleware: 'admin',
+})
 const {
   matches,
   pending: matchesPending,
@@ -16,10 +18,19 @@ const {
 const { rows: categories, fetchCategories } = useCategories()
 const { athletes, fetchAthletes } = useAthletes()
 const { rows: tatamis, fetchTatami } = useTatami()
-
+const { referees, fetchReferees } = useReferees()
+const scorekeepers = ref<{ id: string; name: string; email: string }[]>([])
 const editingId = ref<string | null>(null)
 const saving = ref(false)
 const formError = ref<string | null>(null)
+
+
+async function fetchScorekeepers() {
+  const { api } = useApi()
+  scorekeepers.value = await api('/users/by-role/SCOREKEEPER')
+}
+
+
 
 const form = reactive({
   categoryId: '',
@@ -32,6 +43,8 @@ const form = reactive({
   // Kept as a datetime-local input string ("YYYY-MM-DDTHH:mm") for direct
   // v-model binding; converted to/from ISO at submit()/startEdit().
   scheduledTime: '',
+  refereeId: '',
+  scorekeeperId: '',
 })
 
 const roundOptions = [
@@ -215,6 +228,8 @@ function resetForm() {
   form.timerSeconds = undefined
   form.scheduledTime = ''
   formError.value = null
+  form.refereeId = ''
+  form.scorekeeperId = ''
 }
 
 function startEdit(m: any) {
@@ -258,6 +273,8 @@ async function submit() {
       timerSeconds: form.timerSeconds,
       // Left blank = auto-schedule after the previous match on this tatami
       scheduledTime: fromLocalInputValue(form.scheduledTime),
+      refereeId: form.refereeId || undefined,
+      scorekeeperId: form.scorekeeperId || undefined,
     }
 
     if (editingId.value) {
@@ -311,6 +328,8 @@ onMounted(() => {
   fetchAll()
   fetchCategories()
   fetchAthletes()
+  fetchReferees()
+  fetchScorekeepers()
 })
 </script>
 
@@ -473,6 +492,42 @@ onMounted(() => {
               Selected: {{ athleteName(selectedBlueAthlete) }}
             </p>
           </div>
+          <!-- Referee -->
+            <div>
+              <label class="text-xs text-foreground/50 block mb-1">Referee</label>
+              <select
+                v-model="form.refereeId"
+                class="w-full bg-surface rounded-lg px-3 py-2 text-foreground"
+              >
+                <option value="">Unassigned</option>
+                <option
+                  v-for="r in referees"
+                  :key="r.id"
+                  :value="r.id"
+                >
+                  {{ r.firstName }} {{ r.lastName }}
+                  <span v-if="r.license"> ({{ r.license }})</span>
+                </option>
+              </select>
+            </div>
+
+            <!-- Scorekeeper -->
+            <div>
+              <label class="text-xs text-foreground/50 block mb-1">Scorekeeper</label>
+              <select
+                v-model="form.scorekeeperId"
+                class="w-full bg-surface rounded-lg px-3 py-2 text-foreground"
+              >
+                <option value="">Unassigned</option>
+                <option
+                  v-for="s in scorekeepers"
+                  :key="s.id"
+                  :value="s.id"
+                >
+                  {{ s.name }} ({{ s.email }})
+                </option>
+              </select>
+            </div>
         </div>
 
         <div class="flex gap-3 pt-2">

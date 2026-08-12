@@ -1,10 +1,7 @@
+import { STAFF_ROLES, getHomeRouteForRole } from '~/composables/useAuth'
+
 export default defineNuxtRouteMiddleware(async () => {
-  const {
-    accessToken,
-    user,
-    isStaff,
-    initAuth,
-  } = useAuth()
+  const { accessToken, user, initAuth } = useAuth()
 
   if (!accessToken.value) {
     return navigateTo('/login')
@@ -18,7 +15,7 @@ export default defineNuxtRouteMiddleware(async () => {
     return navigateTo('/login')
   }
 
-  if (!isStaff.value) {
-    return navigateTo('/matches')
+  if (!STAFF_ROLES.includes(user.value.role)) {
+    return navigateTo(getHomeRouteForRole(user.value.role))
   }
 })

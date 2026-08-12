@@ -1,9 +1,7 @@
-export default defineNuxtRouteMiddleware(async () => {
-  const {
-    accessToken,
-    user,
-    initAuth,
-  } = useAuth()
+import { ORGANIZER_ROLES, getHomeRouteForRole } from '~/composables/useAuth'
+
+export default defineNuxtRouteMiddleware(async (to) => {
+  const { accessToken, user, initAuth } = useAuth()
 
   if (!accessToken.value) {
     return navigateTo('/login')
@@ -17,13 +15,11 @@ export default defineNuxtRouteMiddleware(async () => {
     return navigateTo('/login')
   }
 
-  const allowedRoles = [
-    'ADMIN',
-    'SUPER_ADMIN',
-    'ORGANIZER',
-  ]
-
-  if (!allowedRoles.includes(user.value.role)) {
-    return navigateTo('/dashboard')
+  if (!ORGANIZER_ROLES.includes(user.value.role)) {
+    const target = getHomeRouteForRole(user.value.role)
+    if (target === to.path) {
+      return navigateTo('/live')
+    }
+    return navigateTo(target)
   }
 })

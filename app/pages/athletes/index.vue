@@ -8,6 +8,11 @@ import DeleteAthleteModal from '~/components/athletes/DeleteAthleteModal.vue'
 import { useAthletes, type Athlete, type CreateAthleteDto } from '~/composables/useAthletes'
 import { useCoaches } from '~/composables/useCoaches'   // ← add this
 
+definePageMeta({
+  layout: 'default',
+  middleware: 'admin',
+})
+
 const {
   athletes,
   pending,

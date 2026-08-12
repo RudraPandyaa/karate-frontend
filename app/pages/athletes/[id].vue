@@ -6,7 +6,10 @@ import { useCategories } from '~/composables/useCategories'
 import CountryFlag from 'vue-country-flag-next'
 import { COUNTRY_CODE_MAP } from '~/utils/countries'
 import EnrollAthleteModal from '~/components/athletes/EnrollAthleteModal.vue'
-
+definePageMeta({
+  layout: 'athlete',
+  middleware: 'athlete',
+})
 const route = useRoute()
 const athleteId = route.params.id as string
 

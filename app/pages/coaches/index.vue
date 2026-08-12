@@ -7,7 +7,10 @@ import CoachesModal from '~/components/coaches/CoachesModal.vue'
 import DeleteCoachModal from '~/components/coaches/DeleteCoachModal.vue'
 
 import { useCoaches, type Coach } from '~/composables/useCoaches'
-
+definePageMeta({
+  layout: 'default',
+  middleware: 'admin',
+})
 const { isAdmin } = useAuth()
 
 const {

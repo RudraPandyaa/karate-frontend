@@ -1,19 +1,25 @@
-export default defineNuxtRouteMiddleware(async () => {
-  const {
-    user,
-    isLoggedIn,
-    initAuth,
-  } = useAuth()
+import { getHomeRouteForRole } from '~/composables/useAuth'
 
-  if (!isLoggedIn.value) {
-    await initAuth()
-  }
+export default defineNuxtRouteMiddleware(async (to) => {
+  const { accessToken, user, initAuth } = useAuth()
 
-  if (!isLoggedIn.value) {
+  if (!accessToken.value) {
     return navigateTo('/login')
   }
 
-  if (user.value?.role !== 'ATHLETE') {
-    return navigateTo('/dashboard')
+  if (!user.value) {
+    await initAuth()
+  }
+
+  if (!user.value) {
+    return navigateTo('/login')
+  }
+
+  if (user.value.role !== 'ATHLETE') {
+    const target = getHomeRouteForRole(user.value.role)
+    if (target === to.path) {
+      return navigateTo('/live')
+    }
+    return navigateTo(target)
   }
 })

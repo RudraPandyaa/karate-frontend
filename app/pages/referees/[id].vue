@@ -10,8 +10,10 @@ import DeleteRefereeModal from '~/components/referees/DeleteRefereeModal.vue'
 
 // Referees are staff by role (see useAuth's STAFF_ROLES), and match data
 // is otherwise only exposed to staff — same guard as /admin/matches.
-definePageMeta({ middleware: 'staff' })
-
+definePageMeta({
+  layout: 'default',
+  middleware: 'admin',   // or 'staff' if you want SCOREKEEPER to also see it later
+})
 const route = useRoute()
 const id = route.params.id as string
 
@@ -66,12 +68,13 @@ const canSeeContact = computed(() => isAdmin.value || isOwnProfile.value)
 // account (Referee.userId === Match.refereeId). If there's no linked
 // account, we can't determine this from match data at all.
 const officiatedMatches = computed(() => {
-  if (!referee.value?.userId) return []
+  if (!referee.value?.id) return []
   return matches.value
-    .filter((m: any) => m.refereeId === referee.value!.userId)
-    .sort((a: any, b: any) =>
-      new Date(b.completedAt || b.createdAt || 0).getTime() -
-      new Date(a.completedAt || a.createdAt || 0).getTime()
+    .filter((m: any) => m.refereeId === referee.value!.id)
+    .sort(
+      (a: any, b: any) =>
+        new Date(b.completedAt || b.createdAt || 0).getTime() -
+        new Date(a.completedAt || a.createdAt || 0).getTime(),
     )
 })
 

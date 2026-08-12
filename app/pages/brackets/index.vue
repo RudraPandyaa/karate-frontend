@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import PageLoader from '~/components/ui/PageLoader.vue'
+definePageMeta({
+  layout: 'default',
+  middleware: 'staff',
+})
 const { rows: categories, pending, fetchCategories } = useCategories()
 
 onMounted(() => {

@@ -3,6 +3,10 @@ import { Plus, Filter, Download, Search } from 'lucide-vue-next'
 import TournamentsTable from '~/components/TournamentsTable.vue'
 import CreateTournamentModal from '~/components/CreateTournamentModal.vue'
 import PageLoader from '~/components/ui/PageLoader.vue'
+definePageMeta({
+  layout: 'default',
+  middleware: 'admin',
+})
 const {
   rows,
   pending,
