@@ -94,7 +94,7 @@ function statusClass(status?: string) {
       </p>
     </div>
 
-    <PageLoader v-if="pending" text="Loading your matches..." />
+    <PageLoader v-if="pending" text="Loading your schedule..." />
 
     <div
       v-else-if="error"

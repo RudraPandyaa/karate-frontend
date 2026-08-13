@@ -25,7 +25,7 @@ export function useScoringAdmin(matchId: string) {
 
   function recordScore(
     corner: 'RED' | 'BLUE',
-    type: ScoreTypeValue,
+    type: ScoreTypeValue, 
   ) {
     submitError.value = null
     socket?.emit('recordExchange', {

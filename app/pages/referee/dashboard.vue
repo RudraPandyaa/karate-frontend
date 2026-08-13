@@ -2,7 +2,8 @@
 import { computed, onMounted } from 'vue'
 import { useRefereeMatches } from '~/composables/useRefereeMatches'
 import { athleteDisplayName } from '~/composables/useMatches'
-
+import PageLoader from '~/components/ui/PageLoader.vue'
+import EmptyState from '~/components/ui/EmptyState.vue'
 definePageMeta({
   layout: 'default',
   middleware: 'referee',
@@ -49,7 +50,7 @@ const nextMatch = computed(() => {
       </p>
     </div>
 
-    <div v-if="pending" class="text-muted">Loading...</div>
+    <PageLoader v-if="pending" text="Loading referee dashboard..." />
     <div v-else-if="error" class="text-red-400">{{ error }}</div>
 
     <template v-else>

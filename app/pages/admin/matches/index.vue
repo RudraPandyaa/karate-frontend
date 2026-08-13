@@ -243,6 +243,8 @@ function startEdit(m: any) {
   form.timerSeconds =
     m.timerSeconds ?? timerSecondsForCategory(m.category)
   form.scheduledTime = toLocalInputValue(m.scheduledTime)
+  form.refereeId = m.referee?.id ?? ''
+  form.scorekeeperId = m.scorekeeper?.id ?? ''
 }
 
 async function submit() {
@@ -593,6 +595,26 @@ onMounted(() => {
                 }}
                 • {{ m.status }}
                 <span v-if="m.timerSeconds"> • {{ m.timerSeconds }}s</span>
+              </p>
+
+              <p class="mt-1 text-xs text-muted">
+                <span>
+                  Referee:
+                  <span class="text-foreground">
+                    {{
+                      m.referee
+                        ? [m.referee.firstName, m.referee.lastName].filter(Boolean).join(' ')
+                        : 'Unassigned'
+                    }}
+                  </span>
+                </span>
+                <span class="mx-2">·</span>
+                <span>
+                  Scorekeeper:
+                  <span class="text-foreground">
+                    {{ m.scorekeeper?.name || 'Unassigned' }}
+                  </span>
+                </span>
               </p>
             </div>
 

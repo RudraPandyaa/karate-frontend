@@ -2,7 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { useScorekeeperMatches } from '~/composables/useScorekeeperMatches'
 import { athleteDisplayName } from '~/composables/useMatches'
-
+import PageLoader from '~/components/ui/PageLoader.vue'
 definePageMeta({
   layout: 'default',
   middleware: 'scorekeeper',
@@ -48,7 +48,7 @@ const nextMatch = computed(() => {
       <p class="mt-1 text-sm text-muted">Welcome, {{ user?.name }}</p>
     </div>
 
-    <div v-if="pending" class="text-muted">Loading...</div>
+    <PageLoader v-if="pending" text="Loading scorekeeper dashboard..." />
     <div v-else-if="error" class="text-red-400">{{ error }}</div>
 
     <template v-else>

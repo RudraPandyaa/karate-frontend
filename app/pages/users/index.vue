@@ -2,7 +2,8 @@
 import type { Role } from '~/types'
 import { useUsers } from '~/composables/useUsers'
 import { Search, Shield, ClipboardList } from 'lucide-vue-next'
-
+import PageLoader from '~/components/ui/PageLoader.vue'
+import EmptyState from '~/components/ui/EmptyState.vue'
 definePageMeta({
   middleware: ['admin'], // only ADMIN / SUPER_ADMIN
 })
@@ -114,20 +115,14 @@ function roleBadgeClass(role: Role) {
     </p>
 
     <!-- Loading -->
-    <div
-      v-if="pending"
-      class="rounded-2xl border border-line bg-surface py-16 text-center text-muted"
-    >
-      Loading users...
-    </div>
+    <PageLoader v-if="pending" text="Loading users..." />
 
     <!-- Empty -->
-    <div
-      v-else-if="users.length === 0"
-      class="rounded-2xl border border-line bg-surface py-16 text-center text-muted"
-    >
-      No users found
-    </div>
+    <EmptyState
+  v-else-if="users.length === 0"
+  title="No users found"
+  description="Try a different search or role filter."
+/>
 
     <!-- Table -->
     <div

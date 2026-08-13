@@ -18,6 +18,7 @@ const {
   pending,
   error,
   fetchAthletes,
+  createAthleteByAdmin,
   createAthlete,
   updateAthlete,
   deleteAthlete,
@@ -155,7 +156,7 @@ async function saveAthlete(payload: {
     if (selectedAthlete.value?.id) {
       savedAthlete = await updateAthlete(selectedAthlete.value.id, dto)
     } else {
-      savedAthlete = await createAthlete(dto)
+      savedAthlete = await createAthleteByAdmin(dto)
     }
 
     if (photoFile && savedAthlete?.id) {

@@ -2,8 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+
 /* =========================================================
-   Theme tokens
+   Theme
    ========================================================= */
 
 :root {
@@ -34,51 +35,34 @@
   --text-muted: #9ca3af;
 }
 
+
 /* =========================================================
    Base
    ========================================================= */
 
 @layer base {
-  html,
-  body {
-    @apply bg-canvas text-foreground;
+
+  html {
+    min-height: 100%;
   }
 
   body {
-    transition:
-      background-color 0.2s ease,
-      color 0.2s ease;
+    min-height: 100vh;
+    margin: 0;
+
+    @apply bg-canvas text-foreground;
   }
 
   input,
   textarea,
-  select {
-    @apply border border-line bg-canvas text-foreground;
+  select,
+  button {
+    font: inherit;
   }
 
   input::placeholder,
   textarea::placeholder {
     color: var(--text-muted);
-  }
-
-  input:focus,
-  textarea:focus,
-  select:focus {
-    @apply border-blue-500 outline-none;
-    box-shadow: 0 0 0 2px rgb(59 130 246 / 20%);
-  }
-
-  table {
-    @apply text-foreground;
-  }
-
-  th,
-  td {
-    @apply text-foreground;
-  }
-
-  label {
-    @apply text-foreground;
   }
 
   svg {
@@ -88,52 +72,523 @@
   a {
     color: inherit;
   }
+
 }
 
+
 /* =========================================================
-   Reusable components
+   Authentication
    ========================================================= */
 
 @layer components {
+
+  /* Full authentication page */
+
+  .auth-page {
+    position: relative;
+
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100svh;
+
+    overflow: hidden;
+  }
+
+
+  /* Background */
+
+  .auth-background {
+    position: absolute;
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background-image: url('/images/auth-bg.jpg');
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+
+    z-index: 0;
+  }
+
+
+  /* Overlay */
+
+  .auth-overlay {
+    position: absolute;
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.08);
+
+    z-index: 1;
+
+    pointer-events: none;
+  }
+
+
+  /* Content */
+
+  .auth-content {
+    position: relative;
+
+    z-index: 10;
+
+    min-height: 100vh;
+    min-height: 100svh;
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: flex-end;
+
+    padding: 2rem;
+  }
+
+
+  /* Form position */
+
+  .auth-form-wrapper {
+    width: 100%;
+    max-width: 430px;
+
+    margin-right: 2rem;
+  }
+
+
+  /* Main card */
+
+  .auth-card {
+    width: 100%;
+
+    border-radius: 1.5rem;
+
+    border: 1px solid rgba(255, 255, 255, 0.75);
+
+    background: rgba(255, 255, 255, 0.96);
+
+    padding: 2rem;
+
+    box-shadow:
+      0 25px 50px -12px rgba(0, 0, 0, 0.35);
+
+    backdrop-filter: blur(12px);
+
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+
+  /* Header */
+
+  .auth-header {
+    margin-bottom: 1.75rem;
+
+    text-align: center;
+  }
+
+
+  .auth-title {
+    margin: 0;
+
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+
+    font-weight: 800;
+
+    letter-spacing: -0.025em;
+
+    color: #0f172a;
+  }
+
+
+  .auth-subtitle {
+    margin-top: 0.5rem;
+
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+
+    color: #64748b;
+  }
+
+
+  /* Labels */
+
+  .auth-label {
+    display: block;
+
+    margin-bottom: 0.4rem;
+
+    font-size: 0.8rem;
+
+    font-weight: 600;
+
+    color: #334155;
+  }
+
+
+  /* Inputs */
+
+  .auth-input {
+    display: block;
+
+    width: 100%;
+
+    border-radius: 0.75rem;
+
+    border: 1px solid #dbe2ea;
+
+    background: #ffffff;
+
+    padding: 0.75rem 1rem;
+
+    font-size: 0.875rem;
+
+    line-height: 1.25rem;
+
+    color: #0f172a;
+
+    outline: none;
+
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      background-color 0.2s ease;
+  }
+
+
+  .auth-input::placeholder {
+    color: #94a3b8;
+  }
+
+
+  .auth-input:hover {
+    border-color: #cbd5e1;
+  }
+
+
+  .auth-input:focus {
+    border-color: #3b82f6;
+
+    box-shadow:
+      0 0 0 3px rgba(59, 130, 246, 0.12);
+  }
+
+
+  .auth-input option {
+    color: #0f172a;
+    background: #ffffff;
+  }
+
+
+  /* Password eye */
+
+  .auth-password-toggle {
+    position: absolute;
+
+    right: 0.875rem;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    color: #94a3b8;
+
+    transition: color 0.2s ease;
+  }
+
+
+  .auth-password-toggle:hover {
+    color: #334155;
+  }
+
+
+  /* Account type buttons */
+
+  .auth-type-button {
+    width: 100%;
+
+    border-radius: 0.75rem;
+
+    border: 1px solid;
+
+    padding: 0.7rem 1rem;
+
+    font-size: 0.875rem;
+
+    font-weight: 700;
+
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+
+  .auth-type-active-blue {
+    border-color: #3b82f6;
+
+    background: #eff6ff;
+
+    color: #2563eb;
+  }
+
+
+  .auth-type-active-red {
+    border-color: #ef4444;
+
+    background: #fef2f2;
+
+    color: #dc2626;
+  }
+
+
+  .auth-type-inactive {
+    border-color: #e2e8f0;
+
+    background: #ffffff;
+
+    color: #64748b;
+  }
+
+
+  .auth-type-inactive:hover {
+    background: #f8fafc;
+
+    border-color: #cbd5e1;
+  }
+
+
+  /* Athlete section */
+
+  .athlete-section {
+    border-radius: 1rem;
+
+    border: 1px solid #e2e8f0;
+
+    background: #f8fafc;
+
+    padding: 1rem;
+  }
+
+
+  /* Error */
+
+  .auth-error {
+    border-radius: 0.75rem;
+
+    background: #fef2f2;
+
+    border: 1px solid #fecaca;
+
+    padding: 0.75rem 1rem;
+
+    font-size: 0.875rem;
+
+    color: #dc2626;
+  }
+
+
+  /* Success */
+
+  .auth-success {
+    border-radius: 0.75rem;
+
+    background: #f0fdf4;
+
+    border: 1px solid #bbf7d0;
+
+    padding: 0.75rem 1rem;
+
+    font-size: 0.875rem;
+
+    color: #16a34a;
+  }
+
+
+  /* Submit */
+
+  .auth-submit {
+    width: 100%;
+
+    border-radius: 0.75rem;
+
+    padding: 0.8rem 1rem;
+
+    font-size: 0.875rem;
+
+    font-weight: 800;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.025em;
+
+    color: #ffffff;
+
+    transition:
+      background-color 0.2s ease,
+      transform 0.15s ease,
+      opacity 0.2s ease;
+  }
+
+
+  .auth-submit:hover {
+    transform: translateY(-1px);
+  }
+
+
+  .auth-submit:active {
+    transform: translateY(0);
+  }
+
+
+  .auth-submit:disabled {
+    cursor: not-allowed;
+
+    opacity: 0.6;
+
+    transform: none;
+  }
+
+
+  .auth-submit-blue {
+    background: #2563eb;
+  }
+
+
+  .auth-submit-blue:hover {
+    background: #1d4ed8;
+  }
+
+
+  .auth-submit-red {
+    background: #ef4444;
+  }
+
+
+  .auth-submit-red:hover {
+    background: #dc2626;
+  }
+
+
+  /* Footer */
+
+  .auth-footer {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 0.25rem;
+
+    margin-top: 1.5rem;
+
+    font-size: 0.875rem;
+
+    color: #64748b;
+  }
+
+
+  .auth-link {
+    font-weight: 700;
+
+    color: #2563eb;
+
+    transition: color 0.2s ease;
+  }
+
+
+  .auth-link:hover {
+    color: #1d4ed8;
+
+    text-decoration: underline;
+  }
+
+  .auth-dark-input {
+    @apply h-[50px] w-full rounded-xl border border-white/15 bg-white/[0.06] px-4 text-sm text-white outline-none transition;
+  }
+
+  .auth-dark-input::placeholder {
+    color: rgb(255 255 255 / 35%);
+  }
+
+  .auth-dark-input:hover {
+    @apply border-white/20 bg-white/[0.08];
+  }
+
+  .auth-dark-input:focus {
+    @apply border-blue-400/70 bg-white/[0.08];
+    box-shadow: 0 0 0 2px rgb(59 130 246 / 15%);
+  }
+
+  .auth-dark-input option {
+    background: #0f172a;
+    color: white;
+  }
+
+}
+
+
+/* =========================================================
+   Existing application components
+   ========================================================= */
+
+@layer components {
+
   .card {
     @apply rounded-xl border border-line bg-surface shadow-sm;
   }
+
 
   .page {
     @apply min-h-full bg-canvas;
   }
 
+
   .title {
     @apply text-foreground;
   }
 
+
   .subtitle {
     @apply text-muted;
   }
+
 
   .input {
     @apply w-full rounded-xl border border-line bg-canvas px-4 py-3
       text-foreground outline-none transition;
   }
 
+
   .select {
     @apply w-full rounded-xl border border-line bg-canvas px-4 py-3
       text-foreground outline-none transition;
   }
+
 
   .input:focus,
   .select:focus {
     @apply border-blue-500;
   }
 
+
   .btn-primary {
     @apply bg-primary text-white hover:opacity-90;
   }
 
+
   .btn-secondary {
     @apply bg-panel text-foreground;
   }
+
 }
+
 
 /* =========================================================
    Bracket

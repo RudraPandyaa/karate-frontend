@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Eye, EyeOff } from 'lucide-vue-next'
+import { getHomeRouteForRole } from '~/composables/useAuth'
+
 definePageMeta({
   layout: 'auth',
 })
@@ -9,42 +11,49 @@ const { login, user } = useAuth()
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
+const error = ref('')
 const showPassword = ref(false)
+
 const handleLogin = async () => {
-  console.log('1. Login button clicked')
+  error.value = ''
+
+  if (!email.value.trim()) {
+    error.value = 'Please enter your email.'
+    return
+  }
+
+  if (!password.value) {
+    error.value = 'Please enter your password.'
+    return
+  }
 
   loading.value = true
 
   try {
-    console.log('2. Calling login API')
-
     const success = await login(
-      email.value,
-      password.value,
+      email.value.trim(),
+      password.value
     )
 
-    console.log('3. Login result:', success)
-    console.log('4. Logged-in user:', user.value)
-
     if (!success) {
-      console.log('Login returned false')
-      alert('Login failed')
+      error.value = 'Invalid email or password.'
       return
     }
 
     const role = user.value?.role
-    console.log('5. User role:', role)
 
-    const { getHomeRouteForRole } = await import('~/composables/useAuth')
     const target = getHomeRouteForRole(role)
 
-    console.log('6. Redirecting to:', target)
-    await navigateTo(target)
-    console.log('LOGIN SUCCESS')
+    await navigateTo(target, {
+      replace: true,
+    })
+  } catch (err: any) {
+    console.error('Login error:', err)
 
-    console.log('7. Navigation completed')
-  } catch (error) {
-    console.error('Login handler error:', error)
+    error.value =
+      err?.data?.message ||
+      err?.message ||
+      'Unable to login. Please try again.'
   } finally {
     loading.value = false
   }
@@ -52,63 +61,108 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-canvas">
-    <div class="w-full max-w-md p-8 bg-surface rounded-3xl border border-line">
-      <h1 class="text-3xl font-bold text-center mb-8 text-foreground">WKF Manager</h1>
-      
-      <form @submit.prevent="handleLogin" class="space-y-6">
+  <div
+    class="rounded-3xl border border-white/10 bg-slate-950/75 p-7 shadow-2xl backdrop-blur-xl sm:p-8"
+  >
+
+    <!-- Header -->
+    <div class="mb-8 text-center">
+      <h1
+        class="text-3xl font-bold tracking-tight text-white"
+      >
+        Login
+      </h1>
+
+      <p class="mt-2 text-sm text-white/55">
+        Sign in to your WKF Manager account
+      </p>
+    </div>
+
+    <form
+      class="space-y-5"
+      @submit.prevent="handleLogin"
+    >
+
+      <!-- Email -->
+      <div>
+        <label class="mb-2 block text-xs font-medium text-white/70">
+          Email
+        </label>
+
         <input
           v-model="email"
           type="email"
-          placeholder="Email"
+          placeholder="Enter your email"
+          autocomplete="email"
           required
-          class="w-full bg-panel border border-line rounded-xl px-4 py-3 text-foreground"
+          class="w-full rounded-xl border border-white/15 bg-white/[0.06] px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-blue-400/70 focus:bg-white/[0.09] focus:ring-2 focus:ring-blue-500/20"
         />
+      </div>
+
+      <!-- Password -->
+      <div>
+        <label class="mb-2 block text-xs font-medium text-white/70">
+          Password
+        </label>
 
         <div class="relative">
           <input
             v-model="password"
             :type="showPassword ? 'text' : 'password'"
-            placeholder="Password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+            minlength="6"
             required
-            class="w-full bg-panel border border-line rounded-xl px-4 py-3 pr-12 text-foreground"
+            class="w-full rounded-xl border border-white/15 bg-white/[0.06] px-4 py-3 pr-12 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-blue-400/70 focus:bg-white/[0.09] focus:ring-2 focus:ring-blue-500/20"
           />
 
           <button
-            v-if="password"
             type="button"
-            @mousedown="showPassword = true"
-            @mouseup="showPassword = false"
-            @mouseleave="showPassword = false"
-            @touchstart.prevent="showPassword = true"
-            @touchend="showPassword = false"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+            class="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-white/45 transition hover:bg-white/10 hover:text-white"
+            @click="showPassword = !showPassword"
           >
-            <Eye class="w-5 h-5" />
+            <EyeOff
+              v-if="showPassword"
+              class="h-5 w-5"
+            />
+
+            <Eye
+              v-else
+              class="h-5 w-5"
+            />
           </button>
         </div>
+      </div>
 
-        <button
-          type="submit"
-          :disabled="loading"
-          class="w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-xl font-medium text-white"
+      <!-- Error -->
+      <div
+        v-if="error"
+        class="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+      >
+        {{ error }}
+      </div>
+
+      <!-- Login -->
+      <button
+        type="submit"
+        :disabled="loading"
+        class="w-full rounded-xl bg-blue-600 py-3.5 text-sm font-bold uppercase tracking-wide text-white shadow-lg shadow-blue-900/20 transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {{ loading ? 'Logging in...' : 'Login' }}
+      </button>
+
+      <!-- Register -->
+      <div class="pt-2 text-center text-sm text-white/55">
+        Don't have an account?
+
+        <NuxtLink
+          to="/register"
+          class="ml-1 font-semibold text-blue-400 transition hover:text-blue-300 hover:underline"
         >
-          {{ loading ? 'Logging in...' : 'Login' }}
-        </button>
+          Register here
+        </NuxtLink>
+      </div>
 
-        <div class="text-center">
-          <span class="text-muted">
-            Don't have an account?
-          </span>
-
-          <NuxtLink
-            to="/register"
-            class="ml-2 text-blue-500 hover:text-blue-400 hover:underline font-medium"
-          >
-            Register here
-          </NuxtLink>
-        </div>
-      </form>
-    </div>
+    </form>
   </div>
 </template>

@@ -4,7 +4,7 @@ import {
   useRefereeMatches,
 } from '~/composables/useRefereeMatches'
 import { athleteDisplayName } from '~/composables/useMatches'
-
+import PageLoader from '~/components/ui/PageLoader.vue'
 definePageMeta({
   layout: 'default',
   middleware: 'referee',
@@ -59,7 +59,10 @@ function statusClass(status: string) {
       </p>
     </div>
 
-    <div v-if="pending" class="text-muted">Loading matches...</div>
+    <PageLoader
+      v-if="pending"
+      text="Loading matches..."
+    />
     <div v-else-if="error" class="text-red-400">{{ error }}</div>
 
     <div v-else-if="matches.length === 0" class="rounded-xl border border-line bg-surface p-8 text-center">

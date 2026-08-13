@@ -19,7 +19,7 @@ const menu = [
   { label: 'Dashboard', to: '/athletes/dashboard', icon: LayoutDashboard },
   { label: 'My Matches', to: '/athletes/matches', icon: Swords },
   { label: 'Schedule', to: '/athletes/schedule', icon: Calendar },
-  { label: 'My Categories', to: '/athletes/categories', icon: Tags },
+  { label: 'My Categories', to: '/athletes/my-categories', icon: Tags },
   { label: 'Results', to: '/athletes/results', icon: Trophy },
   { label: 'Profile', to: '/athletes/profile', icon: User },
 ]

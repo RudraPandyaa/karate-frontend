@@ -152,6 +152,15 @@ export function useAthletes() {
     return athlete
   }
 
+  async function createAthleteByAdmin(payload: CreateAthleteDto) {
+    const athlete = await api<Athlete>('/athletes/admin', {
+      method: 'POST',
+      body: payload,
+    })
+    await fetchAthletes()
+    return athlete
+  }
+
   async function updateAthlete(id: string, payload: Partial<CreateAthleteDto>) {
     const athlete = await api<Athlete>(`/athletes/${id}`, {
       method: 'PATCH',
@@ -300,6 +309,7 @@ export function useAthletes() {
     error,
     fetchAthletes,
     createAthlete,
+    createAthleteByAdmin,
     updateAthlete,
     deleteAthlete,
     uploadPhoto,

@@ -126,3 +126,17 @@ export function getFlagEmoji(code?: string) {
       String.fromCodePoint(127397 + char.charCodeAt(0)),
     )
 }
+
+export function getFlagUrl(code?: string) {
+  if (!code) return ''
+
+  const upper = code.trim().toUpperCase()
+  const iso2 =
+    upper.length === 2
+      ? upper
+      : COUNTRY_CODE_MAP[upper]
+
+  if (!iso2) return ''
+
+  return `https://flagcdn.com/24x18/${iso2.toLowerCase()}.png`
+}
