@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import { Loader2 } from 'lucide-vue-next'
 import { useAthleteDashboard } from '~/composables/useAthleteDashboard'
-import PageLoader from '~/components/ui/PageLoader.vue'
+
 definePageMeta({
   layout: 'athlete',
   middleware: ['athlete'],
@@ -56,7 +57,7 @@ function getResult(match: any) {
     return {
       label: '—',
       score: `${match.redScore ?? 0} - ${match.blueScore ?? 0}`,
-      isWin: false,
+      isWin: null as boolean | null,
     }
   }
 
@@ -90,7 +91,13 @@ function medalClass(medal?: string | null) {
       </p>
     </div>
 
-    <PageLoader v-if="pending" text="Loading your results..." />
+    <div
+      v-if="pending && !dashboard"
+      class="flex items-center justify-center gap-2 rounded-2xl border border-line bg-surface py-12 text-sm text-muted"
+    >
+      <Loader2 class="h-5 w-5 animate-spin text-blue-400" />
+      Loading results...
+    </div>
 
     <div
       v-else-if="error"
@@ -100,42 +107,49 @@ function medalClass(medal?: string | null) {
     </div>
 
     <template v-else>
-      <!-- Summary -->
-      <section class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <section class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <div class="rounded-2xl border border-line bg-surface p-4">
           <p class="text-xs uppercase tracking-wide text-muted">Matches</p>
           <p class="mt-2 text-2xl font-bold text-foreground">
             {{ dashboard?.stats?.matches ?? 0 }}
           </p>
         </div>
-
         <div class="rounded-2xl border border-line bg-surface p-4">
           <p class="text-xs uppercase tracking-wide text-muted">Wins</p>
           <p class="mt-2 text-2xl font-bold text-green-400">
             {{ dashboard?.stats?.wins ?? 0 }}
           </p>
         </div>
-
         <div class="rounded-2xl border border-line bg-surface p-4">
           <p class="text-xs uppercase tracking-wide text-muted">Losses</p>
           <p class="mt-2 text-2xl font-bold text-red-400">
             {{ dashboard?.stats?.losses ?? 0 }}
           </p>
         </div>
-
         <div class="rounded-2xl border border-line bg-surface p-4">
           <p class="text-xs uppercase tracking-wide text-muted">Win Rate</p>
           <p class="mt-2 text-2xl font-bold text-foreground">
             {{ dashboard?.stats?.winRate ?? 0 }}%
           </p>
         </div>
+        <div class="rounded-2xl border border-line bg-surface p-4">
+          <p class="text-xs uppercase tracking-wide text-muted">Scored</p>
+          <p class="mt-2 text-2xl font-bold text-foreground">
+            {{ dashboard?.stats?.pointsScored ?? 0 }}
+          </p>
+        </div>
+        <div class="rounded-2xl border border-line bg-surface p-4">
+          <p class="text-xs uppercase tracking-wide text-muted">Conceded</p>
+          <p class="mt-2 text-2xl font-bold text-foreground">
+            {{ dashboard?.stats?.pointsConceded ?? 0 }}
+          </p>
+        </div>
       </section>
 
-      <!-- Completed Matches -->
-      <section class="rounded-3xl border border-line bg-surface overflow-hidden">
+      <section class="overflow-hidden rounded-3xl border border-line bg-surface">
         <div class="border-b border-line px-5 py-4">
           <h2 class="font-semibold text-foreground">Completed Matches</h2>
-          <p class="text-sm text-muted">Recent results from this tournament</p>
+          <p class="text-sm text-muted">Tap a result to open the match view</p>
         </div>
 
         <div
@@ -146,10 +160,11 @@ function medalClass(medal?: string | null) {
         </div>
 
         <div v-else class="divide-y divide-line">
-          <div
+          <NuxtLink
             v-for="match in completedMatches"
             :key="match.id"
-            class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+            :to="`/live-scoring/${match.id}`"
+            class="flex flex-col gap-3 px-5 py-4 transition hover:bg-surface-hover sm:flex-row sm:items-center sm:justify-between"
           >
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
@@ -172,21 +187,22 @@ function medalClass(medal?: string | null) {
 
             <div
               class="shrink-0 rounded-xl px-4 py-2 text-center text-sm font-bold"
-              :class="getResult(match).isWin
+              :class="getResult(match).isWin === true
                 ? 'bg-green-500/15 text-green-400'
-                : 'bg-red-500/15 text-red-400'"
+                : getResult(match).isWin === false
+                  ? 'bg-red-500/15 text-red-400'
+                  : 'bg-surface-hover text-muted'"
             >
               {{ getResult(match).label }}
               <div class="text-xs font-medium opacity-80">
                 {{ getResult(match).score }}
               </div>
             </div>
-          </div>
+          </NuxtLink>
         </div>
       </section>
 
-      <!-- Championship History -->
-      <section class="rounded-3xl border border-line bg-surface overflow-hidden">
+      <section class="overflow-hidden rounded-3xl border border-line bg-surface">
         <div class="border-b border-line px-5 py-4">
           <h2 class="font-semibold text-foreground">Championship History</h2>
           <p class="text-sm text-muted">Past tournament achievements</p>

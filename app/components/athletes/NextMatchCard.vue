@@ -92,10 +92,18 @@ const statusClass = computed(() => {
         </span>
       </div>
 
-      <div class="flex items-center gap-3 text-sm text-muted">
-        <span v-if="match.tatami">
+      <div class="flex items-center gap-3">
+        <span v-if="match.tatami" class="text-sm text-muted">
           Tatami {{ match.tatami.number }}
         </span>
+
+        <NuxtLink
+          v-if="match.status === 'IN_PROGRESS' || match.status === 'PAUSED'"
+          :to="`/live-scoring/${match.id}`"
+          class="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-green-500"
+        >
+          Watch Live
+        </NuxtLink>
       </div>
     </div>
 

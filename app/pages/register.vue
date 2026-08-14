@@ -78,6 +78,26 @@ function onPhoneInput(event: Event) {
 /* =========================================================
    Switch account type
    ========================================================= */
+function applyNamePartsFromFullName() {
+  const parts = name.value.trim().split(/\s+/).filter(Boolean)
+
+  if (parts.length === 0) {
+    firstName.value = ''
+    lastName.value = ''
+    middleName.value = ''
+    return
+  }
+
+  if (parts.length === 1) {
+    firstName.value = parts[0]
+    return
+  }
+
+  firstName.value = parts[0]
+  lastName.value = parts[parts.length - 1]
+  middleName.value =
+    parts.length > 2 ? parts.slice(1, -1).join(' ') : ''
+}
 
 function selectGuest() {
   registerAsAthlete.value = false
@@ -89,7 +109,15 @@ function selectAthlete() {
   registerAsAthlete.value = true
   error.value = ''
   success.value = ''
+  applyNamePartsFromFullName()
 }
+
+// Full name change → auto fill when Athlete mode on
+watch(name, () => {
+  if (registerAsAthlete.value) {
+    applyNamePartsFromFullName()
+  }
+})
 
 /* =========================================================
    Register
@@ -113,14 +141,19 @@ async function handleRegister() {
 
   /* ---------------- Athlete validation ---------------- */
 
-  if (registerAsAthlete.value) {
-    if (!firstName.value.trim()) {
-      error.value = 'First name is required.'
-      return
-    }
+    if (registerAsAthlete.value) {
+      if (!firstName.value.trim()) {
+        error.value = 'First name is required.'
+        return
+      }
 
     if (!lastName.value.trim()) {
       error.value = 'Last name is required.'
+      return
+    }
+
+    if (!gender.value) {
+      error.value = 'Gender is required for athletes.'
       return
     }
 
@@ -485,21 +518,16 @@ async function handleRegister() {
             </label>
 
             <select
-              v-model="gender"
-              class="auth-dark-input"
-            >
-              <option value="">
-                Select Gender
-              </option>
-
-              <option value="MALE">
-                Male
-              </option>
-
-              <option value="FEMALE">
-                Female
-              </option>
-            </select>
+                v-model="gender"
+                required
+                class="auth-dark-input"
+              >
+                <option value="">
+                  Select Gender
+                </option>
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+              </select>
           </div>
 
         </div>
@@ -641,7 +669,7 @@ async function handleRegister() {
       <button
         type="submit"
         :disabled="loading"
-        class="w-full rounded-xl bg-red-600 py-3.5 text-sm font-bold uppercase tracking-wide text-white shadow-lg shadow-red-950/20 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+        class="w-full rounded-xl bg-blue-600 py-3.5 text-sm font-bold uppercase tracking-wide text-white shadow-lg shadow-red-950/20 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {{ loading ? 'Creating Account...' : 'Register' }}
       </button>

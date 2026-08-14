@@ -15,6 +15,16 @@ function athleteName(athlete?: any) {
   )
 }
 
+function matchAction(match: AthleteDashboardMatch) {
+  if (match.status === 'IN_PROGRESS' || match.status === 'PAUSED') {
+    return { label: 'Watch Live', to: `/live-scoring/${match.id}` }
+  }
+  if (match.status === 'COMPLETED') {
+    return { label: 'View', to: `/live-scoring/${match.id}` }
+  }
+  return null
+}
+
 function formatRound(round?: string) {
   if (!round) return 'Match'
   return round
@@ -120,26 +130,34 @@ function statusClass(status?: string) {
           </p>
         </div>
 
-        <div class="shrink-0">
-          <template v-if="getResult(match)">
-            <span
-              class="rounded-lg px-3 py-1.5 text-xs font-bold"
+          <div class="flex shrink-0 flex-col items-end gap-2">
+            <NuxtLink
+              v-if="getResult(match)"
+              :to="`/live-scoring/${match.id}`"
+              class="rounded-lg px-3 py-1.5 text-xs font-bold transition hover:opacity-90"
               :class="getResult(match)?.isWin
                 ? 'bg-green-500/15 text-green-400'
                 : 'bg-red-500/15 text-red-400'"
             >
               {{ getResult(match)?.isWin ? 'WIN' : 'LOSS' }}
               {{ getResult(match)?.score }}
-            </span>
-          </template>
+            </NuxtLink>
 
-          <span
-            v-else
-            class="rounded-lg bg-surface-hover px-3 py-1.5 text-xs font-semibold text-muted"
-          >
-            {{ statusLabel(match.status) }}
-          </span>
-        </div>
+            <span
+              v-else
+              class="rounded-lg bg-surface-hover px-3 py-1.5 text-xs font-semibold text-muted"
+            >
+              {{ statusLabel(match.status) }}
+            </span>
+
+            <NuxtLink
+              v-if="matchAction(match)"
+              :to="matchAction(match)!.to"
+              class="text-xs font-semibold text-blue-400 hover:text-blue-300"
+            >
+              {{ matchAction(match)!.label }} →
+            </NuxtLink>
+          </div>
       </div>
     </div>
   </div>

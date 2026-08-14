@@ -1,4 +1,3 @@
-import { ref } from 'vue'
 import { useApi } from '~/composables/useApi'
 
 export interface AthleteDashboardMatch {
@@ -48,9 +47,7 @@ export interface AthleteDashboardMatch {
 
 export interface AthleteDashboard {
   athlete: any
-
   categories: any[]
-
   stats: {
     matches: number
     wins: number
@@ -59,7 +56,6 @@ export interface AthleteDashboard {
     pointsScored: number
     pointsConceded: number
   }
-
   liveMatches: AthleteDashboardMatch[]
   upcomingMatches: AthleteDashboardMatch[]
   recentMatches: AthleteDashboardMatch[]
@@ -69,21 +65,32 @@ export interface AthleteDashboard {
 export function useAthleteDashboard() {
   const { api } = useApi()
 
-  const dashboard = ref<AthleteDashboard | null>(null)
-  const pending = ref(false)
-  const error = ref<string | null>(null)
+  // Shared across layout + all athlete pages
+  const dashboard = useState<AthleteDashboard | null>(
+    'athlete-dashboard',
+    () => null,
+  )
+  const pending = useState<boolean>('athlete-dashboard-pending', () => false)
+  const error = useState<string | null>('athlete-dashboard-error', () => null)
+
+  // Avoid overlapping polls
+  const fetching = useState<boolean>('athlete-dashboard-fetching', () => false)
 
   async function fetchDashboard(tournamentId?: string) {
-    pending.value = true
+    if (fetching.value) return
+
+    fetching.value = true
+    // Only show full pending on first load (no data yet)
+    if (!dashboard.value) {
+      pending.value = true
+    }
     error.value = null
 
     try {
       dashboard.value = await api<AthleteDashboard>(
-          '/athletes/me/dashboard',
+        '/athletes/me/dashboard',
         {
-          query: tournamentId
-            ? { tournamentId }
-            : undefined,
+          query: tournamentId ? { tournamentId } : undefined,
         },
       )
     } catch (err: any) {
@@ -93,6 +100,7 @@ export function useAthleteDashboard() {
         'Unable to load athlete dashboard'
     } finally {
       pending.value = false
+      fetching.value = false
     }
   }
 

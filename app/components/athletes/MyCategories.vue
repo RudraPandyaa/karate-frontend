@@ -44,7 +44,7 @@ function weightLabel(category: any) {
       </div>
 
       <NuxtLink
-        to="/athletes/categories"
+        to="/athletes/my-categories"
         class="text-sm font-medium text-blue-400 hover:text-blue-300"
       >
         View all

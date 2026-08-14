@@ -127,16 +127,39 @@ export function getFlagEmoji(code?: string) {
     )
 }
 
-export function getFlagUrl(code?: string) {
+export function getFlagUrl(code?: string | null) {
   if (!code) return ''
 
-  const upper = code.trim().toUpperCase()
-  const iso2 =
-    upper.length === 2
-      ? upper
-      : COUNTRY_CODE_MAP[upper]
+  const value = String(code).trim()
 
-  if (!iso2) return ''
+  if (!value) return ''
 
-  return `https://flagcdn.com/24x18/${iso2.toLowerCase()}.png`
+  const upper = value.toUpperCase()
+
+  // ISO-2: IN, JP, US
+  if (upper.length === 2) {
+    return `https://flagcdn.com/24x18/${upper.toLowerCase()}.png`
+  }
+
+  // ISO-3: IND, JPN, USA
+  if (COUNTRY_CODE_MAP[upper]) {
+    const iso2 = COUNTRY_CODE_MAP[upper]
+
+    return `https://flagcdn.com/24x18/${iso2.toLowerCase()}.png`
+  }
+
+  // Country name: India, Japan, United States...
+  const country = COUNTRIES.find(
+    c => c.name.toLowerCase() === value.toLowerCase(),
+  )
+
+  if (country) {
+    const iso2 = COUNTRY_CODE_MAP[country.code]
+
+    if (iso2) {
+      return `https://flagcdn.com/24x18/${iso2.toLowerCase()}.png`
+    }
+  }
+
+  return ''
 }
