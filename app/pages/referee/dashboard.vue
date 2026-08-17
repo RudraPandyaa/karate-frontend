@@ -5,7 +5,7 @@ import { athleteDisplayName } from '~/composables/useMatches'
 import PageLoader from '~/components/ui/PageLoader.vue'
 import EmptyState from '~/components/ui/EmptyState.vue'
 definePageMeta({
-  layout: 'referee',
+  layout: 'default',
   middleware: 'referee',
 })
 

@@ -1,9 +1,12 @@
-
 <script setup lang="ts">
+import { Plus, Search, Loader2, X } from 'lucide-vue-next'
+import PageLoader from '~/components/ui/PageLoader.vue'
+
 definePageMeta({
   layout: 'default',
   middleware: 'admin',
 })
+
 const {
   matches,
   pending: matchesPending,
@@ -19,18 +22,23 @@ const { rows: categories, fetchCategories } = useCategories()
 const { athletes, fetchAthletes } = useAthletes()
 const { rows: tatamis, fetchTatami } = useTatami()
 const { referees, fetchReferees } = useReferees()
+
 const scorekeepers = ref<{ id: string; name: string; email: string }[]>([])
 const editingId = ref<string | null>(null)
 const saving = ref(false)
+const regenerating = ref(false)
 const formError = ref<string | null>(null)
+const showForm = ref(false)
 
+const search = ref('')
+const statusFilter = ref('ALL')
+const categoryFilter = ref('')
+const tatamiFilter = ref('ALL')
 
 async function fetchScorekeepers() {
   const { api } = useApi()
   scorekeepers.value = await api('/users/by-role/SCOREKEEPER')
 }
-
-
 
 const form = reactive({
   categoryId: '',
@@ -40,8 +48,6 @@ const form = reactive({
   blueAthleteId: '',
   status: 'SCHEDULED',
   timerSeconds: undefined as number | undefined,
-  // Kept as a datetime-local input string ("YYYY-MM-DDTHH:mm") for direct
-  // v-model binding; converted to/from ISO at submit()/startEdit().
   scheduledTime: '',
   refereeId: '',
   scorekeeperId: '',
@@ -61,13 +67,11 @@ const roundOptions = [
 ]
 
 const selectedCategory = computed(() =>
-  categories.value.find((c) => c.id === form.categoryId)
+  categories.value.find((c) => c.id === form.categoryId),
 )
 
-/** WKF-oriented duration from category age group + name + discipline */
 function timerSecondsForCategory(c?: any): number {
   if (!c) return 180
-
   const disc = (c.discipline || '').toUpperCase()
   const age = `${c.ageGroup || ''} ${c.name || ''}`.toUpperCase()
   const g = (c.gender || '').toUpperCase()
@@ -75,14 +79,12 @@ function timerSecondsForCategory(c?: any): number {
   const minAge = c.minAge ?? null
 
   let band: 'U10' | 'U14' | 'CADET' | 'JUNIOR' | 'U21' | 'SENIOR' = 'SENIOR'
-
   if (maxAge != null) {
     if (maxAge <= 10) band = 'U10'
     else if (maxAge <= 14) band = 'U14'
     else if (maxAge <= 16) band = 'CADET'
     else if (maxAge <= 18) band = 'JUNIOR'
     else if (maxAge <= 21) band = 'U21'
-    else band = 'SENIOR'
   } else if (minAge != null && minAge >= 18) {
     band = minAge >= 21 ? 'SENIOR' : 'U21'
   } else {
@@ -91,11 +93,9 @@ function timerSecondsForCategory(c?: any): number {
     else if (/U\s*16|CADET/.test(age)) band = 'CADET'
     else if (/U\s*18|JUNIOR/.test(age)) band = 'JUNIOR'
     else if (/U\s*21|UNDER\s*21/.test(age)) band = 'U21'
-    else if (/SENIOR|OPEN|ADULT|18\+|21\+/.test(age)) band = 'SENIOR'
   }
 
   const isKumite = disc === 'KUMITE' || disc === 'TEAM_KUMITE'
-
   if (isKumite) {
     switch (band) {
       case 'U10': return 60
@@ -106,8 +106,6 @@ function timerSecondsForCategory(c?: any): number {
       default: return 180
     }
   }
-
-  // Kata / Team Kata soft limit
   switch (band) {
     case 'U10': return 60
     case 'U14': return 90
@@ -118,10 +116,9 @@ function timerSecondsForCategory(c?: any): number {
 }
 
 const suggestedTimerSeconds = computed(() =>
-  timerSecondsForCategory(selectedCategory.value)
+  timerSecondsForCategory(selectedCategory.value),
 )
 
-/** ISO string -> value a <input type="datetime-local"> can display */
 function toLocalInputValue(iso?: string | null): string {
   if (!iso) return ''
   const d = new Date(iso)
@@ -130,7 +127,6 @@ function toLocalInputValue(iso?: string | null): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-/** <input type="datetime-local"> value -> ISO string for the API */
 function fromLocalInputValue(value?: string): string | undefined {
   if (!value) return undefined
   const d = new Date(value)
@@ -138,7 +134,6 @@ function fromLocalInputValue(value?: string): string | undefined {
   return d.toISOString()
 }
 
-/** Full date + time for the match list (not tatami-scoped, so a bare "HH:mm" isn't enough here) */
 function formatScheduledTime(iso?: string | null): string | null {
   if (!iso) return null
   const d = new Date(iso)
@@ -152,12 +147,12 @@ function formatScheduledTime(iso?: string | null): string | null {
 }
 
 function athleteName(a: any): string {
-  if (!a) return ''
+  if (!a) return 'TBD'
   if (a.fullName) return a.fullName
   if (a.name) return a.name
   const parts = [a.firstName, a.middleName, a.lastName].filter(Boolean)
   if (parts.length) return parts.join(' ')
-  return `Unnamed athlete (${a.id.slice(0, 6)})`
+  return `Athlete (${a.id?.slice(0, 6) || '?'})`
 }
 
 const athletesInCategory = computed(() => {
@@ -165,37 +160,27 @@ const athletesInCategory = computed(() => {
   return athletes.value.filter(
     (a) =>
       Array.isArray(a.categories) &&
-      a.categories.some((c: any) => c.id === form.categoryId)
+      a.categories.some((c: any) => c.id === form.categoryId),
   )
 })
 
 const redAthleteOptions = computed(() =>
-  athletesInCategory.value.filter((a) => a.id !== form.blueAthleteId)
+  athletesInCategory.value.filter((a) => a.id !== form.blueAthleteId),
 )
 const blueAthleteOptions = computed(() =>
-  athletesInCategory.value.filter((a) => a.id !== form.redAthleteId)
-)
-
-const selectedRedAthlete = computed(() =>
-  athletes.value.find((a) => a.id === form.redAthleteId)
-)
-const selectedBlueAthlete = computed(() =>
-  athletes.value.find((a) => a.id === form.blueAthleteId)
+  athletesInCategory.value.filter((a) => a.id !== form.redAthleteId),
 )
 
 watch(
   () => form.categoryId,
   async (newId) => {
     form.tatamiId = ''
-
     const cat = categories.value.find((c) => c.id === newId)
     if (cat?.tournamentId) {
       await fetchTatami(cat.tournamentId)
     } else {
       tatamis.value = []
     }
-
-    // Auto duration from age group / name
     form.timerSeconds = newId ? timerSecondsForCategory(cat) : undefined
 
     const validIds = new Set(
@@ -203,18 +188,13 @@ watch(
         .filter(
           (a) =>
             Array.isArray(a.categories) &&
-            a.categories.some((c: any) => c.id === newId)
+            a.categories.some((c: any) => c.id === newId),
         )
-        .map((a) => a.id)
+        .map((a) => a.id),
     )
-
-    if (form.redAthleteId && !validIds.has(form.redAthleteId)) {
-      form.redAthleteId = ''
-    }
-    if (form.blueAthleteId && !validIds.has(form.blueAthleteId)) {
-      form.blueAthleteId = ''
-    }
-  }
+    if (form.redAthleteId && !validIds.has(form.redAthleteId)) form.redAthleteId = ''
+    if (form.blueAthleteId && !validIds.has(form.blueAthleteId)) form.blueAthleteId = ''
+  },
 )
 
 function resetForm() {
@@ -227,9 +207,14 @@ function resetForm() {
   form.status = 'SCHEDULED'
   form.timerSeconds = undefined
   form.scheduledTime = ''
-  formError.value = null
   form.refereeId = ''
   form.scorekeeperId = ''
+  formError.value = null
+}
+
+function openCreate() {
+  resetForm()
+  showForm.value = true
 }
 
 function startEdit(m: any) {
@@ -240,11 +225,20 @@ function startEdit(m: any) {
   form.blueAthleteId = m.blueAthlete?.id ?? ''
   form.status = m.status ?? 'SCHEDULED'
   form.tatamiId = m.tatami?.id ?? ''
-  form.timerSeconds =
-    m.timerSeconds ?? timerSecondsForCategory(m.category)
+  form.timerSeconds = m.timerSeconds ?? timerSecondsForCategory(m.category)
   form.scheduledTime = toLocalInputValue(m.scheduledTime)
-  form.refereeId = m.referee?.id ?? ''
-  form.scorekeeperId = m.scorekeeper?.id ?? ''
+  form.refereeId = m.referee?.id ?? m.refereeId ?? ''
+  form.scorekeeperId = m.scorekeeper?.id ?? m.scorekeeperId ?? ''
+  formError.value = null
+  showForm.value = true
+
+  const cat = categories.value.find((c) => c.id === form.categoryId)
+  if (cat?.tournamentId) fetchTatami(cat.tournamentId)
+}
+
+function closeForm() {
+  showForm.value = false
+  resetForm()
 }
 
 async function submit() {
@@ -253,7 +247,6 @@ async function submit() {
     formError.value = 'Category and round are required.'
     return
   }
-
   if (
     form.redAthleteId &&
     form.blueAthleteId &&
@@ -273,7 +266,6 @@ async function submit() {
       blueAthleteId: form.blueAthleteId || undefined,
       status: form.status,
       timerSeconds: form.timerSeconds,
-      // Left blank = auto-schedule after the previous match on this tatami
       scheduledTime: fromLocalInputValue(form.scheduledTime),
       refereeId: form.refereeId || undefined,
       scorekeeperId: form.scorekeeperId || undefined,
@@ -285,7 +277,7 @@ async function submit() {
       await createMatch(payload)
     }
 
-    resetForm()
+    closeForm()
     await fetchAll()
   } catch (err: any) {
     formError.value =
@@ -303,27 +295,86 @@ async function handleDelete(id: string) {
 
 async function handleRegenerate() {
   if (!form.categoryId) {
-    alert('Please select a category first.')
+    alert('Open New Match and select a category first, or pick category in filters and use regenerate from modal.')
+    return
+  }
+  if (
+    !confirm(
+      'This will delete all matches for the selected category and regenerate the bracket. Continue?',
+    )
+  ) {
     return
   }
 
-  const confirmed = window.confirm(
-    'This will delete all matches for the selected category and regenerate them from the bracket.\n\nDo you want to continue?'
-  )
-
-  if (!confirmed) return
-
+  regenerating.value = true
   try {
     await regenerateBracket(form.categoryId)
-
     await fetchAll()
-
-    alert('Bracket regenerated successfully.')
-
-    resetForm()
+    closeForm()
   } catch (err: any) {
     alert(err?.data?.message || err?.message || 'Failed to regenerate bracket.')
+  } finally {
+    regenerating.value = false
   }
+}
+
+const filteredMatches = computed(() => {
+  let list = [...matches.value]
+
+  if (statusFilter.value === 'LIVE') {
+    list = list.filter((m) =>
+      ['IN_PROGRESS', 'PAUSED'].includes(m.status),
+    )
+  } else if (statusFilter.value !== 'ALL') {
+    list = list.filter((m) => m.status === statusFilter.value)
+  }
+
+  if (categoryFilter.value) {
+    list = list.filter((m) => m.category?.id === categoryFilter.value)
+  }
+
+  if (tatamiFilter.value === 'unassigned') {
+    list = list.filter((m) => !m.tatami)
+  } else if (tatamiFilter.value !== 'ALL') {
+    list = list.filter(
+      (m) => String(m.tatami?.number) === tatamiFilter.value,
+    )
+  }
+
+  const q = search.value.trim().toLowerCase()
+  if (q) {
+    list = list.filter((m) => {
+      const red = athleteName(m.redAthlete)
+      const blue = athleteName(m.blueAthlete)
+      const cat = m.category?.name || ''
+      return (
+        red.toLowerCase().includes(q) ||
+        blue.toLowerCase().includes(q) ||
+        cat.toLowerCase().includes(q)
+      )
+    })
+  }
+
+  return list
+})
+
+const tatamiOptions = computed(() => {
+  const set = new Set<number>()
+  for (const m of matches.value) {
+    if (m.tatami?.number != null) set.add(m.tatami.number)
+  }
+  return Array.from(set).sort((a, b) => a - b)
+})
+
+function statusClass(s: string) {
+  if (s === 'IN_PROGRESS') return 'bg-green-500/15 text-green-400'
+  if (s === 'PAUSED') return 'bg-yellow-500/15 text-yellow-400'
+  if (s === 'COMPLETED') return 'bg-zinc-500/15 text-zinc-300'
+  return 'bg-blue-500/15 text-blue-400'
+}
+
+function roundLabel(value?: string) {
+  return roundOptions.find((r) => r.value === value)?.label || value || '—'
 }
 
 onMounted(() => {
@@ -336,311 +387,403 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-canvas px-6 py-10 text-foreground">
-    <div class="max-w-5xl mx-auto space-y-10">
-      <h1 class="text-3xl font-bold text-foreground">Manage Matches</h1>
-
-      <!-- Form -->
-      <div class="bg-panel border border-line rounded-2xl p-6 space-y-4">
-        <h2 class="text-lg font-semibold text-foreground">
-          {{ editingId ? 'Edit Match' : 'Create Match' }}
-        </h2>
-
-        <div
-          v-if="formError"
-          class="bg-red-950/60 border border-red-700 text-red-300 px-4 py-2 rounded-lg text-sm"
-        >
-          {{ formError }}
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="text-xs text-foreground/50 block mb-1">Category</label>
-            <select
-              v-model="form.categoryId"
-              class="w-full bg-surface rounded-lg px-3 py-2 text-foreground"
-            >
-              <option value="">Select category</option>
-              <option v-for="c in categories" :key="c.id" :value="c.id">
-                {{ c.name }}
-              </option>
-            </select>
-          </div>
-
-          <div>
-            <label class="text-xs text-foreground/50 block mb-1">Tatami</label>
-            <select
-              v-model="form.tatamiId"
-              class="w-full bg-surface rounded-lg px-3 py-2 text-foreground"
-              :disabled="!form.categoryId"
-            >
-              <option value="">Unassigned</option>
-              <option v-for="t in tatamis" :key="t.id" :value="t.id">
-                Tatami {{ t.number }}
-              </option>
-            </select>
-          </div>
-
-          <div>
-            <label class="text-xs text-foreground/50 block mb-1">Round</label>
-            <select
-              v-model="form.round"
-              class="w-full bg-surface rounded-lg px-3 py-2 text-foreground"
-            >
-              <option value="">Select round</option>
-              <option
-                v-for="r in roundOptions"
-                :key="r.value"
-                :value="r.value"
-              >
-                {{ r.label }}
-              </option>
-            </select>
-          </div>
-
-          <div>
-            <label class="text-xs text-foreground/50 block mb-1">Status</label>
-            <select
-              v-model="form.status"
-              class="w-full bg-surface rounded-lg px-3 py-2 text-foreground"
-            >
-              <option value="SCHEDULED">Scheduled</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="PAUSED">Paused</option>
-              <option value="COMPLETED">Completed</option>
-            </select>
-          </div>
-
-          <!-- Scheduled start time -->
-          <div class="col-span-2">
-            <label class="text-xs text-foreground/50 block mb-1">
-              Scheduled start time
-            </label>
-            <input
-              v-model="form.scheduledTime"
-              type="datetime-local"
-              class="w-full bg-surface rounded-lg px-3 py-2 text-foreground"
-            />
-            <p class="text-xs text-foreground/50 mt-1">
-              Leave blank to auto-schedule after the previous match on this tatami.
-            </p>
-          </div>
-
-          <!-- Duration -->
-          <div class="col-span-2">
-            <label class="text-xs text-foreground/50 block mb-1">
-              Match duration (seconds)
-            </label>
-            <input
-              v-model.number="form.timerSeconds"
-              type="number"
-              min="30"
-              max="600"
-              step="30"
-              class="w-full bg-surface rounded-lg px-3 py-2 text-foreground"
-              placeholder="Auto from age group"
-            />
-            <p v-if="form.categoryId" class="text-xs text-foreground/50 mt-1">
-              Suggested (WKF): {{ suggestedTimerSeconds }}s
-              <span v-if="selectedCategory">
-                — {{ selectedCategory.ageGroup || selectedCategory.name }}
-                / {{ selectedCategory.discipline }}
-              </span>
-            </p>
-          </div>
-
-          <!-- Red Corner -->
-          <div>
-            <label class="text-xs text-foreground/50 block mb-1">
-              Red Corner Athlete
-            </label>
-            <select
-              v-model="form.redAthleteId"
-              class="w-full bg-surface rounded-lg px-3 py-2 text-foreground border border-red-800/40"
-            >
-              <option value="">TBD</option>
-              <option
-                v-for="a in redAthleteOptions"
-                :key="a.id"
-                :value="a.id"
-              >
-                {{ athleteName(a) }}
-              </option>
-            </select>
-            <p v-if="selectedRedAthlete" class="text-xs text-red-400 mt-1">
-              Selected: {{ athleteName(selectedRedAthlete) }}
-            </p>
-          </div>
-
-          <!-- Blue Corner -->
-          <div>
-            <label class="text-xs text-foreground/50 block mb-1">
-              Blue Corner Athlete
-            </label>
-            <select
-              v-model="form.blueAthleteId"
-              class="w-full bg-surface rounded-lg px-3 py-2 text-foreground border border-blue-800/40"
-            >
-              <option value="">TBD</option>
-              <option
-                v-for="a in blueAthleteOptions"
-                :key="a.id"
-                :value="a.id"
-              >
-                {{ athleteName(a) }}
-              </option>
-            </select>
-            <p v-if="selectedBlueAthlete" class="text-xs text-blue-400 mt-1">
-              Selected: {{ athleteName(selectedBlueAthlete) }}
-            </p>
-          </div>
-          <!-- Referee -->
-            <div>
-              <label class="text-xs text-foreground/50 block mb-1">Referee</label>
-              <select
-                v-model="form.refereeId"
-                class="w-full bg-surface rounded-lg px-3 py-2 text-foreground"
-              >
-                <option value="">Unassigned</option>
-                <option
-                  v-for="r in referees"
-                  :key="r.id"
-                  :value="r.id"
-                >
-                  {{ r.firstName }} {{ r.lastName }}
-                  <span v-if="r.license"> ({{ r.license }})</span>
-                </option>
-              </select>
-            </div>
-
-            <!-- Scorekeeper -->
-            <div>
-              <label class="text-xs text-foreground/50 block mb-1">Scorekeeper</label>
-              <select
-                v-model="form.scorekeeperId"
-                class="w-full bg-surface rounded-lg px-3 py-2 text-foreground"
-              >
-                <option value="">Unassigned</option>
-                <option
-                  v-for="s in scorekeepers"
-                  :key="s.id"
-                  :value="s.id"
-                >
-                  {{ s.name }} ({{ s.email }})
-                </option>
-              </select>
-            </div>
-        </div>
-
-        <div class="flex gap-3 pt-2">
-          <button
-            class="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 font-semibold disabled:opacity-40 text-white"
-            :disabled="saving"
-            @click="submit"
-          >
-            {{ editingId ? 'Save Changes' : 'Create Match' }}
-          </button>
-          <button
-            class="px-5 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white"
-            @click="handleRegenerate"
-          >
-            Clear & Regenerate
-          </button>
-          <button
-            v-if="editingId"
-            class="px-5 py-2 rounded-lg bg-surface hover:bg-surface-hover font-semibold"
-            @click="resetForm"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-
-      <!-- List -->
+  <div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-4">
       <div>
-        <h2 class="text-lg font-semibold mb-4 text-foreground">
-          Existing Matches
-        </h2>
+        <h1 class="text-3xl font-bold text-foreground">Matches</h1>
+        <p class="mt-1 text-sm text-muted">
+          Schedule bouts, assign officials, open scoring
+        </p>
+      </div>
+      <button
+        type="button"
+        class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-medium text-white hover:bg-blue-700"
+        @click="openCreate"
+      >
+        <Plus class="h-4 w-4" />
+        New Match
+      </button>
+    </div>
 
-        <div v-if="matchesPending" class="text-foreground/60">Loading...</div>
-        <div v-else-if="matchesError" class="text-red-400">
-          {{ matchesError }}
+    <!-- Filters -->
+    <div class="flex flex-wrap items-center gap-3">
+      <div class="relative min-w-[200px] max-w-sm flex-1">
+        <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+        <input
+          v-model="search"
+          type="text"
+          placeholder="Search athletes, categories..."
+          class="w-full rounded-xl border border-line bg-surface py-2.5 pl-10 pr-3 text-sm text-foreground outline-none focus:border-blue-500"
+        >
+      </div>
+      <select
+        v-model="statusFilter"
+        class="rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-foreground"
+      >
+        <option value="ALL">All statuses</option>
+        <option value="LIVE">Live / Paused</option>
+        <option value="SCHEDULED">Scheduled</option>
+        <option value="COMPLETED">Completed</option>
+      </select>
+      <select
+        v-model="categoryFilter"
+        class="rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-foreground"
+      >
+        <option value="">All categories</option>
+        <option
+          v-for="c in categories"
+          :key="c.id"
+          :value="c.id"
+        >
+          {{ c.name }}
+        </option>
+      </select>
+      <select
+        v-model="tatamiFilter"
+        class="rounded-xl border border-line bg-surface px-3 py-2.5 text-sm text-foreground"
+      >
+        <option value="ALL">All tatamis</option>
+        <option
+          v-for="n in tatamiOptions"
+          :key="n"
+          :value="String(n)"
+        >
+          Tatami {{ n }}
+        </option>
+        <option value="unassigned">Unassigned</option>
+      </select>
+    </div>
+
+    <PageLoader
+      v-if="matchesPending && !matches.length"
+      text="Loading matches..."
+    />
+
+    <div
+      v-else-if="matchesError"
+      class="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-400"
+    >
+      {{ matchesError }}
+    </div>
+
+    <div
+      v-else-if="filteredMatches.length === 0"
+      class="rounded-2xl border border-dashed border-line bg-surface py-16 text-center"
+    >
+      <p class="text-lg font-medium text-foreground">No matches found</p>
+      <p class="mt-2 text-sm text-muted">Create a match or change filters.</p>
+      <button
+        type="button"
+        class="mt-6 rounded-xl bg-blue-600 px-5 py-2.5 text-sm text-white hover:bg-blue-700"
+        @click="openCreate"
+      >
+        New Match
+      </button>
+    </div>
+
+    <!-- List -->
+    <div
+      v-else
+      class="space-y-2"
+    >
+      <div
+        v-for="m in filteredMatches"
+        :key="m.id"
+        class="flex flex-col gap-3 rounded-2xl border border-line bg-surface px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <p class="font-medium text-foreground">
+              <span class="text-red-400">{{ athleteName(m.redAthlete) }}</span>
+              <span class="mx-1 text-muted">vs</span>
+              <span class="text-blue-400">{{ athleteName(m.blueAthlete) }}</span>
+            </p>
+            <span
+              class="rounded-full px-2.5 py-0.5 text-xs font-bold"
+              :class="statusClass(m.status)"
+            >
+              {{ m.status }}
+            </span>
+            <span
+              v-if="formatScheduledTime(m.scheduledTime)"
+              class="rounded-full bg-blue-600/15 px-2.5 py-0.5 text-xs font-semibold text-blue-400"
+            >
+              {{ formatScheduledTime(m.scheduledTime) }}
+            </span>
+          </div>
+          <p class="mt-1 text-xs text-muted">
+            {{ m.category?.name || '—' }}
+            · {{ roundLabel(m.round) }}
+            · {{ m.tatami ? `Tatami ${m.tatami.number}` : 'No tatami' }}
+            <span v-if="m.timerSeconds"> · {{ m.timerSeconds }}s</span>
+          </p>
+          <p class="mt-1 text-xs text-muted">
+            Ref:
+            {{
+              m.referee
+                ? [m.referee.firstName, m.referee.lastName].filter(Boolean).join(' ')
+                : '—'
+            }}
+            · SK: {{ m.scorekeeper?.name || '—' }}
+          </p>
         </div>
 
-        <div v-else class="space-y-2">
-          <div
-            v-for="m in matches"
-            :key="m.id"
-            class="flex items-center justify-between bg-panel border border-line rounded-xl px-5 py-3"
+        <div class="flex shrink-0 flex-wrap gap-2">
+          <NuxtLink
+            :to="`/scoring-control/${m.id}`"
+            class="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500"
           >
-            <div>
-              <div class="flex items-center gap-2">
-                <p class="font-medium text-foreground">
-                  {{ m.redAthlete ? athleteName(m.redAthlete) : 'TBD' }}
-                  vs
-                  {{ m.blueAthlete ? athleteName(m.blueAthlete) : 'TBD' }}
-                </p>
-                <span
-                  v-if="formatScheduledTime(m.scheduledTime)"
-                  class="rounded-full bg-blue-600/20 px-2.5 py-0.5 text-xs font-semibold text-blue-400"
-                >
-                  {{ formatScheduledTime(m.scheduledTime) }}
-                </span>
-              </div>
-              <p class="text-xs text-foreground/50">
-                {{ m.category?.name }} •
-                {{
-                  roundOptions.find((r) => r.value === m.round)?.label ||
-                  m.round
-                }}
-                • {{ m.status }}
-                <span v-if="m.timerSeconds"> • {{ m.timerSeconds }}s</span>
-              </p>
-
-              <p class="mt-1 text-xs text-muted">
-                <span>
-                  Referee:
-                  <span class="text-foreground">
-                    {{
-                      m.referee
-                        ? [m.referee.firstName, m.referee.lastName].filter(Boolean).join(' ')
-                        : 'Unassigned'
-                    }}
-                  </span>
-                </span>
-                <span class="mx-2">·</span>
-                <span>
-                  Scorekeeper:
-                  <span class="text-foreground">
-                    {{ m.scorekeeper?.name || 'Unassigned' }}
-                  </span>
-                </span>
-              </p>
-            </div>
-
-            <div class="flex gap-2">
-              <NuxtLink
-                :to="`/scoring-control/${m.id}`"
-                class="px-3 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-600 text-sm text-white"
-              >
-                Score
-              </NuxtLink>
-              <button
-                class="px-3 py-1.5 rounded-lg bg-surface hover:bg-surface-hover text-sm"
-                @click="startEdit(m)"
-              >
-                Edit
-              </button>
-              <button
-                class="px-3 py-1.5 rounded-lg bg-red-800 hover:bg-red-700 text-sm text-white"
-                @click="handleDelete(m.id)"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
+            Score
+          </NuxtLink>
+          <button
+            type="button"
+            class="rounded-lg border border-line bg-surface px-3 py-1.5 text-sm hover:bg-surface-hover"
+            @click="startEdit(m)"
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            class="rounded-lg bg-red-800 px-3 py-1.5 text-sm text-white hover:bg-red-700"
+            @click="handleDelete(m.id)"
+          >
+            Delete
+          </button>
         </div>
       </div>
     </div>
+
+    <!-- Create / Edit modal -->
+    <Teleport to="body">
+      <div
+        v-if="showForm"
+        class="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4"
+        @click.self="closeForm"
+      >
+        <div class="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-line bg-panel shadow-2xl">
+          <div class="flex items-center justify-between border-b border-line px-6 py-4">
+            <h2 class="text-lg font-bold text-foreground">
+              {{ editingId ? 'Edit Match' : 'New Match' }}
+            </h2>
+            <button
+              type="button"
+              class="rounded-lg p-2 text-muted hover:bg-surface hover:text-foreground"
+              @click="closeForm"
+            >
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+
+          <div class="space-y-4 overflow-y-auto p-6">
+            <div
+              v-if="formError"
+              class="rounded-xl border border-red-700/50 bg-red-950/40 px-4 py-2 text-sm text-red-300"
+            >
+              {{ formError }}
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label class="mb-1 block text-xs text-muted">Category</label>
+                <select
+                  v-model="form.categoryId"
+                  class="w-full rounded-lg border border-line bg-surface px-3 py-2 text-foreground"
+                >
+                  <option value="">Select category</option>
+                  <option
+                    v-for="c in categories"
+                    :key="c.id"
+                    :value="c.id"
+                  >
+                    {{ c.name }}
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs text-muted">Tatami</label>
+                <select
+                  v-model="form.tatamiId"
+                  class="w-full rounded-lg border border-line bg-surface px-3 py-2 text-foreground"
+                  :disabled="!form.categoryId"
+                >
+                  <option value="">Unassigned</option>
+                  <option
+                    v-for="t in tatamis"
+                    :key="t.id"
+                    :value="t.id"
+                  >
+                    Tatami {{ t.number }}
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs text-muted">Round</label>
+                <select
+                  v-model="form.round"
+                  class="w-full rounded-lg border border-line bg-surface px-3 py-2 text-foreground"
+                >
+                  <option value="">Select round</option>
+                  <option
+                    v-for="r in roundOptions"
+                    :key="r.value"
+                    :value="r.value"
+                  >
+                    {{ r.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs text-muted">Status</label>
+                <select
+                  v-model="form.status"
+                  class="w-full rounded-lg border border-line bg-surface px-3 py-2 text-foreground"
+                >
+                  <option value="SCHEDULED">Scheduled</option>
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="PAUSED">Paused</option>
+                  <option value="COMPLETED">Completed</option>
+                </select>
+              </div>
+
+              <div class="sm:col-span-2">
+                <label class="mb-1 block text-xs text-muted">Scheduled start time</label>
+                <input
+                  v-model="form.scheduledTime"
+                  type="datetime-local"
+                  class="w-full rounded-lg border border-line bg-surface px-3 py-2 text-foreground"
+                >
+              </div>
+
+              <div class="sm:col-span-2">
+                <label class="mb-1 block text-xs text-muted">Duration (seconds)</label>
+                <input
+                  v-model.number="form.timerSeconds"
+                  type="number"
+                  min="30"
+                  max="600"
+                  step="30"
+                  class="w-full rounded-lg border border-line bg-surface px-3 py-2 text-foreground"
+                >
+                <p
+                  v-if="form.categoryId"
+                  class="mt-1 text-xs text-muted"
+                >
+                  Suggested: {{ suggestedTimerSeconds }}s
+                </p>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs text-muted">Red (AKA)</label>
+                <select
+                  v-model="form.redAthleteId"
+                  class="w-full rounded-lg border border-red-800/40 bg-surface px-3 py-2 text-foreground"
+                >
+                  <option value="">TBD</option>
+                  <option
+                    v-for="a in redAthleteOptions"
+                    :key="a.id"
+                    :value="a.id"
+                  >
+                    {{ athleteName(a) }}
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs text-muted">Blue (AO)</label>
+                <select
+                  v-model="form.blueAthleteId"
+                  class="w-full rounded-lg border border-blue-800/40 bg-surface px-3 py-2 text-foreground"
+                >
+                  <option value="">TBD</option>
+                  <option
+                    v-for="a in blueAthleteOptions"
+                    :key="a.id"
+                    :value="a.id"
+                  >
+                    {{ athleteName(a) }}
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs text-muted">Referee</label>
+                <select
+                  v-model="form.refereeId"
+                  class="w-full rounded-lg border border-line bg-surface px-3 py-2 text-foreground"
+                >
+                  <option value="">Unassigned</option>
+                  <option
+                    v-for="r in referees"
+                    :key="r.id"
+                    :value="r.id"
+                  >
+                    {{ r.firstName }} {{ r.lastName }}
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs text-muted">Scorekeeper</label>
+                <select
+                  v-model="form.scorekeeperId"
+                  class="w-full rounded-lg border border-line bg-surface px-3 py-2 text-foreground"
+                >
+                  <option value="">Unassigned</option>
+                  <option
+                    v-for="s in scorekeepers"
+                    :key="s.id"
+                    :value="s.id"
+                  >
+                    {{ s.name }}
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-3 border-t border-line px-6 py-4">
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 rounded-lg border border-red-500/40 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+              :disabled="!form.categoryId || regenerating"
+              @click="handleRegenerate"
+            >
+              <Loader2
+                v-if="regenerating"
+                class="h-4 w-4 animate-spin"
+              />
+              Clear & Regenerate
+            </button>
+
+            <div class="flex gap-2">
+              <button
+                type="button"
+                class="rounded-lg border border-line px-4 py-2 text-sm hover:bg-surface"
+                @click="closeForm"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
+                :disabled="saving"
+                @click="submit"
+              >
+                <Loader2
+                  v-if="saving"
+                  class="h-4 w-4 animate-spin"
+                />
+                {{ editingId ? 'Save Changes' : 'Create Match' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>

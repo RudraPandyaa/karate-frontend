@@ -1,24 +1,33 @@
 import type { MatchListItem } from '~/composables/useMatches'
 
+export type MatchScope = 'all' | 'mine'
+
 export function useScorekeeperMatches() {
   const { api } = useApi()
 
   const matches = useState<MatchListItem[]>('scorekeeper-matches', () => [])
   const pending = useState('scorekeeper-matches-pending', () => false)
-  const error = useState<string | null>('scorekeeper-matches-error', () => null)
+  const error = useState<string | null>(
+    'scorekeeper-matches-error',
+    () => null,
+  )
 
-  async function fetchAssignedToScorekeeper() {
+  async function fetchMatches(scope: MatchScope = 'mine') {
     pending.value = true
     error.value = null
+
     try {
-      matches.value = await api<MatchListItem[]>(
-        '/matches/assigned/scorekeeper',
-      )
+      const endpoint =
+        scope === 'mine'
+          ? '/matches/assigned/scorekeeper'
+          : '/matches'
+
+      matches.value = await api<MatchListItem[]>(endpoint)
     } catch (err: any) {
       error.value =
         err?.data?.message ||
         err?.message ||
-        'Unable to load assigned matches'
+        'Unable to load matches'
     } finally {
       pending.value = false
     }
@@ -28,6 +37,6 @@ export function useScorekeeperMatches() {
     matches,
     pending,
     error,
-    fetchAssignedToScorekeeper,
+    fetchMatches,
   }
 }

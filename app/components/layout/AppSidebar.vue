@@ -12,6 +12,7 @@ import {
   GraduationCap,
   BarChart3,
   User,
+  Building2,
 } from 'lucide-vue-next'
 
 import type { Role } from '~/types'
@@ -28,6 +29,7 @@ const route = useRoute()
 // Full staff navigation (SUPER_ADMIN, ADMIN, ORGANIZER)
 const fullStaffNav: NavItem[] = [
   { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
+  { label: 'Organizations', to: '/organizations', icon: Building2 },
   { label: 'Tournaments', to: '/tournaments', icon: Trophy },
   { label: 'Categories', to: '/categories', icon: Tags },
   { label: 'Athletes', to: '/athletes', icon: Users },
@@ -35,7 +37,7 @@ const fullStaffNav: NavItem[] = [
   // { label: 'Coaches', to: '/coaches', icon: GraduationCap },
   { label: 'Tatamis', to: '/tatamis', icon: Waypoints },
   { label: 'Matches', to: '/admin/matches', icon: Swords },
-  { label: 'Live Scoring', to: '/live', icon: Tv },
+  { label: 'Live Scoring', to: '/scoring-control', icon: Tv },
   { label: 'Brackets', to: '/brackets', icon: GitBranch },
   { label: 'Users', to: '/users', icon: Users },
 ]
@@ -44,7 +46,7 @@ const fullStaffNav: NavItem[] = [
 const scorekeeperNav: NavItem[] = [
   { label: 'Dashboard', to: '/scorekeeper/dashboard', icon: LayoutDashboard },
   { label: 'Matches', to: '/scorekeeper/matches', icon: Swords },
-  { label: 'Live Scoring', to: '/live', icon: Tv },
+  { label: 'Live Scoring', to: '/scoring-control', icon: Tv },
   { label: 'Tatamis', to: '/tatamis', icon: Waypoints },
   { label: 'Brackets', to: '/brackets', icon: GitBranch },
   { label: 'Results', to: '/scorekeeper/results', icon: BarChart3 },
@@ -54,7 +56,7 @@ const scorekeeperNav: NavItem[] = [
 const refereeNav: NavItem[] = [
   { label: 'Dashboard', to: '/referee/dashboard', icon: LayoutDashboard },
   { label: 'My Matches', to: '/referee/matches', icon: Swords },
-  { label: 'Live Scoring', to: '/live', icon: Tv },
+  { label: 'Live Scoring', to: '/scoring-control', icon: Tv },
   { label: 'Match History', to: '/referee/history', icon: BarChart3 },
   { label: 'Profile', to: '/referee/profile', icon: User },
 ]

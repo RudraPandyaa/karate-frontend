@@ -5,7 +5,7 @@ import { useRefereeMatches } from '~/composables/useRefereeMatches'
 import { athleteDisplayName } from '~/composables/useMatches'
 
 definePageMeta({
-  layout: 'referee',
+  layout: 'default',
   middleware: 'referee',
 })
 

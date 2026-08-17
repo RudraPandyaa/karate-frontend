@@ -154,10 +154,17 @@ function submit() {
               </option>
             </select>
             <p
-              v-if="loadingOrganizations"
-              class="mt-2 text-sm text-muted"
+              v-if="!loadingOrganizations && organizations.length === 0"
+              class="mt-2 text-sm text-amber-400"
             >
-              Loading organizations...
+              No organizations found.
+              <NuxtLink
+                to="/organizations"
+                class="underline hover:text-amber-300"
+                @click="emit('close')"
+              >
+                Create one first
+              </NuxtLink>
             </p>
           </div>
         </div>
