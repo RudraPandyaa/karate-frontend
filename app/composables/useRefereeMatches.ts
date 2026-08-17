@@ -1,11 +1,11 @@
-import type { MatchListItem } from '~/types'
+import type { MatchListItem } from '~/composables/useMatches'
 
 export function useRefereeMatches() {
   const { api } = useApi()
 
-  const matches = ref<MatchListItem[]>([])
-  const pending = ref(false)
-  const error = ref<string | null>(null)
+  const matches = useState<MatchListItem[]>('referee-matches', () => [])
+  const pending = useState('referee-matches-pending', () => false)
+  const error = useState<string | null>('referee-matches-error', () => null)
 
   async function fetchAssignedToReferee() {
     pending.value = true

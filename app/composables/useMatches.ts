@@ -44,6 +44,7 @@ export interface MatchListItem {
   status: MatchStatus
   redScore: number
   blueScore: number
+  scheduledTime?: string | null
 
   redAthlete: MatchAthlete | null
   blueAthlete: MatchAthlete | null

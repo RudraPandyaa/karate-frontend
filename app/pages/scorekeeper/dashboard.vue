@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
+import { Loader2 } from 'lucide-vue-next'
 import { useScorekeeperMatches } from '~/composables/useScorekeeperMatches'
 import { athleteDisplayName } from '~/composables/useMatches'
-import PageLoader from '~/components/ui/PageLoader.vue'
+
 definePageMeta({
-  layout: 'default',
+  layout: 'scorekeeper',
   middleware: 'scorekeeper',
 })
 
@@ -14,6 +15,8 @@ const { matches, pending, error, fetchAssignedToScorekeeper } =
 
 onMounted(() => {
   fetchAssignedToScorekeeper()
+  const timer = setInterval(() => fetchAssignedToScorekeeper(), 20000)
+  onUnmounted(() => clearInterval(timer))
 })
 
 const liveCount = computed(() =>
@@ -39,17 +42,36 @@ const nextMatch = computed(() => {
     null
   )
 })
+
+function statusLabel(status?: string) {
+  if (status === 'IN_PROGRESS') return 'LIVE'
+  if (status === 'PAUSED') return 'PAUSED'
+  if (status === 'SCHEDULED') return 'UPCOMING'
+  return status || '—'
+}
 </script>
 
 <template>
-  <div class="space-y-6 p-6">
+  <div class="mx-auto max-w-5xl space-y-6 p-6">
     <div>
       <h1 class="text-2xl font-bold text-foreground">Scorekeeper Dashboard</h1>
       <p class="mt-1 text-sm text-muted">Welcome, {{ user?.name }}</p>
     </div>
 
-    <PageLoader v-if="pending" text="Loading scorekeeper dashboard..." />
-    <div v-else-if="error" class="text-red-400">{{ error }}</div>
+    <div
+      v-if="pending && !matches.length"
+      class="flex items-center justify-center gap-2 rounded-2xl border border-line bg-surface py-12 text-sm text-muted"
+    >
+      <Loader2 class="h-5 w-5 animate-spin text-blue-400" />
+      Loading dashboard...
+    </div>
+
+    <div
+      v-else-if="error"
+      class="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-red-300"
+    >
+      {{ error }}
+    </div>
 
     <template v-else>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -94,7 +116,10 @@ const nextMatch = computed(() => {
               </span>
             </p>
             <p class="mt-1 text-xs font-semibold text-blue-400">
-              {{ nextMatch.status }}
+              {{ statusLabel(nextMatch.status) }}
+              <span v-if="['IN_PROGRESS', 'PAUSED'].includes(nextMatch.status)">
+                · {{ nextMatch.redScore ?? 0 }}–{{ nextMatch.blueScore ?? 0 }}
+              </span>
             </p>
           </div>
 
@@ -105,6 +130,21 @@ const nextMatch = computed(() => {
             Open Scoring
           </NuxtLink>
         </div>
+      </div>
+
+      <div class="flex flex-wrap gap-3">
+        <NuxtLink
+          to="/scorekeeper/matches"
+          class="rounded-xl border border-line bg-surface px-4 py-3 text-sm font-medium hover:bg-surface-hover"
+        >
+          View all matches
+        </NuxtLink>
+        <NuxtLink
+          to="/scorekeeper/results"
+          class="rounded-xl border border-line bg-surface px-4 py-3 text-sm font-medium hover:bg-surface-hover"
+        >
+          Results
+        </NuxtLink>
       </div>
     </template>
   </div>

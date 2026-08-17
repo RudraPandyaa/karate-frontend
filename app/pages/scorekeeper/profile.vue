@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({
-  layout: 'referee',
-  middleware: 'referee',
+  layout: 'scorekeeper',
+  middleware: 'scorekeeper',
 })
 
 const { user, logout } = useAuth()
@@ -12,20 +12,20 @@ const { user, logout } = useAuth()
     <div>
       <h1 class="text-2xl font-bold text-foreground">My Profile</h1>
       <p class="mt-1 text-sm text-muted">
-        Your referee account details
+        Your scorekeeper account details
       </p>
     </div>
 
     <section class="rounded-2xl border border-line bg-surface p-6">
       <div class="flex items-center gap-4">
         <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-xl font-bold text-white">
-          {{ user?.name?.charAt(0)?.toUpperCase() || 'R' }}
+          {{ user?.name?.charAt(0)?.toUpperCase() || 'S' }}
         </div>
         <div class="min-w-0">
           <h2 class="truncate text-lg font-semibold text-foreground">
-            {{ user?.name || 'Referee' }}
+            {{ user?.name || 'Scorekeeper' }}
           </h2>
-          <p class="text-sm text-muted">Referee</p>
+          <p class="text-sm text-muted">Scorekeeper</p>
         </div>
       </div>
 
@@ -38,14 +38,14 @@ const { user, logout } = useAuth()
         </div>
         <div class="flex items-center justify-between gap-4">
           <span class="text-muted">Email</span>
-          <span class="font-medium text-foreground text-right break-all">
+          <span class="break-all font-medium text-foreground text-right">
             {{ user?.email || '—' }}
           </span>
         </div>
         <div class="flex items-center justify-between gap-4">
           <span class="text-muted">Role</span>
           <span class="rounded-full bg-blue-600/15 px-2.5 py-1 text-xs font-semibold text-blue-400">
-            REFEREE
+            SCOREKEEPER
           </span>
         </div>
       </div>

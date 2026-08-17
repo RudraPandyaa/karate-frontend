@@ -3,6 +3,7 @@ import type { LiveMatch } from '~/composables/useLiveMatch'
 
 const props = defineProps<{
   match: LiveMatch
+  tv?: boolean
 }>()
 
 const safeTimeRemaining = computed(() =>
@@ -305,7 +306,8 @@ const winnerName = computed(() => {
             <div class="mt-5 text-center">
 
               <p
-                class="font-mono text-8xl font-black leading-none tabular-nums sm:text-9xl"
+                class="font-mono font-black leading-none tabular-nums"
+                :class="tv ? 'text-[7rem] sm:text-[9rem]' : 'text-8xl sm:text-9xl'"
               >
                 {{ match.redScore }}
               </p>
@@ -321,6 +323,7 @@ const winnerName = computed(() => {
 
             <!-- Score Breakdown -->
             <div
+              v-if="!tv"
               class="mt-5 grid grid-cols-3 gap-2 border-t border-red-300/20 pt-4 text-center"
             >
 
@@ -385,12 +388,11 @@ const winnerName = computed(() => {
           </p>
 
           <div
-            class="mt-3 font-mono text-7xl font-black leading-none tabular-nums sm:text-8xl xl:text-9xl"
-            :class="
-              isLowTime
-                ? 'animate-pulse text-red-500'
-                : 'text-white'
-            "
+            class="mt-3 font-mono font-black leading-none tabular-nums"
+            :class="[
+              isLowTime ? 'animate-pulse text-red-500' : 'text-white',
+              tv ? 'text-[6rem] sm:text-[8rem] xl:text-[9rem]' : 'text-7xl sm:text-8xl xl:text-9xl',
+            ]"
           >
             {{ clock }}
           </div>
@@ -509,6 +511,7 @@ const winnerName = computed(() => {
 
             <!-- Score Breakdown -->
             <div
+              v-if="!tv"
               class="mt-5 grid grid-cols-3 gap-2 border-t border-blue-300/20 pt-4 text-center"
             >
 

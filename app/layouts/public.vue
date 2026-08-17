@@ -32,7 +32,10 @@ const handleLogout = async () => {
               </p>
             </div>
           </NuxtLink>
-
+          
+          <NuxtLink to="/tv" class="text-sm text-muted hover:text-foreground">
+            TV
+          </NuxtLink>
           <!-- Server fallback -->
           <template #fallback>
             <NuxtLink
