@@ -14,20 +14,33 @@ const emit = defineEmits<{
 
 const search = ref('')
 
-const filteredAthletes = computed(() => {
-  if (!search.value) return props.athletes
-  const q = search.value.toLowerCase()
-  return props.athletes.filter((a) =>
-    [a.name, a.state, a.country].filter(Boolean).join(' ').toLowerCase().includes(q)
+function athleteName(a: Athlete) {
+  return (
+    a.fullName ||
+    [a.firstName, a.lastName].filter(Boolean).join(' ') ||
+    '—'
   )
-})
+}
 
 function calculateAge(dateOfBirth: string | null | undefined): number | string {
-  if (!dateOfBirth) return '-'
+  if (!dateOfBirth) return '—'
   const dob = new Date(dateOfBirth)
+  if (Number.isNaN(dob.getTime())) return '—'
   const diff = Date.now() - dob.getTime()
   return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25))
 }
+
+const filteredAthletes = computed(() => {
+  if (!search.value.trim()) return props.athletes
+  const q = search.value.toLowerCase()
+  return props.athletes.filter((a) =>
+    [athleteName(a), a.state, a.country]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+      .includes(q),
+  )
+})
 </script>
 
 <template>
@@ -100,7 +113,7 @@ function calculateAge(dateOfBirth: string | null | undefined): number | string {
 
                 <div>
                   <div class="font-semibold">
-                    {{ athlete.name }}
+                    {{ athleteName(athlete) }}
                   </div>
 
                   <div class="text-xs text-muted">
@@ -127,7 +140,7 @@ function calculateAge(dateOfBirth: string | null | undefined): number | string {
             </td>
 
             <td class="px-6 py-4">
-              {{ athlete.age }}
+              {{ calculateAge(athlete.dateOfBirth) }}
             </td>
 
             <td class="px-6 py-4 text-right space-x-3">

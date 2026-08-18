@@ -9,7 +9,6 @@ import { getTatamiLabel } from '~/composables/useTatami'
 
 defineProps<{
   rows: Category[]
-  /** When true (admin), show Edit / Delete */
   canManage?: boolean
 }>()
 
@@ -56,7 +55,7 @@ function formatWeight(category: Category) {
             <th class="px-6 py-4 font-medium text-foreground">Tatami</th>
             <th
               v-if="canManage"
-              class="px-6 py-4 font-medium text-right text-foreground"
+              class="px-6 py-4 text-right font-medium text-foreground"
             >
               Actions
             </th>
@@ -67,7 +66,7 @@ function formatWeight(category: Category) {
           <tr
             v-for="category in rows"
             :key="category.id"
-            class="border-b border-line last:border-b-0 transition hover:bg-surface-hover"
+            class="border-b border-line transition last:border-b-0 hover:bg-surface-hover"
           >
             <td class="px-6 py-4 font-medium">
               <NuxtLink
@@ -86,22 +85,17 @@ function formatWeight(category: Category) {
               {{ category.ageGroup }}
             </td>
 
-            <td class="px-6 py-4 text-foreground">
+            <td class="px-6 py-4">
               <GenderBadge :gender="category.gender" />
             </td>
 
-            <td class="px-6 py-4 text-foreground">
+            <td class="px-6 py-4">
               <DisciplineBadge :discipline="category.discipline" />
             </td>
 
             <td class="px-6 py-4 text-muted">
               {{ formatWeight(category) }}
             </td>
-
-            <td class="px-6 py-4 text-foreground">
-              {{ getTatamiLabel(category.tatami) }}
-            </td>
-
 
             <td class="px-6 py-4 text-muted">
               <span class="inline-flex items-center gap-1.5">
@@ -117,9 +111,17 @@ function formatWeight(category: Category) {
               </span>
             </td>
 
-            <td v-if="canManage" class="px-6 py-4 text-foreground">
+            <td class="px-6 py-4 text-muted">
+              {{ getTatamiLabel(category.tatami) }}
+            </td>
+
+            <td
+              v-if="canManage"
+              class="px-6 py-4"
+            >
               <div class="flex items-center justify-end gap-2">
                 <button
+                  type="button"
                   class="rounded-lg p-2 text-muted transition hover:bg-surface-hover hover:text-foreground"
                   title="Edit category"
                   @click="emit('edit', category)"
@@ -128,6 +130,7 @@ function formatWeight(category: Category) {
                 </button>
 
                 <button
+                  type="button"
                   class="rounded-lg p-2 text-muted transition hover:bg-red-500/10 hover:text-red-400"
                   title="Delete category"
                   @click="emit('delete', category)"

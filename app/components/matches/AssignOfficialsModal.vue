@@ -36,10 +36,17 @@ async function loadStaff() {
   try {
     // const refResponse = await api('/users/by-role/REFEREE')
     // const scoreResponse = await api('/users/by-role/SCOREKEEPER')
-    const users = await api('/users')
+    const users = await api<Array<{ id: string; name: string; role?: string }>>(
+      '/users',
+    )
 
-    referees.value = users
-    scorekeepers.value = users
+    referees.value = users.filter(
+      (u) => !u.role || u.role === 'REFEREE' || u.role === 'ADMIN' || u.role === 'SUPER_ADMIN' || u.role === 'ORGANIZER',
+    )
+    scorekeepers.value = users.filter(
+      (u) => !u.role || u.role === 'SCOREKEEPER' || u.role === 'ADMIN' || u.role === 'SUPER_ADMIN' || u.role === 'ORGANIZER',
+    )
+
     form.refereeId = props.match?.referee?.id || ''
     form.scorekeeperId = props.match?.scorekeeper?.id || ''
   } catch (err: any) {
@@ -79,6 +86,19 @@ async function save() {
     saving.value = false
   }
 }
+
+function athleteName(a?: {
+  fullName?: string | null
+  firstName?: string | null
+  lastName?: string | null
+} | null) {
+  if (!a) return 'TBD'
+  return (
+    a.fullName ||
+    [a.firstName, a.lastName].filter(Boolean).join(' ') ||
+    'TBD'
+  )
+}
 </script>
 
 <template>
@@ -93,9 +113,9 @@ async function save() {
           </h2>
 
           <p class="text-sm text-muted mt-1">
-            {{ match?.redAthlete?.name }}
+            {{ athleteName(match?.redAthlete) }}
             vs
-            {{ match?.blueAthlete?.name }}
+            {{ athleteName(match?.blueAthlete) }}
           </p>
         </div>
 

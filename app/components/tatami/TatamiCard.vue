@@ -55,7 +55,7 @@ const isLive = computed(() => {
 // end (or off their own explicit scheduledTime, if one was set when the
 // match was created).
 const scheduledQueue = computed(() => {
-  const all = [queue.value.current, ...queue.value.next].filter(Boolean) as any[]
+  const all = [queue.value.current, ...queue.value.next].filter(Boolean)
   const scheduled = computeTatamiSchedule(all)
   const byId = new Map(scheduled.map((s) => [s.match.id, s]))
 
@@ -65,15 +65,18 @@ const scheduledQueue = computed(() => {
       : null,
     next: queue.value.next
       .map((m) => byId.get(m.id))
-      .filter(Boolean) as ScheduledMatch[],
+      .filter((x): x is ScheduledMatch => !!x),
   }
 })
 
-function athleteName(a?: any) {
+function athleteName(a?: {
+  fullName?: string | null
+  firstName?: string | null
+  lastName?: string | null
+} | null) {
   if (!a) return 'TBD'
   return (
     a.fullName ||
-    a.name ||
     [a.firstName, a.lastName].filter(Boolean).join(' ') ||
     'TBD'
   )

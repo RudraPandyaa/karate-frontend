@@ -171,16 +171,44 @@ const blueAthleteOptions = computed(() =>
   athletesInCategory.value.filter((a) => a.id !== form.redAthleteId),
 )
 
+const activeReferees = computed(() =>
+  referees.value.filter((r) => (r.status || 'ACTIVE') === 'ACTIVE'),
+)
+
+/** Dropdown options: ACTIVE only; if editing and current is inactive, still show them once */
+const refereeOptions = computed(() => {
+  const list = [...activeReferees.value]
+  if (form.refereeId) {
+    const current = referees.value.find((r) => r.id === form.refereeId)
+    if (
+      current &&
+      (current.status || 'ACTIVE') !== 'ACTIVE' &&
+      !list.some((r) => r.id === current.id)
+    ) {
+      list.unshift(current)
+    }
+  }
+  return list
+})
+
+const selectedRefereeInactive = computed(() => {
+  if (!form.refereeId) return false
+  const r = referees.value.find((x) => x.id === form.refereeId)
+  return !!r && (r.status || 'ACTIVE') !== 'ACTIVE'
+})
+
 watch(
   () => form.categoryId,
   async (newId) => {
     form.tatamiId = ''
     const cat = categories.value.find((c) => c.id === newId)
+
     if (cat?.tournamentId) {
       await fetchTatami(cat.tournamentId)
     } else {
       tatamis.value = []
     }
+    form.tatamiId = cat?.tatamiId || cat?.tatami?.id || ''
     form.timerSeconds = newId ? timerSecondsForCategory(cat) : undefined
 
     const validIds = new Set(
@@ -243,10 +271,12 @@ function closeForm() {
 
 async function submit() {
   formError.value = null
+
   if (!form.categoryId || !form.round) {
     formError.value = 'Category and round are required.'
     return
   }
+
   if (
     form.redAthleteId &&
     form.blueAthleteId &&
@@ -254,6 +284,16 @@ async function submit() {
   ) {
     formError.value = 'Red and Blue corner athletes must be different.'
     return
+  }
+
+  // ✅ inside submit, before API call
+  if (form.refereeId) {
+    const r = referees.value.find((x) => x.id === form.refereeId)
+    if (r && (r.status || 'ACTIVE') !== 'ACTIVE') {
+      formError.value =
+        'Only ACTIVE referees can be assigned. Choose another referee.'
+      return
+    }
   }
 
   saving.value = true
@@ -718,13 +758,22 @@ onMounted(() => {
                 >
                   <option value="">Unassigned</option>
                   <option
-                    v-for="r in referees"
+                    v-for="r in refereeOptions"
                     :key="r.id"
                     :value="r.id"
                   >
                     {{ r.firstName }} {{ r.lastName }}
+                    <template v-if="(r.status || 'ACTIVE') !== 'ACTIVE'">
+                      ({{ r.status }})
+                    </template>
                   </option>
                 </select>
+                <p
+                  v-if="selectedRefereeInactive"
+                  class="mt-1 text-xs text-amber-400"
+                >
+                  This referee is not ACTIVE. Pick an active referee before saving.
+                </p>
               </div>
 
               <div>

@@ -3,12 +3,15 @@ import type { Category } from '~/composables/useCategories'
 
 export interface BracketAthlete {
   id: string
-  fullName?: string
-  firstName?: string
-  lastName?: string
-  state?: string
-  country?: string
- }
+  fullName?: string | null
+  firstName?: string | null
+  lastName?: string | null
+  name?: string | null
+  country?: string | null
+  countryCode?: string | null
+  state?: string | null
+  photoUrl?: string | null
+}
 export interface BracketMatch {
   id: string
   round: string

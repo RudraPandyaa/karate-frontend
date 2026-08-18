@@ -14,7 +14,12 @@ const emit = defineEmits<{
 
 const { api } = useApi()
 
-const organizations = ref<any[]>([])
+interface Org {
+  id: string
+  name: string
+}
+
+const organizations = ref<Org[]>([])
 const loadingOrganizations = ref(false)
 
 const form = reactive<CreateTournamentPayload>({
@@ -28,7 +33,7 @@ const form = reactive<CreateTournamentPayload>({
 async function loadOrganizations() {
   loadingOrganizations.value = true
   try {
-    organizations.value = await api('/organizations')
+    organizations.value = await api<Org[]>('/organizations')
   } catch (err) {
     console.error(err)
   } finally {

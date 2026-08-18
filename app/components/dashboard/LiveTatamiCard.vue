@@ -3,7 +3,28 @@ import type { LiveMatchSummary } from '~/types'
 
 const props = defineProps<{ match: LiveMatchSummary }>()
 
-const isKata = computed(() => props.match.discipline === 'KATA' || props.match.discipline === 'TEAM_KATA')
+function athleteName(
+  a?: {
+    fullName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    name?: string | null
+  } | null,
+) {
+  if (!a) return 'TBD'
+  return (
+    a.fullName ||
+    a.name ||
+    [a.firstName, a.lastName].filter(Boolean).join(' ') ||
+    'TBD'
+  )
+}
+
+const isKata = computed(
+  () =>
+    props.match.discipline === 'KATA' ||
+    props.match.discipline === 'TEAM_KATA',
+)
 
 const timeLabel = computed(() => {
   const total = props.match.timeRemaining
@@ -12,11 +33,10 @@ const timeLabel = computed(() => {
   return `${m}:${s.toString().padStart(2, '0')}`
 })
 
-// Highlight which corner is currently ahead — a quiet visual cue rather
-// than a fixed color per card.
 const leadingCorner = computed<'red' | 'blue' | null>(() => {
   if (isKata.value) {
-    if (props.match.redKataScore == null || props.match.blueKataScore == null) return null
+    if (props.match.redKataScore == null || props.match.blueKataScore == null)
+      return null
     if (props.match.redKataScore === props.match.blueKataScore) return null
     return props.match.redKataScore > props.match.blueKataScore ? 'red' : 'blue'
   }
@@ -41,12 +61,16 @@ const borderClass = computed(() => {
     <div class="flex items-center justify-between px-4 pt-3">
       <div class="text-left">
         <p class="text-[11px] font-bold text-aka">AKA</p>
-        <p class="text-sm font-semibold text-foreground truncate max-w-[110px]">{{ match.redAthlete?.name ?? 'TBD' }}</p>
+        <p class="text-sm font-semibold text-foreground truncate max-w-[110px]">
+        {{ athleteName(match.redAthlete) }}
+      </p>
       </div>
       <span class="text-xs font-semibold text-muted px-2">VS</span>
       <div class="text-right">
         <p class="text-[11px] font-bold text-ao">AO</p>
-        <p class="text-sm font-semibold text-foreground truncate max-w-[110px]">{{ match.blueAthlete?.name ?? 'TBD' }}</p>
+        <p class="text-sm font-semibold text-foreground truncate max-w-[110px]">
+        {{ athleteName(match.blueAthlete) }}
+      </p>
       </div>
     </div>
 

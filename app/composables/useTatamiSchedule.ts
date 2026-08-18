@@ -15,11 +15,25 @@ const CHANGEOVER_SECONDS = 5 * 60 // gap for corner/ref reset between matches
 export interface ScheduleMatch {
   id: string
   tatamiId?: string | null
-  scheduledTime?: string | null // ISO string, set explicitly by staff
+  scheduledTime?: string | null
   timerSeconds?: number | null
   status?: string | null
   createdAt?: string | null
   bracketSlot?: number | null
+
+  // Display fields (optional — queue API se aate hain)
+  redAthlete?: {
+    fullName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    country?: string | null
+  } | null
+  blueAthlete?: {
+    fullName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    country?: string | null
+  } | null
 }
 
 // TatamiMatch (composables/useTatami.ts) is structurally compatible with

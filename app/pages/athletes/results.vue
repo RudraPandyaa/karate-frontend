@@ -52,6 +52,26 @@ function formatRound(round?: string) {
     .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
+function formatPosition(pos?: string | null) {
+  if (!pos) return '—'
+  return pos
+    .replaceAll('_', ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+function formatMedal(medal?: string | null) {
+  if (!medal) return '—'
+  return medal
+}
+
+function medalClass(medal?: string | null) {
+  if (medal === 'GOLD') return 'text-yellow-400'
+  if (medal === 'SILVER') return 'text-gray-300'
+  if (medal === 'BRONZE') return 'text-orange-400'
+  return 'text-muted'
+}
+
 function getResult(match: any) {
   if (!match.winnerId || !athleteId.value) {
     return {
@@ -72,13 +92,6 @@ function getResult(match: any) {
     score,
     isWin,
   }
-}
-
-function medalClass(medal?: string | null) {
-  if (medal === 'GOLD') return 'text-yellow-400'
-  if (medal === 'SILVER') return 'text-gray-300'
-  if (medal === 'BRONZE') return 'text-orange-400'
-  return 'text-muted'
 }
 </script>
 
@@ -217,14 +230,15 @@ function medalClass(medal?: string | null) {
 
         <div v-else class="overflow-x-auto">
           <table class="w-full text-sm">
-            <thead class="bg-canvas/50 text-left text-xs uppercase tracking-wide text-muted">
-              <tr>
-                <th class="px-5 py-3 font-medium">Year</th>
-                <th class="px-5 py-3 font-medium">Tournament</th>
-                <th class="px-5 py-3 font-medium">Medal</th>
-                <th class="px-5 py-3 font-medium">Position</th>
-              </tr>
-            </thead>
+           <thead class="bg-canvas/50 text-left text-xs uppercase tracking-wide text-muted">
+            <tr>
+              <th class="px-5 py-3 font-medium">Year</th>
+              <th class="px-5 py-3 font-medium">Tournament</th>
+              <th class="px-5 py-3 font-medium">Category</th>
+              <th class="px-5 py-3 font-medium">Medal</th>
+              <th class="px-5 py-3 font-medium">Position</th>
+            </tr>
+          </thead>
             <tbody>
               <tr
                 v-for="item in history"
@@ -237,16 +251,16 @@ function medalClass(medal?: string | null) {
                 <td class="px-5 py-3 text-muted">
                   {{ item.tournament?.name || '—' }}
                 </td>
+                <td class="px-5 py-3 text-muted">
+                  {{ item.category?.name || '—' }}
+                </td>
                 <td class="px-5 py-3">
-                  <span
-                    class="font-semibold"
-                    :class="medalClass(item.medal)"
-                  >
-                    {{ item.medal || '—' }}
+                  <span class="font-semibold" :class="medalClass(item.medal)">
+                    {{ formatMedal(item.medal) }}
                   </span>
                 </td>
                 <td class="px-5 py-3 text-muted">
-                  {{ item.position ? `#${item.position}` : '—' }}
+                  {{ formatPosition(item.position) }}
                 </td>
               </tr>
             </tbody>

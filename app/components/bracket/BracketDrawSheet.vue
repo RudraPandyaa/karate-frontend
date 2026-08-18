@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Category } from '~/composables/useCategories'
-import type { BracketMatch } from '~/composables/useBracket'
+import type { BracketMatch, BracketAthlete } from '~/composables/useBracket'
 import { computed } from 'vue'
 import CountryFlag from 'vue-country-flag-next'
 import { COUNTRY_CODE_MAP } from '~/utils/countries'
@@ -9,6 +9,7 @@ const props = defineProps<{
   category: Category
   matches: BracketMatch[]
 }>()
+// type BracketAthlete = NonNullable<BracketMatch['redAthlete']>
 
 // Fixed card geometry
 const MATCH_HEIGHT = 75 // px
@@ -25,10 +26,10 @@ const weightLabel = computed(() => {
   return `${weightMin}-${weightMax}KG`
 })
 
-interface PodiumEntry {
-  name: string
-  state: string
-}
+// interface PodiumEntry {
+//   name: string
+//   state: string
+// }
 
 const podium = computed(() => {
   const finalMatch = props.matches.find(
@@ -50,8 +51,7 @@ const podium = computed(() => {
 
   if (!winner || !runnerUp) return null
 
-  let secondRunnerUp: PodiumEntry | null = null
-
+  let secondRunnerUp: BracketAthlete | null = null
   const bronzeMatch = props.matches.find(
     (m) => (m.round === 'BRONZE' || m.round === 'BRONZE_MEDAL') && m.status === 'COMPLETED'
   )
@@ -235,23 +235,28 @@ function buildConnectorLines(rounds: RoundGroup[]) {
 
   if (bronzeRound && mainRounds.length > 0) {
     const semifinalRound = mainRounds[mainRounds.length - 1]
-    const semifinalRoundIndex = mainRounds.length - 1
-    const columnX = semifinalRoundIndex * (COLUMN_WIDTH + COLUMN_GAP) + COLUMN_WIDTH / 2
-    const junctionY = dims.mainHeight + BRONZE_GAP / 2
-    const bronzeTopY = dims.mainHeight + BRONZE_GAP
+    if (!semifinalRound) {
+      // skip bronze connectors
+    } else {
+      const semifinalRoundIndex = mainRounds.length - 1
+      const columnX =
+        semifinalRoundIndex * (COLUMN_WIDTH + COLUMN_GAP) + COLUMN_WIDTH / 2
+      const junctionY = dims.mainHeight + BRONZE_GAP / 2
+      const bronzeTopY = dims.mainHeight + BRONZE_GAP
 
-    semifinalRound.matches.forEach((match, matchIndex) => {
-      const y = getMatchCardCenterY(semifinalRoundIndex, matchIndex)
-      lines.push({
-        key: `${semifinalRound.round}-${match.id}-bronze-drop`,
-        d: `M ${columnX} ${y} V ${junctionY}`,
+      semifinalRound.matches.forEach((match, matchIndex) => {
+        const y = getMatchCardCenterY(semifinalRoundIndex, matchIndex)
+        lines.push({
+          key: `${semifinalRound.round}-${match.id}-bronze-drop`,
+          d: `M ${columnX} ${y} V ${junctionY}`,
+        })
       })
-    })
 
-    lines.push({
-      key: 'bronze-merge',
-      d: `M ${columnX} ${junctionY} V ${bronzeTopY}`,
-    })
+      lines.push({
+        key: 'bronze-merge',
+        d: `M ${columnX} ${junctionY} V ${bronzeTopY}`,
+      })
+    }
   }
 
   return lines
@@ -261,21 +266,27 @@ function buildConnectorLines(rounds: RoundGroup[]) {
 
 function athleteName(
   a?: {
-    fullName?: string
-    firstName?: string
-    lastName?: string
+    fullName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+    name?: string | null
   } | null,
 ) {
   if (!a) return 'TBD'
   return (
     a.fullName ||
+    a.name ||
     [a.firstName, a.lastName].filter(Boolean).join(' ') ||
     'Unknown'
   )
 }
 
-function athleteCountryCode(a?: { country?: string } | null): string | null {
-  if (!a?.country) return null
+function athleteCountryCode(
+  a?: { country?: string | null; countryCode?: string | null } | null,
+): string | null {
+  if (!a) return null
+  if (a.countryCode) return a.countryCode
+  if (!a.country) return null
   return COUNTRY_CODE_MAP[a.country.toUpperCase()] ?? null
 }
 </script>

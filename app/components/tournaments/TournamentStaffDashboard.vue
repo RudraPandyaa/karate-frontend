@@ -77,6 +77,21 @@ const matchStatusMeta: Record<MatchStatus, { label: string; class: string }> = {
   COMPLETED: { label: 'Completed', class: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' },
   CANCELLED: { label: 'Cancelled', class: 'bg-red-500/15 text-red-400 border border-red-500/30' },
 }
+
+function athleteName(
+  a?: {
+    fullName?: string | null
+    firstName?: string | null
+    lastName?: string | null
+  } | null,
+) {
+  if (!a) return 'TBD'
+  return (
+    a.fullName ||
+    [a.firstName, a.lastName].filter(Boolean).join(' ') ||
+    'TBD'
+  )
+}
 </script>
 
 <template>
@@ -172,11 +187,11 @@ const matchStatusMeta: Record<MatchStatus, { label: string; class: string }> = {
         >
           <div class="flex justify-between">
             <div>
-              <div class="font-semibold">
-                {{ match.redAthlete?.name }}
-                <span class="text-muted px-2">vs</span>
-                {{ match.blueAthlete?.name }}
-              </div>
+            <div class="font-semibold">
+              {{ athleteName(match.redAthlete) }}
+              <span class="text-muted px-2">vs</span>
+              {{ athleteName(match.blueAthlete) }}
+            </div>
               <div class="text-sm text-muted mt-1">
                 {{ match.category?.name }}
               </div>

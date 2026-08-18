@@ -64,9 +64,8 @@ function formatDate(date: string) {
         >
           <!-- Tournament Info -->
           <td class="px-6 py-5">
-            <div class="font-semibold text-foreground">{{ tournament.name }}</div>
-            <div v-if="tournament.subtitle" class="mt-1 text-sm text-muted">
-              {{ tournament.subtitle }}
+            <div class="font-semibold text-foreground">
+              {{ tournament.name }}
             </div>
             <div class="mt-2 flex items-center gap-2 text-xs text-muted">
               <MapPin class="h-4 w-4" />

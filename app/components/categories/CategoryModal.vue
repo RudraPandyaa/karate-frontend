@@ -13,7 +13,7 @@ const props = defineProps<{
   loading: boolean
   category: Category | null
   tournaments: TournamentOption[]
-  tatamis: { id: string; number: number; name?: string | null }[] 
+  tatamis: { id: string; number: number; name?: string | null; tournamentId?: string }[] 
 }>()
 
 const emit = defineEmits<{
@@ -137,9 +137,11 @@ function validate() {
 const filteredTatamis = computed(() => {
   if (!form.value.tournamentId) return []
 
-  return props.tatamis.filter(
-    (t) => t.tournamentId === form.value.tournamentId
-  )
+  const list = props.tatamis
+  if (list.some((t) => t.tournamentId)) {
+    return list.filter((t) => t.tournamentId === form.value.tournamentId)
+  }
+  return list
 })
 
 function handleSubmit() {
@@ -151,7 +153,7 @@ function handleSubmit() {
     ageGroup: form.value.ageGroup.trim(),
     minAge: Number(form.value.minAge),
     maxAge: Number(form.value.maxAge),
-
+    tatamiId: form.value.tatamiId || null,
     weightMin: showWeightFields.value
       ? (
           form.value.weightMin == null ||
@@ -268,23 +270,30 @@ function handleClose() {
                   </div>
 
                   <!-- Tatami -->
-                  <select
-                    v-model="form.tatamiId"
-                    class="w-full rounded-xl border border-line bg-canvas px-4 py-3 text-foreground outline-none transition focus:border-blue-500"
-                    :disabled="!form.tournamentId"
-                  >
-                    <option :value="null">
-                      {{ form.tournamentId ? 'No Tatami assigned' : 'Select tournament first' }}
-                    </option>
-
-                    <option
-                      v-for="t in filteredTatamis"
-                      :key="t.id"
-                      :value="t.id"
+                  <div>
+                    <label class="mb-2 block text-sm font-medium text-foreground">
+                      Default Tatami
+                    </label>
+                    <select
+                      v-model="form.tatamiId"
+                      class="w-full rounded-xl border border-line bg-canvas px-4 py-3 text-foreground outline-none transition focus:border-blue-500"
+                      :disabled="!form.tournamentId"
                     >
-                      Tatami {{ t.number }}{{ t.name ? ` – ${t.name}` : '' }}
-                    </option>
-                  </select>
+                      <option :value="null">
+                        {{ form.tournamentId ? 'No default tatami' : 'Select tournament first' }}
+                      </option>
+                      <option
+                        v-for="t in filteredTatamis"
+                        :key="t.id"
+                        :value="t.id"
+                      >
+                        Tatami {{ t.number }}{{ t.name ? ` – ${t.name}` : '' }}
+                      </option>
+                    </select>
+                    <p class="mt-1 text-xs text-muted">
+                      New matches in this category will default to this mat (can override per match).
+                    </p>
+                  </div>
 
                   <!-- Name -->
                   <div>

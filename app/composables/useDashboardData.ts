@@ -1,5 +1,4 @@
 import type {
-  DashboardStats,
   LiveMatchSummary,
   UpcomingMatchRow,
   MatchStatus,
@@ -9,8 +8,9 @@ import type {
 interface RawMatch {
   id: string
   category: { name: string; discipline?: Discipline } | null
-  tatami: { number: number } | null
+  tatami: { id?: string; number: number } | null
   round: string
+  scheduledTime?: string | null
   redAthlete: {
     id: string
     name?: string
@@ -35,8 +35,15 @@ interface RawMatch {
   timeRemaining: number
 }
 
-function athleteLabel(a: any): { id: string; name: string; country: string } {
-  if (!a) return { id: '', name: 'TBD', country: '' }
+function athleteLabel(a: any): {
+  id: string
+  name: string
+  country: string
+  state: string
+} {
+  if (!a) {
+    return { id: '', name: 'TBD', country: '', state: '' }
+  }
 
   const name =
     a.fullName ||
@@ -48,6 +55,7 @@ function athleteLabel(a: any): { id: string; name: string; country: string } {
     id: a.id || '',
     name,
     country: a.country || '',
+    state: a.state || '',
   }
 }
 
@@ -67,7 +75,7 @@ function toLiveSummary(raw: RawMatch): LiveMatchSummary {
   return {
     id: raw.id,
     tatami: {
-      id: (raw.tatami as any)?.id || '',
+      id: raw.tatami?.id || '',
       number: raw.tatami?.number ?? 0,
     },
     category: { name: raw.category?.name || 'Unknown' },
@@ -82,109 +90,96 @@ function toLiveSummary(raw: RawMatch): LiveMatchSummary {
   }
 }
 
-// ===================================================================
-
 export function useDashboardData() {
   const { api } = useApi()
 
-  const stats = ref<DashboardStats>({
+  const pending = ref(false)
+  const usingMockData = ref(false)
+
+  const stats = reactive({
     totalTournaments: 0,
-    totalTournamentsDeltaPct: 0,
+    totalTournamentsDeltaPct: null as number | null,
     activeTournamentsCount: 0,
-    activeTournamentName: null,
+    activeTournamentName: null as string | null,
     totalAthletes: 0,
     runningMatches: 0,
   })
 
   const liveMatches = ref<LiveMatchSummary[]>([])
   const upcomingMatches = ref<UpcomingMatchRow[]>([])
-  const usingMockData = ref(false)
-  const pending = ref(false)
-  const error = ref<string | null>(null)
-
-  const ROUND_ORDER = [
-  'ROUND_1',
-  'ROUND_2',
-  'ROUND_3',
-  'ROUND_OF_32',
-  'ROUND_OF_16',
-  'QUARTER_FINAL',
-  'SEMI_FINAL',
-  'FINAL',
-  'BRONZE',
-]
 
   async function fetchAll() {
     pending.value = true
-    error.value = null
+    usingMockData.value = false
 
     try {
-      const [matches, tournaments, athletes] = await Promise.all([
-        api<RawMatch[]>('/matches'),
+      const [tournaments, athletes, matches] = await Promise.all([
         api<any[]>('/tournaments'),
         api<any[]>('/athletes'),
+        api<RawMatch[]>('/matches'),
       ])
 
-      console.log('MATCHES RESPONSE:', matches)
-      console.log('TOURNAMENTS RESPONSE:', tournaments)
-      console.log('ATHLETES RESPONSE:', athletes)
-      
-      const live = matches
-        .filter(m => m.status === 'IN_PROGRESS')
-        .map(toLiveSummary)
+      const today = new Date()
+      today.setHours(12, 0, 0, 0)
 
-      const playable = matches.filter(
-        m =>
-          m.status === 'SCHEDULED' &&
-          m.redAthlete &&
-          m.blueAthlete
+      const active = tournaments.filter((t) => {
+        if (t.status === 'CANCELLED') return false
+        const s = new Date(t.startDate)
+        const e = new Date(t.endDate)
+        if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return false
+        s.setHours(0, 0, 0, 0)
+        e.setHours(23, 59, 59, 999)
+        return today >= s && today <= e
+      })
+
+      stats.totalTournaments = tournaments.length
+      stats.activeTournamentsCount = active.length
+      stats.activeTournamentName =
+        active.length === 1
+          ? active[0].name
+          : active.length > 1
+            ? `${active.length} ongoing`
+            : null
+      stats.totalAthletes = athletes.length
+
+      const running = matches.filter((m) =>
+        ['IN_PROGRESS', 'PAUSED'].includes(m.status),
       )
+      stats.runningMatches = running.length
+      liveMatches.value = running.map(toLiveSummary)
 
-let scheduled: RawMatch[] = []
-
-for (const round of ROUND_ORDER) {
-  const roundMatches = playable.filter(m => m.round === round)
-
-  if (roundMatches.length) {
-    scheduled = roundMatches
-    break
-  }
-}
-
-upcomingMatches.value = scheduled
-  .slice(0, 4)
-  .map(toUpcomingRow)
-
-      const ongoing = tournaments.filter((t: any) => t.status === 'ONGOING')
-
-      liveMatches.value = live
-
-      stats.value = {
-        totalTournaments: tournaments.length,
-        totalTournamentsDeltaPct: 12, // TODO: calculate delta if needed
-        activeTournamentsCount: ongoing.length,
-        activeTournamentName: ongoing[0]?.name ?? null,
-        totalAthletes: athletes.length,
-        runningMatches: live.length,
-      }
-
-      usingMockData.value = false
-    } catch (e: any) {
-      console.warn('[useDashboardData] API error, using fallback:', e.message)
+      upcomingMatches.value = matches
+        .filter(
+          (m) =>
+            m.status === 'SCHEDULED' &&
+            m.redAthlete &&
+            m.blueAthlete,
+        )
+        .sort((a, b) => {
+          const ta = a.scheduledTime
+            ? new Date(a.scheduledTime).getTime()
+            : 0
+          const tb = b.scheduledTime
+            ? new Date(b.scheduledTime).getTime()
+            : 0
+          return ta - tb
+        })
+        .slice(0, 20)
+        .map(toUpcomingRow)
+    } catch (e) {
+      console.error(e)
       usingMockData.value = true
-      error.value = e.message || 'Failed to load dashboard'
     } finally {
       pending.value = false
     }
   }
 
-  return { 
-    stats, 
-    liveMatches, 
-    upcomingMatches, 
-    usingMockData, 
-    pending, 
-    error, 
-    fetchAll 
+  return {
+    stats,
+    liveMatches,
+    upcomingMatches,
+    usingMockData,
+    pending,
+    fetchAll,
   }
 }

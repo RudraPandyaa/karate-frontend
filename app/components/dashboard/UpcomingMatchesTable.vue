@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Pencil, Eye } from 'lucide-vue-next'
 import CountryFlag from 'vue-country-flag-next'
-import type { UpcomingMatchRow } from '~/types'
+import type { UpcomingMatchRow, Athlete } from '~/types'
 import { COUNTRY_CODE_MAP } from '~/utils/countries'
 
 const props = defineProps<{
@@ -12,6 +12,26 @@ const props = defineProps<{
 const emit = defineEmits<{
   edit: [match: UpcomingMatchRow]
 }>()
+
+function athleteName(a?: Athlete | null) {
+  if (!a) return 'TBD'
+  return (
+    a.fullName ||
+    [a.firstName, a.lastName].filter(Boolean).join(' ') ||
+    'TBD'
+  )
+}
+
+function isRealAthlete(a?: Athlete | null) {
+  if (!a) return false
+  return athleteName(a) !== 'TBD'
+}
+
+const visibleMatches = computed(() =>
+  props.matches.filter(
+    (m) => isRealAthlete(m.redAthlete) && isRealAthlete(m.blueAthlete),
+  ),
+)
 
 function iso2(code?: string) {
   if (!code) return ''
@@ -55,12 +75,7 @@ function viewMatch(match: UpcomingMatchRow) {
       </thead>
       <tbody>
         <tr
-          v-for="m in matches.filter(match =>
-            match.redAthlete &&
-            match.blueAthlete &&
-            match.redAthlete.name !== 'TBD' &&
-            match.blueAthlete.name !== 'TBD'
-          )"
+          v-for="m in visibleMatches"
           :key="m.id"
           class="border-b border-border/60 hover:bg-muted/40 transition-colors"
         >
@@ -75,7 +90,7 @@ function viewMatch(match: UpcomingMatchRow) {
           <td class="px-5 py-4 text-sm text-foreground">
             <div class="flex min-w-[180px] items-center gap-2">
               <span class="h-2 w-2 shrink-0 rounded-full bg-red-500" />
-              <span class="truncate font-medium">{{ m.redAthlete.name }}</span>
+              <span class="truncate font-medium">{{ athleteName(m.redAthlete) }}</span>
               <CountryFlag
                 v-if="iso2(m.redAthlete.country)"
                 :country="iso2(m.redAthlete.country)"
@@ -88,7 +103,7 @@ function viewMatch(match: UpcomingMatchRow) {
           <td class="px-5 py-4 text-sm text-foreground">
             <div class="flex min-w-[180px] items-center gap-2">
               <span class="h-2 w-2 shrink-0 rounded-full bg-blue-500" />
-              <span class="truncate font-medium">{{ m.blueAthlete.name }}</span>
+              <span class="truncate font-medium">{{ athleteName(m.blueAthlete) }}</span>
               <CountryFlag
                 v-if="iso2(m.blueAthlete.country)"
                 :country="iso2(m.blueAthlete.country)"
@@ -122,14 +137,7 @@ function viewMatch(match: UpcomingMatchRow) {
           </td>
         </tr>
 
-        <tr
-          v-if="matches.filter(match =>
-            match.redAthlete &&
-            match.blueAthlete &&
-            match.redAthlete.name !== 'TBD' &&
-            match.blueAthlete.name !== 'TBD'
-          ).length === 0"
-        >
+        <tr v-if="visibleMatches.length === 0">
           <td colspan="7" class="px-5 py-10 text-center text-sm text-muted">
             No upcoming matches scheduled.
           </td>

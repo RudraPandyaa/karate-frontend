@@ -3,7 +3,7 @@ import type { Tournament, Match, Athlete, Category } from '~/types'
 export const useTournamentDetail = (tournamentId: string) => {
   const tournament = ref<Tournament | null>(null)
   const matches = ref<Match[]>([])
-  const athletes = ref<Athlete[]>([])
+  const athletes = ref<Athlete[] | any[]>([])
   const categories = ref<Category[]>([])
   const loading = ref(true)
   const error = ref<string | null>(null)

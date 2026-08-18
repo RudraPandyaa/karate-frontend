@@ -42,7 +42,6 @@ export function useTournamentsData() {
       rows.value = data.map((t): TournamentRow => ({
         id: t.id,
         name: t.name,
-        subtitle: t.location,
         location: t.location,
         startDate: t.startDate,
         endDate: t.endDate,

@@ -178,6 +178,20 @@ async function handleDelete() {
     console.error(err)
   }
 }
+
+
+// const allTatamis = ref<any[]>([])
+
+async function loadTatamis() {
+  const { api } = useApi()
+  // Prefer: all tatamis with tournamentId
+  tatamis.value = await api('/tatami') // or your list endpoint
+}
+
+onMounted(async () => {
+  await refresh()
+  await loadTatamis()
+})
 </script>
 
 <template>
@@ -290,6 +304,7 @@ async function handleDelete() {
     >
       <CategoriesTable
         :rows="filteredRows"
+        :can-manage="isAdmin"
         @edit="openEdit"
         @delete="openDelete"
       />
