@@ -10,7 +10,15 @@ const colorMode = useColorMode()
 const showTournamentModal = ref(false)
 const showUserMenu = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
+const { selectTournament, selectedTournamentName } = useSelectedTournament()
 
+// @select="{ id, name }"  OR  @select="id"
+function onSelectTournament(payload: { id: string; name?: string } | string) {
+  if (typeof payload === 'string') selectTournament(payload)
+  else selectTournament(payload.id, payload.name)
+  showTournamentModal.value = false
+  navigateTo('/dashboard')
+}
 const handleClickOutside = (event: MouseEvent) => {
   if (
     showUserMenu.value &&
@@ -51,11 +59,11 @@ const openTournamentSelector = () => {
   showTournamentModal.value = true
 }
 
-const selectTournament = (tournamentId: string) => {
-  // You can store selected tournament globally if needed
-  showTournamentModal.value = false
-  navigateTo('/dashboard')
-}
+// const selectTournament = (tournamentId: string) => {
+//   // You can store selected tournament globally if needed
+//   showTournamentModal.value = false
+//   navigateTo('/dashboard')
+// }
 </script>
 
 <template>
@@ -77,12 +85,13 @@ const selectTournament = (tournamentId: string) => {
     <div class="flex items-center gap-3">
       <!-- Select Tournament -->
       <ClientOnly>
-        <button
+       <button
           v-if="canSelectTournament"
-          class="rounded-full bg-blue-600/15 border border-blue-600/30 px-5 py-2 text-sm font-medium text-blue-300 hover:bg-blue-600/25 transition-colors"
+          type="button"
+          class="max-w-[200px] truncate rounded-full border border-blue-600/30 bg-blue-600/15 px-4 py-2 text-sm font-medium text-blue-300 transition-colors hover:bg-blue-600/25"
           @click="openTournamentSelector"
         >
-          Select Tournament
+          {{ selectedTournamentName || 'Select Tournament' }}
         </button>
       </ClientOnly>
 
@@ -137,8 +146,8 @@ const selectTournament = (tournamentId: string) => {
   <!-- Tournament Selector Modal -->
 <!-- Tournament Selector Modal -->
   <TournamentSelectorModal 
-    :model-value="showTournamentModal"
-    @close="showTournamentModal = false" 
-    @select="selectTournament" 
+  :model-value="showTournamentModal"
+  @close="showTournamentModal = false"
+  @select="onSelectTournament"
   />
 </template>

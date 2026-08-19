@@ -1,3 +1,4 @@
+import { useApi } from '~/composables/useApi'
 import type {
   LiveMatchSummary,
   UpcomingMatchRow,
@@ -7,50 +8,30 @@ import type {
 
 interface RawMatch {
   id: string
-  category: { name: string; discipline?: Discipline } | null
+  category: {
+    name: string
+    discipline?: Discipline
+    tournamentId?: string
+  } | null
+  tournamentId?: string
   tatami: { id?: string; number: number } | null
   round: string
   scheduledTime?: string | null
-  redAthlete: {
-    id: string
-    name?: string
-    fullName?: string
-    firstName?: string
-    lastName?: string
-    state?: string
-    country?: string
-  } | null
-  blueAthlete: {
-    id: string
-    name?: string
-    fullName?: string
-    firstName?: string
-    lastName?: string
-    state?: string
-    country?: string
-  } | null
+  redAthlete: any | null
+  blueAthlete: any | null
   status: MatchStatus
   redScore: number
   blueScore: number
   timeRemaining: number
 }
 
-function athleteLabel(a: any): {
-  id: string
-  name: string
-  country: string
-  state: string
-} {
-  if (!a) {
-    return { id: '', name: 'TBD', country: '', state: '' }
-  }
-
+function athleteLabel(a: any) {
+  if (!a) return { id: '', name: 'TBD', country: '', state: '' }
   const name =
     a.fullName ||
     a.name ||
     [a.firstName, a.lastName].filter(Boolean).join(' ') ||
     'TBD'
-
   return {
     id: a.id || '',
     name,
@@ -59,10 +40,10 @@ function athleteLabel(a: any): {
   }
 }
 
-function toUpcomingRow(raw: RawMatch): UpcomingMatchRow {
+function toUpcomingRow(raw: any): UpcomingMatchRow {
   return {
     id: raw.id,
-    matchNo: `#M-${raw.id.slice(-4).toUpperCase()}`,
+    matchNo: `#M-${String(raw.id).slice(-4).toUpperCase()}`,
     categoryName: raw.category?.name || 'Unknown',
     round: raw.round,
     tatamiNumber: raw.tatami?.number ?? 0,
@@ -71,7 +52,7 @@ function toUpcomingRow(raw: RawMatch): UpcomingMatchRow {
   }
 }
 
-function toLiveSummary(raw: RawMatch): LiveMatchSummary {
+function toLiveSummary(raw: any): LiveMatchSummary {
   return {
     id: raw.id,
     tatami: {
@@ -83,15 +64,16 @@ function toLiveSummary(raw: RawMatch): LiveMatchSummary {
     discipline: raw.category?.discipline ?? 'KUMITE',
     redAthlete: athleteLabel(raw.redAthlete),
     blueAthlete: athleteLabel(raw.blueAthlete),
-    redScore: raw.redScore,
-    blueScore: raw.blueScore,
-    timeRemaining: raw.timeRemaining,
+    redScore: raw.redScore ?? 0,
+    blueScore: raw.blueScore ?? 0,
+    timeRemaining: raw.timeRemaining ?? 0,
     status: raw.status,
   }
 }
 
 export function useDashboardData() {
   const { api } = useApi()
+  const { selectedTournamentId } = useSelectedTournament()
 
   const pending = ref(false)
   const usingMockData = ref(false)
@@ -116,13 +98,29 @@ export function useDashboardData() {
       const [tournaments, athletes, matches] = await Promise.all([
         api<any[]>('/tournaments'),
         api<any[]>('/athletes'),
-        api<RawMatch[]>('/matches'),
+        api<any[]>('/matches'),
       ])
+
+      const tid = selectedTournamentId.value
+
+      // Matches for selected tournament only
+      const scopedMatches = tid
+        ? matches.filter(
+            (m) =>
+              m.category?.tournamentId === tid ||
+              m.tournamentId === tid,
+          )
+        : matches
 
       const today = new Date()
       today.setHours(12, 0, 0, 0)
 
-      const active = tournaments.filter((t) => {
+      let tournamentList = tournaments
+      if (tid) {
+        tournamentList = tournaments.filter((t) => t.id === tid)
+      }
+
+      const active = tournamentList.filter((t) => {
         if (t.status === 'CANCELLED') return false
         const s = new Date(t.startDate)
         const e = new Date(t.endDate)
@@ -132,23 +130,26 @@ export function useDashboardData() {
         return today >= s && today <= e
       })
 
-      stats.totalTournaments = tournaments.length
+      stats.totalTournaments = tid ? 1 : tournaments.length
       stats.activeTournamentsCount = active.length
-      stats.activeTournamentName =
-        active.length === 1
+      stats.activeTournamentName = tid
+        ? tournaments.find((t) => t.id === tid)?.name ?? null
+        : active.length === 1
           ? active[0].name
           : active.length > 1
             ? `${active.length} ongoing`
             : null
+
+      // Optional: athletes only in this tournament’s categories (simple: keep all if hard)
       stats.totalAthletes = athletes.length
 
-      const running = matches.filter((m) =>
+      const running = scopedMatches.filter((m) =>
         ['IN_PROGRESS', 'PAUSED'].includes(m.status),
       )
       stats.runningMatches = running.length
       liveMatches.value = running.map(toLiveSummary)
 
-      upcomingMatches.value = matches
+      upcomingMatches.value = scopedMatches
         .filter(
           (m) =>
             m.status === 'SCHEDULED' &&
@@ -173,6 +174,10 @@ export function useDashboardData() {
       pending.value = false
     }
   }
+
+  watch(selectedTournamentId, () => {
+    fetchAll()
+  })
 
   return {
     stats,

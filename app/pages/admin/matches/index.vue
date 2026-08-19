@@ -31,7 +31,7 @@ const formError = ref<string | null>(null)
 const showForm = ref(false)
 
 const search = ref('')
-const statusFilter = ref('ALL')
+const statusFilter = ref('SCHEDULED')
 const categoryFilter = ref('')
 const tatamiFilter = ref('ALL')
 
@@ -65,6 +65,40 @@ const roundOptions = [
   { value: 'REPECHAGE', label: 'Repechage' },
   { value: 'BRONZE', label: 'Bronze Medal Match' },
 ]
+
+/** Lower = earlier in tournament; Final highest */
+const ROUND_RANK: Record<string, number> = {
+  ROUND_1: 1,
+  ROUND_2: 2,
+  ROUND_3: 3,
+  ROUND_OF_32: 4,
+  ROUND_OF_16: 5,
+  QUARTER_FINAL: 6,
+  SEMI_FINAL: 7,
+  BRONZE: 8,
+  REPECHAGE: 9,
+  FINAL: 10,
+}
+
+function roundRank(round?: string) {
+  if (!round) return 0
+  return ROUND_RANK[round] ?? 0
+}
+
+function hasBothAthletes(m: any) {
+  return !!(m.redAthlete?.id && m.blueAthlete?.id)
+}
+
+/** Furthest round that already has at least one COMPLETED match */
+function focusRoundRank(list: any[]) {
+  let max = 0
+  for (const m of list) {
+    if (m.status === 'COMPLETED' && hasBothAthletes(m)) {
+      max = Math.max(max, roundRank(m.round))
+    }
+  }
+  return max
+}
 
 const selectedCategory = computed(() =>
   categories.value.find((c) => c.id === form.categoryId),
@@ -359,12 +393,18 @@ async function handleRegenerate() {
 }
 
 const filteredMatches = computed(() => {
-  let list = [...matches.value]
+  // 1. Never show TBD vs TBD
+  let list = matches.value.filter(hasBothAthletes)
 
+  // 2. Status filter (default you can set statusFilter to 'SCHEDULED')
   if (statusFilter.value === 'LIVE') {
     list = list.filter((m) =>
       ['IN_PROGRESS', 'PAUSED'].includes(m.status),
     )
+  } else if (statusFilter.value === 'SCHEDULED') {
+    list = list.filter((m) => m.status === 'SCHEDULED')
+  } else if (statusFilter.value === 'COMPLETED') {
+    list = list.filter((m) => m.status === 'COMPLETED')
   } else if (statusFilter.value !== 'ALL') {
     list = list.filter((m) => m.status === statusFilter.value)
   }
@@ -394,6 +434,46 @@ const filteredMatches = computed(() => {
       )
     })
   }
+
+  // 3. Round focus from ALL matches (not only filtered status)
+  const focus = focusRoundRank(matches.value.filter(hasBothAthletes))
+
+  list = [...list].sort((a, b) => {
+    const ra = roundRank(a.round)
+    const rb = roundRank(b.round)
+
+    if (focus > 0) {
+      // Matches in the focus round first
+      const aFocus = ra === focus ? 0 : 1
+      const bFocus = rb === focus ? 0 : 1
+      if (aFocus !== bFocus) return aFocus - bFocus
+
+      // After Final has started completing → show later rounds first (Final → Semi → …)
+      if (focus >= ROUND_RANK.FINAL) {
+        if (rb !== ra) return rb - ra
+      } else {
+        // Still early: show current focus, then earlier unfinished rounds, then later
+        if (ra !== rb) return ra - rb
+      }
+    } else {
+      // Nothing completed yet → early rounds first
+      if (ra !== rb) return ra - rb
+    }
+
+    // Same round: live first, then scheduled time
+    const statusWeight = (s: string) => {
+      if (s === 'IN_PROGRESS') return 0
+      if (s === 'PAUSED') return 1
+      if (s === 'SCHEDULED') return 2
+      return 3
+    }
+    const sw = statusWeight(a.status) - statusWeight(b.status)
+    if (sw !== 0) return sw
+
+    const ta = a.scheduledTime ? new Date(a.scheduledTime).getTime() : 0
+    const tb = b.scheduledTime ? new Date(b.scheduledTime).getTime() : 0
+    return ta - tb
+  })
 
   return list
 })

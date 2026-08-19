@@ -30,7 +30,7 @@ onMounted(async () => {
       </p>
     </div>
 
-    <PageLoader v-if="loading" text="Loading your tournaments..." />
+    <PageLoader v-if="loading" text="Loading your tournaments for tatamis..." />
 
     <div
       v-else-if="tournaments.length === 0"

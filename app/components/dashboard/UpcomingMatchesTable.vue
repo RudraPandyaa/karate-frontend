@@ -17,21 +17,11 @@ function athleteName(a?: Athlete | null) {
   if (!a) return 'TBD'
   return (
     a.fullName ||
+    a.name ||
     [a.firstName, a.lastName].filter(Boolean).join(' ') ||
     'TBD'
   )
 }
-
-function isRealAthlete(a?: Athlete | null) {
-  if (!a) return false
-  return athleteName(a) !== 'TBD'
-}
-
-const visibleMatches = computed(() =>
-  props.matches.filter(
-    (m) => isRealAthlete(m.redAthlete) && isRealAthlete(m.blueAthlete),
-  ),
-)
 
 function iso2(code?: string) {
   if (!code) return ''
@@ -43,13 +33,8 @@ function iso2(code?: string) {
 const editMatch = (match: UpcomingMatchRow) => {
   emit('edit', match)
 }
-
 function viewMatch(match: UpcomingMatchRow) {
-  navigateTo(
-    props.editable
-      ? `/scoring-control/${match.id}`
-      : `/live-scoring/${match.id}`,
-  )
+  navigateTo(`/live-scoring/${match.id}`)
 }
 </script>
 
@@ -75,7 +60,7 @@ function viewMatch(match: UpcomingMatchRow) {
       </thead>
       <tbody>
         <tr
-          v-for="m in visibleMatches"
+          v-for="m in matches"
           :key="m.id"
           class="border-b border-border/60 hover:bg-muted/40 transition-colors"
         >
@@ -92,7 +77,7 @@ function viewMatch(match: UpcomingMatchRow) {
               <span class="h-2 w-2 shrink-0 rounded-full bg-red-500" />
               <span class="truncate font-medium">{{ athleteName(m.redAthlete) }}</span>
               <CountryFlag
-                v-if="iso2(m.redAthlete.country)"
+                v-if="iso2(m.redAthlete?.country)"
                 :country="iso2(m.redAthlete.country)"
                 size="small"
                 class="shrink-0"
@@ -105,7 +90,7 @@ function viewMatch(match: UpcomingMatchRow) {
               <span class="h-2 w-2 shrink-0 rounded-full bg-blue-500" />
               <span class="truncate font-medium">{{ athleteName(m.blueAthlete) }}</span>
               <CountryFlag
-                v-if="iso2(m.blueAthlete.country)"
+                v-if="iso2(m.blueAthlete?.country)"
                 :country="iso2(m.blueAthlete.country)"
                 size="small"
                 class="shrink-0"
@@ -115,7 +100,6 @@ function viewMatch(match: UpcomingMatchRow) {
 
           <td class="px-5 py-4">
             <div class="flex items-center justify-end gap-3">
-              <!-- Edit button - ADMIN ONLY -->
               <button
                 v-if="editable"
                 @click="editMatch(m)"
@@ -125,7 +109,6 @@ function viewMatch(match: UpcomingMatchRow) {
                 <Pencil class="h-4 w-4" />
               </button>
 
-              <!-- View button - Everyone -->
               <button
                 @click="viewMatch(m)"
                 class="text-muted hover:text-foreground transition-colors"
@@ -137,7 +120,7 @@ function viewMatch(match: UpcomingMatchRow) {
           </td>
         </tr>
 
-        <tr v-if="visibleMatches.length === 0">
+        <tr v-if="matches.length === 0">
           <td colspan="7" class="px-5 py-10 text-center text-sm text-muted">
             No upcoming matches scheduled.
           </td>

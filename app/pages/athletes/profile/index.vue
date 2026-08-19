@@ -225,7 +225,12 @@ const age = computed(() => {
               </p>
             </div>
           </div>
-
+          <NuxtLink
+              to="/athletes/profile/edit"
+              class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+            >
+              Edit profile
+          </NuxtLink>
           <!-- Logout -->
           <button
             class="rounded-xl border border-red-500/30 px-4 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/10"

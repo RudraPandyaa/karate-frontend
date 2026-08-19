@@ -34,7 +34,13 @@ const {
   dashboard,
   fetchDashboard,
 } = useAthleteDashboard()
+const photoUrl = computed(
+  () => dashboard.value?.athlete?.photoUrl || null,
+)
 
+const initials = computed(() =>
+  (user.value?.name || 'A').charAt(0).toUpperCase(),
+)
 const menu = [
   { label: 'Dashboard', to: '/athletes/dashboard', icon: LayoutDashboard },
   { label: 'Matches', to: '/athletes/matches', icon: Swords },
@@ -215,8 +221,16 @@ onMounted(() => {
           to="/athletes/profile"
           class="mb-3 flex items-center gap-3 rounded-xl px-1 py-1 transition hover:bg-surface-hover"
         >
-          <div class="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
-            {{ user?.name?.charAt(0)?.toUpperCase() || 'A' }}
+          <div
+            class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-600 text-sm font-bold text-white"
+          >
+            <img
+              v-if="photoUrl"
+              :src="photoUrl"
+              alt=""
+              class="h-full w-full object-cover"
+            />
+            <span v-else>{{ initials }}</span>
           </div>
           <div class="min-w-0">
             <p class="truncate text-sm font-medium">{{ user?.name || 'Athlete' }}</p>
@@ -433,10 +447,16 @@ onMounted(() => {
 
           <NuxtLink
             to="/athletes/profile"
-            class="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white"
+            class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-blue-600 text-sm font-bold text-white"
             :title="user?.name || 'Profile'"
           >
-            {{ user?.name?.charAt(0)?.toUpperCase() || 'A' }}
+            <img
+              v-if="photoUrl"
+              :src="photoUrl"
+              alt=""
+              class="h-full w-full object-cover"
+            />
+            <span v-else>{{ initials }}</span>
           </NuxtLink>
 
           <button

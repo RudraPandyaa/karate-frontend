@@ -8,24 +8,30 @@ const props = defineProps<{
   athletesCount: number
 }>()
 
+const route = useRoute()
+const tournamentId = route.params.id as string
+
 const stats = computed(() => [
   {
     label: 'Total Athletes',
     value: props.athletesCount.toLocaleString(),
     icon: Users,
     color: 'text-emerald-400',
+    to: '/athletes',
   },
   {
     label: 'Categories',
     value: props.tournament?.categoriesCount ?? 0,
     icon: Target,
     color: 'text-blue-400',
+    to: '/categories',
   },
   {
     label: 'Matches',
     value: props.tournament?.matchesCount ?? 0,
     icon: Trophy,
     color: 'text-amber-400',
+    to: '/matches',
   },
   {
     label: 'Days Left',
@@ -34,6 +40,7 @@ const stats = computed(() => [
       : 0,
     icon: Clock,
     color: 'text-purple-400',
+    to: null,
   },
 ])
 
@@ -67,6 +74,7 @@ const statusText = computed(
 
 <template>
   <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <!-- Left big card -->
     <div class="rounded-3xl border border-line bg-surface p-8 lg:col-span-2">
       <div class="flex items-center gap-4">
         <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10">
@@ -76,10 +84,7 @@ const statusText = computed(
           <h2 class="text-2xl font-bold text-foreground">
             {{ tournament?.name || 'Tournament' }}
           </h2>
-          <p
-            v-if="statusText"
-            class="mt-1 text-sm text-muted"
-          >
+          <p v-if="statusText" class="mt-1 text-sm text-muted">
             {{ statusText }}
           </p>
         </div>
@@ -101,17 +106,19 @@ const statusText = computed(
       </div>
     </div>
 
+    <!-- Clickable stat cards -->
     <div
       v-for="(stat, i) in stats"
       :key="i"
-      class="rounded-3xl border border-line bg-surface p-6 transition-colors hover:border-blue-500/30"
+      class="rounded-3xl border border-line bg-surface p-6 transition-colors"
+      :class="stat.to 
+        ? 'hover:border-blue-500/50 hover:bg-surface-hover cursor-pointer' 
+        : 'hover:border-blue-500/30'"
+      @click="stat.to && navigateTo(stat.to)"
     >
       <div class="flex items-center justify-between">
         <div :class="stat.color">
-          <component
-            :is="stat.icon"
-            class="h-8 w-8"
-          />
+          <component :is="stat.icon" class="h-8 w-8" />
         </div>
         <div class="text-right">
           <div class="text-3xl font-bold text-foreground">

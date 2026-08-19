@@ -52,7 +52,7 @@ function winnerLabel(m: any) {
       v-if="pending && !matches.length"
       class="flex items-center justify-center gap-2 rounded-2xl border border-line bg-surface py-12 text-sm text-muted"
     >
-      <Loader2 class="h-5 w-5 animate-spin text-amber-400" />
+      <Loader2 class="h-5 w-5 animate-spin text-blue-400" />
       Loading history...
     </div>
 

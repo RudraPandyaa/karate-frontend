@@ -102,7 +102,7 @@ const roleLabel = computed(() => {
 
 <template>
   <aside
-    class="hidden lg:flex w-64 shrink-0 flex-col bg-panel border-r border-line"
+    class="hidden h-full w-64 shrink-0 flex-col border-r border-line bg-panel lg:flex"
   >
     <!-- Brand -->
     <div class="flex items-center gap-3 px-5 h-16 border-b border-line">

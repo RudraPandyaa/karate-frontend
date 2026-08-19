@@ -52,7 +52,7 @@ export const useTournamentDetail = (tournamentId: string) => {
     } finally {
       loading.value = false
     }
-  }
+  } 
 
   const refresh = async () => {
     await fetchTournament()

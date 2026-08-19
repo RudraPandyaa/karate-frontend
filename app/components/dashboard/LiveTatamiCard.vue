@@ -19,6 +19,26 @@ function athleteName(
     'TBD'
   )
 }
+const displayRed = computed(() => {
+  if (isKata.value) {
+    if (props.match.redKataScore != null) {
+      return props.match.redKataScore.toFixed(1)
+    }
+    // fallback: show kumite score if kata score missing
+    return props.match.redScore ?? 0
+  }
+  return props.match.redScore ?? 0
+})
+
+const displayBlue = computed(() => {
+  if (isKata.value) {
+    if (props.match.blueKataScore != null) {
+      return props.match.blueKataScore.toFixed(1)
+    }
+    return props.match.blueScore ?? 0
+  }
+  return props.match.blueScore ?? 0
+})
 
 const isKata = computed(
   () =>
@@ -75,11 +95,11 @@ const borderClass = computed(() => {
     </div>
 
     <div class="flex items-center justify-between px-6 pt-2">
-      <span class="text-3xl font-extrabold tabular text-foreground">
-        {{ isKata ? match.redKataScore?.toFixed(1) ?? '-' : match.redScore }}
+      <span class="text-3xl font-extrabold tabular-nums text-foreground">
+        {{ displayRed }}
       </span>
-      <span class="text-3xl font-extrabold tabular text-foreground">
-        {{ isKata ? match.blueKataScore?.toFixed(1) ?? '-' : match.blueScore }}
+      <span class="text-3xl font-extrabold tabular-nums text-foreground">
+        {{ displayBlue }}
       </span>
     </div>
 

@@ -3,10 +3,12 @@ import { Plus, Filter, Download, Search } from 'lucide-vue-next'
 import TournamentsTable from '~/components/TournamentsTable.vue'
 import CreateTournamentModal from '~/components/CreateTournamentModal.vue'
 import PageLoader from '~/components/ui/PageLoader.vue'
+
 definePageMeta({
   layout: 'default',
   middleware: 'admin',
 })
+
 const {
   rows,
   pending,
@@ -94,136 +96,135 @@ function exportToCsv() {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 relative min-h-[60vh]">
+    <!-- Single full-page loader (same as dashboard) -->
+    <PageLoader
+      v-if="pending"
+      text="Loading your tournaments..."
+    />
 
-    <!-- Loading -->
-    <PageLoader v-if="pending" text="Loading your tournaments..." />
-
-    <!-- Error -->
-    <div
-      v-if="error"
-      class="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-400"
-    >
-      {{ error }}
-    </div>
-
-    <!-- Header -->
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold text-foreground">
-          Tournaments
-        </h1>
-
-        <p class="mt-1 text-sm text-muted">
-          Manage karate tournaments
-        </p>
+    <!-- Everything else only shows after data is loaded -->
+    <div v-else class="space-y-6">
+      <!-- Error -->
+      <div
+        v-if="error"
+        class="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-400"
+      >
+        {{ error }}
       </div>
 
-      <!-- Staff/Admin only -->
-      <ClientOnly>
-        <button
-          v-if="isStaff"
-          class="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700"
-          @click="showCreateModal = true"
-        >
-          <Plus class="h-4 w-4" />
-          Create Tournament
-        </button>
-      </ClientOnly>
-    </div>
+      <!-- Header -->
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-foreground">
+            Tournaments
+          </h1>
+          <p class="mt-1 text-sm text-muted">
+            Manage karate tournaments
+          </p>
+        </div>
 
-    <!-- Toolbar (open to any logged-in user) -->
-    <div class="flex flex-wrap items-center gap-3">
-
-      <div class="relative flex-1 min-w-[250px] max-w-md">
-        <Search
-          class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
-        />
-
-        <input
-          v-model="search"
-          type="text"
-          placeholder="Search tournaments..."
-          class="w-full rounded-full border border-line bg-surface py-3 pl-10 pr-4 text-sm outline-none focus:border-blue-500 text-foreground"
-        >
+        <ClientOnly>
+          <button
+            v-if="isStaff"
+            class="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700"
+            @click="showCreateModal = true"
+          >
+            <Plus class="h-4 w-4" />
+            Create Tournament
+          </button>
+        </ClientOnly>
       </div>
 
-      <div class="relative">
+      <!-- Toolbar -->
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="relative flex-1 min-w-[250px] max-w-md">
+          <Search
+            class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+          />
+          <input
+            v-model="search"
+            type="text"
+            placeholder="Search tournaments..."
+            class="w-full rounded-full border border-line bg-surface py-3 pl-10 pr-4 text-sm outline-none focus:border-blue-500 text-foreground"
+          >
+        </div>
+
+        <div class="relative">
+          <button
+            class="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-foreground transition hover:bg-surface-hover"
+            @click="showFilterMenu = !showFilterMenu"
+          >
+            <Filter class="h-4 w-4" />
+            Filter
+          </button>
+
+          <div
+            v-if="showFilterMenu"
+            class="absolute right-0 mt-2 w-48 rounded-xl border border-line bg-surface shadow-2xl py-2 z-50"
+          >
+            <button
+              class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
+              @click="statusFilter = null; showFilterMenu = false"
+            >
+              All
+            </button>
+            <button
+              class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
+              @click="statusFilter = 'DRAFT'; showFilterMenu = false"
+            >
+              Draft
+            </button>
+            <button
+              class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
+              @click="statusFilter = 'ONGOING'; showFilterMenu = false"
+            >
+              Ongoing
+            </button>
+            <button
+              class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
+              @click="statusFilter = 'UPCOMING'; showFilterMenu = false"
+            >
+              Upcoming
+            </button>
+            <button
+              class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
+              @click="statusFilter = 'COMPLETED'; showFilterMenu = false"
+            >
+              Completed
+            </button>
+            <button
+              class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
+              @click="statusFilter = 'CANCELLED'; showFilterMenu = false"
+            >
+              Cancelled
+            </button>
+          </div>
+        </div>
+
         <button
           class="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-foreground transition hover:bg-surface-hover"
-          @click="showFilterMenu = !showFilterMenu"
+          @click="exportToCsv"
         >
-          <Filter class="h-4 w-4" />
-          Filter
+          <Download class="h-4 w-4" />
+          Export
         </button>
-
-        <div
-          v-if="showFilterMenu"
-          class="absolute right-0 mt-2 w-48 rounded-xl border border-line bg-surface shadow-2xl py-2 z-50"
-        >
-          <button
-            class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
-            @click="statusFilter = null; showFilterMenu = false"
-          >
-            All
-          </button>
-          <button
-            class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
-            @click="statusFilter = 'DRAFT'; showFilterMenu = false"
-          >
-            Draft
-          </button>
-          <button
-            class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
-            @click="statusFilter = 'ONGOING'; showFilterMenu = false"
-          >
-            Ongoing
-          </button>
-          <button
-            class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
-            @click="statusFilter = 'UPCOMING'; showFilterMenu = false"
-          >
-            Upcoming
-          </button>
-          <button
-            class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
-            @click="statusFilter = 'COMPLETED'; showFilterMenu = false"
-          >
-            Completed
-          </button>
-          <button
-            class="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-surface-hover"
-            @click="statusFilter = 'CANCELLED'; showFilterMenu = false"
-          >
-            Cancelled
-          </button>
-        </div>
       </div>
 
-      <button
-        class="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-3 text-foreground transition hover:bg-surface-hover"
-        @click="exportToCsv"
-      >
-        <Download class="h-4 w-4" />
-        Export
-      </button>
+      <!-- Table -->
+      <TournamentsTable
+        :rows="filteredRows"
+        :search="search"
+      />
 
+      <!-- Create Tournament Modal -->
+      <CreateTournamentModal
+        v-if="showCreateModal"
+        :submitting="creating"
+        :submit-error="createError"
+        @close="showCreateModal = false"
+        @submit="handleCreateTournament"
+      />
     </div>
-
-    <!-- Table (open to any logged-in user) -->
-    <TournamentsTable
-      :rows="filteredRows"
-      :search="search"
-    />
-
-    <!-- Create Tournament Modal -->
-    <CreateTournamentModal
-      v-if="showCreateModal"
-      :submitting="creating"
-      :submit-error="createError"
-      @close="showCreateModal = false"
-      @submit="handleCreateTournament"
-    />
-
   </div>
 </template>
