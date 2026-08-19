@@ -23,6 +23,7 @@ const {
 
 const showForm = ref(false)
 const editingTatami = ref<Tatami | null>(null)
+const autoAssigning = ref(false)
 
 onMounted(async () => {
   await fetchTatami(tournamentId)
@@ -49,8 +50,15 @@ async function handleDelete(id: string) {
 
 async function handleAutoAssign() {
   if (!isAdmin.value) return
-  await autoAssign(tournamentId)
-  await fetchTatami(tournamentId)
+  autoAssigning.value = true
+  try {
+    await autoAssign(tournamentId)
+    await fetchTatami(tournamentId)
+  } catch (err) {
+    console.error(err)
+  } finally {
+    autoAssigning.value = false
+  }
 }
 
 async function handleSubmit(payload: { number: number; name: string }) {
@@ -90,12 +98,17 @@ async function handleSubmit(payload: { number: number; name: string }) {
         >
           Add Tatami
         </button>
-        <button
+       <button
           type="button"
-          class="rounded-xl bg-green-600 px-5 py-3 text-white"
+          class="inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 text-white disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="autoAssigning"
           @click="handleAutoAssign"
         >
-          Auto Assign
+          <span
+            v-if="autoAssigning"
+            class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
+          />
+          {{ autoAssigning ? 'Assigning…' : 'Auto Assign' }}
         </button>
       </div>
     </div>

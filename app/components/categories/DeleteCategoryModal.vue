@@ -49,20 +49,25 @@ function handleClose() {
           <div class="mt-6 flex items-center justify-end gap-3">
             <button
               type="button"
-              class="btn btn-secondary"
+              class="rounded-xl border border-line px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-surface-hover disabled:opacity-50"
               :disabled="loading"
-              @click="handleClose"
+              @click="emit('close')"
             >
               Cancel
             </button>
 
             <button
               type="button"
-              class="btn bg-red-600 text-white hover:bg-red-500"
+              class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
               :disabled="loading"
               @click="emit('confirm')"
             >
-              {{ loading ? 'Deleting...' : 'Delete' }}
+              <span
+                v-if="loading"
+                class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
+                aria-hidden="true"
+              />
+              {{ loading ? 'Deleting…' : 'Delete' }}
             </button>
           </div>
 

@@ -94,17 +94,31 @@ export const useCategories = () => {
 
   async function createCategory(payload: CategoryPayload) {
     saving.value = true
-    console.log('PAYLOAD SENT:', JSON.stringify(payload, null, 2))
-    
+    error.value = null
+
     try {
-      await api('/categories', {
+      const created = await api<Category>('/categories', {
         method: 'POST',
         body: payload,
       })
 
-      await fetchCategories()
+      // Soft merge — no pending / no full-page loader
+      const tournament = tournaments.value.find(
+        (t) => t.id === payload.tournamentId,
+      )
+      rows.value = [
+        {
+          ...created,
+          tournament: created.tournament ?? (tournament
+            ? { id: tournament.id, name: tournament.name }
+            : undefined),
+        },
+        ...rows.value,
+      ]
+      return created
     } catch (err: any) {
-      console.log(err.data) // <-- Add this
+      error.value =
+        err?.data?.message || err?.message || 'Unable to create category'
       throw err
     } finally {
       saving.value = false
@@ -113,14 +127,36 @@ export const useCategories = () => {
 
   async function updateCategory(id: string, payload: CategoryPayload) {
     saving.value = true
+    error.value = null
 
     try {
-      await api(`/categories/${id}`, {
+      const updated = await api<Category>(`/categories/${id}`, {
         method: 'PATCH',
         body: payload,
       })
 
-      await fetchCategories()
+      const tournament = tournaments.value.find(
+        (t) => t.id === payload.tournamentId,
+      )
+
+      rows.value = rows.value.map((c) =>
+        c.id === id
+          ? {
+              ...c,
+              ...updated,
+              tournament:
+                updated.tournament ??
+                (tournament
+                  ? { id: tournament.id, name: tournament.name }
+                  : c.tournament),
+            }
+          : c,
+      )
+      return updated
+    } catch (err: any) {
+      error.value =
+        err?.data?.message || err?.message || 'Unable to update category'
+      throw err
     } finally {
       saving.value = false
     }
